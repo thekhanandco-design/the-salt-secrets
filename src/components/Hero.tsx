@@ -15,7 +15,7 @@ import {
 export default function Hero() {
   return (
     <section className="bg-[#fff8f5]">
-      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-12 pb-0">
+      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-6 pb-0">
         <div className="grid lg:grid-cols-2 gap-14 items-center">
           {/* LEFT */}
           <div>
@@ -23,7 +23,7 @@ export default function Hero() {
               Premium Himalayan Pink Salt
             </span>
 
-            <h1 className="mt-5 text-5xl md:text-6xl lg:text-7xl leading-[0.95] font-black text-[#07142B]">
+            <h1 className="mt-5 text-5xl md:text-6xl lg:text-[78px] leading-[0.92] font-black text-[#07142B]">
               Pure. Natural.
               <br />
               <span className="text-[#C23B4A]">
@@ -56,22 +56,22 @@ export default function Hero() {
 
           {/* RIGHT BANNER */}
           <div className="relative">
-  <Image
-    src="/hero-banner.png"
-    alt="Premium Himalayan Pink Salt"
-    width={1200}
-    height={700}
-    priority
-    className="w-full h-auto object-contain"
-  />
-</div>
+            <Image
+              src="/hero-banner.png"
+              alt="Premium Himalayan Pink Salt"
+              width={1600}
+              height={900}
+              priority
+              className="w-full h-[620px] object-contain"
+            />
+          </div>
         </div>
 
         {/* TRUST STRIP */}
-        <div className="bg-white border border-[#EEDDE1] rounded-t-[24px] mt-10 overflow-hidden">
+        <div className="bg-white border border-[#EEDDE1] rounded-t-[24px] mt-8 overflow-hidden">
           <div className="grid grid-cols-2 lg:grid-cols-4">
-            <div className="px-6 py-3 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
-              <Leaf className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-5 py-2 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
+              <Leaf className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-semibold text-base">
                 100% Natural
@@ -82,8 +82,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-3 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
-              <FlaskConical className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-5 py-2 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
+              <FlaskConical className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-semibold text-base">
                 Lab Tested
@@ -94,8 +94,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-3 text-center border-r border-[#EEDDE1]">
-              <Truck className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-5 py-2 text-center border-r border-[#EEDDE1]">
+              <Truck className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-semibold text-base">
                 On-Time Delivery
@@ -106,8 +106,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-3 text-center">
-              <PackageCheck className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-5 py-2 text-center">
+              <PackageCheck className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-semibold text-base">
                 Private Label
@@ -127,11 +127,9 @@ export default function Hero() {
           <div className="grid md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-700">
             <div className="p-5 text-center text-white">
               <Factory className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-
               <h3 className="font-bold uppercase text-sm">
                 Manufacturer
               </h3>
-
               <p className="text-xs text-slate-400 mt-1">
                 Direct Factory Pricing
               </p>
@@ -139,11 +137,9 @@ export default function Hero() {
 
             <div className="p-5 text-center text-white">
               <FileText className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-
               <h3 className="font-bold uppercase text-sm">
                 Export Expertise
               </h3>
-
               <p className="text-xs text-slate-400 mt-1">
                 Documentation Support
               </p>
@@ -151,11 +147,9 @@ export default function Hero() {
 
             <div className="p-5 text-center text-white">
               <ShieldCheck className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-
               <h3 className="font-bold uppercase text-sm">
                 Quality Control
               </h3>
-
               <p className="text-xs text-slate-400 mt-1">
                 Strict Quality Checks
               </p>
@@ -163,11 +157,9 @@ export default function Hero() {
 
             <div className="p-5 text-center text-white">
               <Globe className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-
               <h3 className="font-bold uppercase text-sm">
                 Global Shipping
               </h3>
-
               <p className="text-xs text-slate-400 mt-1">
                 Fast & Reliable Delivery
               </p>
@@ -175,11 +167,9 @@ export default function Hero() {
 
             <div className="p-5 text-center text-white">
               <Tags className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-
               <h3 className="font-bold uppercase text-sm">
                 Private Label
               </h3>
-
               <p className="text-xs text-slate-400 mt-1">
                 Custom Packaging
               </p>
