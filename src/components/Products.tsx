@@ -1,204 +1,103 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const products = [
+  {
+    title: "Salt Grinder",
+    image: "/product-3.png",
+    link: "/products/salt-grinder",
+    size: "200g / 400g",
+  },
+  {
+    title: "Pink Salt Jar",
+    image: "/product-2.png",
+    link: "/products/fine-salt",
+    size: "200g / 500g",
+  },
+  {
+    title: "Salt Shaker",
+    image: "/product-4.png",
+    link: "/products/salt-shaker",
+    size: "200g / 400g",
+  },
+  {
+    title: "Rock Salt Chunks",
+    image: "/product-5.png",
+    link: "/products/bulk-salt",
+    size: "1kg / 2kg / 5kg",
+  },
+];
+
 export default function Products() {
   return (
     <section
       id="products"
-      className="max-w-7xl mx-auto px-6 py-24"
+      className="py-24 bg-[#FFF8F5]"
     >
-      <div className="text-center mb-16">
-        <span className="uppercase tracking-[5px] text-[#C98A92] font-semibold">
-          Featured Products
-        </span>
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid lg:grid-cols-[380px_1fr] gap-12 items-start">
 
-        <h2 className="text-5xl font-bold mt-4">
-          Himalayan Pink Salt Collection
-        </h2>
+          {/* LEFT CONTENT */}
+          <div>
+            <span className="uppercase tracking-[4px] text-[#C98A92] font-bold text-xs">
+              Our Products
+            </span>
 
-        <p className="text-slate-600 mt-4 max-w-2xl mx-auto">
-          Premium export-quality Himalayan Pink Salt products for distributors,
-          wholesalers, retailers and private label brands worldwide.
-        </p>
-      </div>
+            <h2 className="text-4xl lg:text-5xl font-bold mt-4 text-slate-950 leading-tight">
+              Premium Himalayan
+              <br />
+              Pink Salt Range
+            </h2>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-1.jpg"
-            alt="Coarse Grain Salt"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
-
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Coarse Grain Salt
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Premium food-grade coarse Himalayan Pink Salt for retail,
-              wholesale and food service industries.
+            <p className="text-slate-600 mt-5 leading-relaxed">
+              Wide range of premium Himalayan Pink Salt products
+              available in retail packaging, bulk supply and
+              private label solutions.
             </p>
 
             <Link
-              href="/products/coarse-grain-salt"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
+              href="/products"
+              className="inline-flex items-center mt-8 bg-[#C98A92] text-white px-7 py-4 rounded-full font-semibold hover:opacity-90 transition"
             >
-              View Details →
+              View All Products
             </Link>
           </div>
-        </div>
 
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-2.png"
-            alt="Fine Salt"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
+          {/* PRODUCTS GRID */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <Link
+                key={product.title}
+                href={product.link}
+                className="group bg-white rounded-[28px] border border-[#F0DDE1] p-5 hover:shadow-[0_20px_60px_rgba(201,138,146,0.18)] transition-all duration-300"
+              >
+                <div className="bg-[#FFF8F5] rounded-[22px] p-4 h-[240px] flex items-center justify-center overflow-hidden">
+                  <Image
+                    src={product.image}
+                    alt={product.title}
+                    width={300}
+                    height={300}
+                    className="max-h-[190px] w-auto object-contain transition duration-300 group-hover:scale-105"
+                  />
+                </div>
 
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Fine Salt
-            </h3>
+                <div className="mt-5">
+                  <h3 className="font-bold text-xl text-slate-950">
+                    {product.title}
+                  </h3>
 
-            <p className="text-slate-500 mt-2">
-              Finely ground Himalayan Pink Salt ideal for cooking,
-              seasoning and retail packaging.
-            </p>
+                  <p className="text-sm text-slate-500 mt-2">
+                    {product.size}
+                  </p>
 
-            <Link
-              href="/products/fine-salt"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
-            >
-              View Details →
-            </Link>
+                  <span className="inline-block mt-4 text-[#C98A92] font-semibold">
+                    View Details →
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-3.png"
-            alt="Salt Grinder"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
-
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Salt Grinder
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Premium grinder packaging designed for supermarkets,
-              retailers and private label brands.
-            </p>
-
-            <Link
-              href="/products/salt-grinder"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
-            >
-              View Details →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-4.png"
-            alt="Salt Shaker"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
-
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Salt Shaker
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Convenient shaker packaging for supermarkets,
-              retailers and global distribution.
-            </p>
-
-            <Link
-              href="/products/salt-shaker"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
-            >
-              View Details →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-5.png"
-            alt="Private Label Solutions"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
-
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Private Label Solutions
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Custom branding, packaging and export-ready private
-              label solutions for global brands.
-            </p>
-
-            <Link
-              href="/products/private-label"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
-            >
-              View Details →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-[30px] overflow-hidden shadow-lg border bg-white hover:shadow-2xl transition">
-          <Image
-            src="/product-1.jpg"
-            alt="Bulk Salt"
-            width={600}
-            height={700}
-            className="w-full h-[320px] object-cover"
-          />
-
-          <div className="p-6">
-            <h3 className="font-bold text-2xl">
-              Bulk Salt
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Bulk Himalayan Pink Salt for wholesale, food processing
-              and industrial buyers worldwide.
-            </p>
-
-            <Link
-              href="/products/bulk-salt"
-              className="inline-block mt-5 text-[#C98A92] font-semibold"
-            >
-              View Details →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="text-center mt-14">
-        <Link
-          href="/products"
-          className="inline-block bg-[#C98A92] text-white px-8 py-4 rounded-full font-semibold hover:opacity-90"
-        >
-          View Complete Product Range
-        </Link>
       </div>
     </section>
   );
