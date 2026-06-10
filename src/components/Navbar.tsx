@@ -9,58 +9,67 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] bg-white shadow-[0_2px_20px_rgba(0,0,0,0.04)] border-b border-[#F1E2E5]">
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+      <header className="sticky top-0 z-[999] bg-white/95 backdrop-blur-md border-b border-[#F1E2E5] shadow-sm">
+        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
+          {/* LOGO */}
+          <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="The Salt Secrets"
-              width={55}
-              height={55}
+              width={90}
+              height={90}
               priority
+              className="h-[72px] w-auto"
             />
-
-            <h2 className="font-bold text-[1.8rem] text-slate-950 leading-none">
-              The Salt Secrets
-            </h2>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8 text-[15px] font-medium text-slate-700">
-            <Link href="/" className="hover:text-[#C98A92] transition">
+          {/* DESKTOP MENU */}
+          <nav className="hidden lg:flex items-center gap-10 text-[15px] font-medium text-slate-700">
+            <Link href="/" className="hover:text-[#C23B4A] transition">
               Home
             </Link>
 
-            <Link href="/about" className="hover:text-[#C98A92] transition">
+            <Link
+              href="/about"
+              className="hover:text-[#C23B4A] transition"
+            >
               About Us
             </Link>
 
-            <Link href="/products" className="hover:text-[#C98A92] transition">
+            <Link
+              href="/products"
+              className="hover:text-[#C23B4A] transition"
+            >
               Products
             </Link>
 
             <Link
               href="/private-label"
-              className="hover:text-[#C98A92] transition"
+              className="hover:text-[#C23B4A] transition"
             >
               Private Label
             </Link>
 
             <Link
               href="/#certifications"
-              className="hover:text-[#C98A92] transition"
+              className="hover:text-[#C23B4A] transition"
             >
               Certifications
             </Link>
 
-            <Link href="/contact" className="hover:text-[#C98A92] transition">
+            <Link
+              href="/contact"
+              className="hover:text-[#C23B4A] transition"
+            >
               Contact
             </Link>
           </nav>
 
+          {/* CTA */}
           <div className="flex items-center gap-4">
             <Link
               href="/contact"
-              className="hidden md:flex items-center justify-center bg-[#C98A92] text-white px-7 py-3 rounded-xl font-semibold hover:opacity-90 transition"
+              className="hidden md:flex items-center justify-center bg-[#C23B4A] text-white px-7 py-2.5 rounded-lg font-semibold hover:opacity-90 transition"
             >
               Get Quote
             </Link>
@@ -86,18 +95,13 @@ export default function Navbar() {
 
           <div className="fixed top-0 right-0 h-screen w-[85%] max-w-[380px] bg-white z-[100] shadow-2xl">
             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Image
-                  src="/logo.png"
-                  alt="The Salt Secrets"
-                  width={45}
-                  height={45}
-                />
-
-                <h3 className="font-bold text-lg">
-                  The Salt Secrets
-                </h3>
-              </div>
+              <Image
+                src="/logo.png"
+                alt="The Salt Secrets"
+                width={65}
+                height={65}
+                className="h-[55px] w-auto"
+              />
 
               <button
                 onClick={() => setIsOpen(false)}
@@ -124,7 +128,10 @@ export default function Navbar() {
                 Private Label
               </Link>
 
-              <Link href="/#certifications" onClick={() => setIsOpen(false)}>
+              <Link
+                href="/#certifications"
+                onClick={() => setIsOpen(false)}
+              >
                 Certifications
               </Link>
 
@@ -135,7 +142,7 @@ export default function Navbar() {
               <Link
                 href="/contact"
                 onClick={() => setIsOpen(false)}
-                className="mt-4 bg-[#C98A92] text-white text-center py-4 rounded-xl font-semibold"
+                className="mt-4 bg-[#C23B4A] text-white text-center py-4 rounded-lg font-semibold"
               >
                 Get Quote
               </Link>
