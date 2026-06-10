@@ -14,9 +14,38 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://thesaltsecrets.com"),
+
   title: "The Salt Secrets | Premium Himalayan Pink Salt Exporter",
+
   description:
     "Premium Himalayan Pink Salt exporter by Khan & Co. Supplying global markets with private label solutions.",
+
+  openGraph: {
+    title: "The Salt Secrets",
+    description:
+      "Premium Himalayan Pink Salt exporter by Khan & Co.",
+    url: "https://thesaltsecrets.com",
+    siteName: "The Salt Secrets",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "The Salt Secrets",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "The Salt Secrets",
+    description:
+      "Premium Himalayan Pink Salt exporter by Khan & Co.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
