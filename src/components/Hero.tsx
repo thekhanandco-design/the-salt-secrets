@@ -14,16 +14,16 @@ import {
 
 export default function Hero() {
   return (
-    <section className="bg-[#FFF8F5]">
-      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-10 pb-0">
-        <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-12 items-center">
-          {/* LEFT CONTENT */}
+    <section className="bg-[#fff8f5]">
+      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-12 pb-0">
+        <div className="grid lg:grid-cols-2 gap-14 items-center">
+          {/* LEFT */}
           <div>
             <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
               Premium Himalayan Pink Salt
             </span>
 
-            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl leading-[0.95] font-black text-slate-950">
+            <h1 className="mt-5 text-5xl md:text-6xl lg:text-7xl leading-[0.95] font-black text-[#07142B]">
               Pure. Natural.
               <br />
               <span className="text-[#C23B4A]">
@@ -32,9 +32,9 @@ export default function Hero() {
             </h1>
 
             <p className="mt-6 text-slate-600 text-lg leading-relaxed max-w-xl">
-              Leading manufacturer and exporter of 100% natural Himalayan Pink
-              Salt products for retail, wholesale, supermarkets and private
-              label brands worldwide.
+              Leading manufacturer and exporter of 100% natural Himalayan
+              Pink Salt products for retail, wholesale, supermarkets and
+              private label brands worldwide.
             </p>
 
             <div className="flex flex-wrap gap-4 mt-8">
@@ -47,33 +47,33 @@ export default function Hero() {
 
               <Link
                 href="/contact"
-                className="bg-white border border-[#E7D4D8] text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-[#FFF2F4] transition"
+                className="bg-white border border-[#E8D2D6] text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-[#fff4f6] transition"
               >
                 Get Quote →
               </Link>
             </div>
           </div>
 
-          {/* HERO BANNER */}
-          <div className="relative">
+          {/* RIGHT BANNER */}
+          <div>
             <Image
               src="/hero-banner.png"
               alt="Premium Himalayan Pink Salt"
-              width={1600}
-              height={1200}
+              width={1400}
+              height={900}
               priority
-              className="w-full h-auto rounded-[30px]"
+              className="w-full h-[520px] object-contain"
             />
           </div>
         </div>
 
         {/* TRUST STRIP */}
-        <div className="bg-white border border-[#ECD8DC] rounded-t-[24px] mt-10 overflow-hidden">
+        <div className="bg-white border border-[#EEDDE1] rounded-t-[24px] mt-10 overflow-hidden">
           <div className="grid grid-cols-2 lg:grid-cols-4">
-            <div className="px-6 py-5 text-center border-r border-b lg:border-b-0 border-[#ECD8DC]">
-              <Leaf className="w-8 h-8 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-6 py-3 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
+              <Leaf className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
 
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-base">
                 100% Natural
               </h3>
 
@@ -82,10 +82,10 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-5 text-center border-r border-b lg:border-b-0 border-[#ECD8DC]">
-              <FlaskConical className="w-8 h-8 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-6 py-3 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
+              <FlaskConical className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
 
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-base">
                 Lab Tested
               </h3>
 
@@ -94,10 +94,10 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-5 text-center border-r border-[#ECD8DC]">
-              <Truck className="w-8 h-8 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-6 py-3 text-center border-r border-[#EEDDE1]">
+              <Truck className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
 
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-base">
                 On-Time Delivery
               </h3>
 
@@ -106,10 +106,10 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="px-6 py-5 text-center">
-              <PackageCheck className="w-8 h-8 mx-auto mb-2 text-[#C23B4A]" />
+            <div className="px-6 py-3 text-center">
+              <PackageCheck className="w-6 h-6 mx-auto mb-2 text-[#C23B4A]" />
 
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-base">
                 Private Label
               </h3>
 
@@ -121,12 +121,12 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* DARK FEATURE STRIP */}
+      {/* DARK STRIP */}
       <div className="bg-[#081528]">
         <div className="max-w-7xl mx-auto px-5 lg:px-6">
           <div className="grid md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-700">
-            <div className="p-6 text-center text-white">
-              <Factory className="w-8 h-8 mx-auto mb-3 text-[#C23B4A]" />
+            <div className="p-5 text-center text-white">
+              <Factory className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-bold uppercase text-sm">
                 Manufacturer
@@ -137,8 +137,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="p-6 text-center text-white">
-              <FileText className="w-8 h-8 mx-auto mb-3 text-[#C23B4A]" />
+            <div className="p-5 text-center text-white">
+              <FileText className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-bold uppercase text-sm">
                 Export Expertise
@@ -149,8 +149,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="p-6 text-center text-white">
-              <ShieldCheck className="w-8 h-8 mx-auto mb-3 text-[#C23B4A]" />
+            <div className="p-5 text-center text-white">
+              <ShieldCheck className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-bold uppercase text-sm">
                 Quality Control
@@ -161,8 +161,8 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="p-6 text-center text-white">
-              <Globe className="w-8 h-8 mx-auto mb-3 text-[#C23B4A]" />
+            <div className="p-5 text-center text-white">
+              <Globe className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-bold uppercase text-sm">
                 Global Shipping
@@ -173,15 +173,15 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="p-6 text-center text-white">
-              <Tags className="w-8 h-8 mx-auto mb-3 text-[#C23B4A]" />
+            <div className="p-5 text-center text-white">
+              <Tags className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
 
               <h3 className="font-bold uppercase text-sm">
                 Private Label
               </h3>
 
               <p className="text-xs text-slate-400 mt-1">
-                Custom Branding
+                Custom Packaging
               </p>
             </div>
           </div>
