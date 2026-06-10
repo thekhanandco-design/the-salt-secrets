@@ -55,16 +55,16 @@ export default function Hero() {
           </div>
 
           {/* RIGHT BANNER */}
-          <div>
-            <Image
-              src="/hero-banner.png"
-              alt="Premium Himalayan Pink Salt"
-              width={1400}
-              height={900}
-              priority
-              className="w-full h-[520px] object-contain"
-            />
-          </div>
+          <div className="relative">
+  <Image
+    src="/hero-banner.png"
+    alt="Premium Himalayan Pink Salt"
+    width={1200}
+    height={700}
+    priority
+    className="w-full h-auto object-contain"
+  />
+</div>
         </div>
 
         {/* TRUST STRIP */}

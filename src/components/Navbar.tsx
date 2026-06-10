@@ -9,8 +9,8 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] bg-white/95 backdrop-blur-md border-b border-[#F1E2E5] shadow-sm">
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-[999] bg-[#fff8f5] border-b border-[#f1e4e6]">
+        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-20 flex items-center justify-between">
           {/* LOGO */}
           <Link href="/" className="flex items-center">
             <Image
@@ -19,7 +19,7 @@ export default function Navbar() {
               width={90}
               height={90}
               priority
-              className="h-[72px] w-auto"
+              className="h-[56px] w-auto"
             />
           </Link>
 
