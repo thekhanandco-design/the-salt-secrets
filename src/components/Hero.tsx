@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -13,14 +14,14 @@ export default function Hero() {
           </span>
 
           <h1 className="text-6xl lg:text-7xl font-bold leading-tight mt-6">
-  Premium
-  <br />
-  Himalayan Pink Salt
-  <br />
-  For Retail &
-  <br />
-  Wholesale Brands
-</h1>
+            Premium
+            <br />
+            Himalayan Pink Salt
+            <br />
+            For Retail &
+            <br />
+            Wholesale Brands
+          </h1>
 
           <p className="mt-8 text-xl text-slate-600 leading-relaxed max-w-xl">
             The Salt Secrets by Khan & Co. supplies premium Himalayan Pink Salt
@@ -29,32 +30,62 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-wrap gap-4 mt-10">
-            <button className="bg-[#C98A92] text-white px-8 py-4 rounded-full font-semibold">
+            <Link
+              href="/contact"
+              className="bg-[#C98A92] text-white px-8 py-4 rounded-full font-semibold hover:opacity-90 transition"
+            >
               Request Quotation
-            </button>
+            </Link>
 
-            <button className="border border-slate-300 px-8 py-4 rounded-full font-semibold">
-              Download Catalog
-            </button>
+            <Link
+              href="/products"
+              className="border border-slate-300 px-8 py-4 rounded-full font-semibold hover:bg-slate-50 transition"
+            >
+              View Products
+            </Link>
           </div>
 
+          {/* TRUST BADGES */}
+          <div className="flex flex-wrap gap-3 mt-8">
+            <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
+              ISO 22000 Certified
+            </span>
+
+            <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
+              HACCP
+            </span>
+
+            <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
+              HALAL
+            </span>
+
+            <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
+              Worldwide Export
+            </span>
+          </div>
+
+          {/* STATS */}
           <div className="grid grid-cols-3 gap-6 mt-12">
-            <div className="grid grid-cols-3 gap-6 mt-12">
-  <div>
-    <h3 className="text-3xl font-bold">25+</h3>
-    <p className="text-slate-500">Export Markets</p>
-  </div>
+            <div>
+              <h3 className="text-3xl font-bold">25+</h3>
+              <p className="text-slate-500">
+                Countries Served
+              </p>
+            </div>
 
-  <div>
-    <h3 className="text-3xl font-bold">100%</h3>
-    <p className="text-slate-500">Natural Salt</p>
-  </div>
+            <div>
+              <h3 className="text-3xl font-bold">500+</h3>
+              <p className="text-slate-500">
+                Tons Exported
+              </p>
+            </div>
 
-  <div>
-    <h3 className="text-3xl font-bold">Private</h3>
-    <p className="text-slate-500">Label Solutions</p>
-  </div>
-</div>
+            <div>
+              <h3 className="text-3xl font-bold">Private</h3>
+              <p className="text-slate-500">
+                Label Manufacturing
+              </p>
+            </div>
           </div>
         </div>
 
@@ -72,20 +103,3 @@ export default function Hero() {
     </section>
   );
 }
-<div className="flex flex-wrap gap-3 mt-10">
-  <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
-    ISO 22000
-  </span>
-
-  <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
-    HACCP
-  </span>
-
-  <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
-    HALAL
-  </span>
-
-  <span className="px-4 py-2 bg-slate-100 rounded-full text-sm font-medium">
-    KOSHER
-  </span>
-</div>
