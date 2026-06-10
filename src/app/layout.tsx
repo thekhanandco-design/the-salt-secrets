@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: "The Salt Secrets",
     description:
       "Premium Himalayan Pink Salt exporter by Khan & Co.",
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
   },
 };
 
@@ -72,6 +72,23 @@ export default function RootLayout({
       </head>
 
       <body className="bg-[#F8F8F8] text-slate-900">
+        <Script
+          id="schema-org"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "The Salt Secrets",
+              alternateName: "Khan & Co.",
+              url: "https://thesaltsecrets.com",
+              logo: "https://thesaltsecrets.com/logo.png",
+              email: "thekhanandco@gmail.com",
+              sameAs: [],
+            }),
+          }}
+        />
+
         <Navbar />
         {children}
         <Footer />
