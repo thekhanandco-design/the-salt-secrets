@@ -5,148 +5,118 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-gradient-to-b from-[#fffdfc] to-[#f8f8f8]"
+      className="relative overflow-hidden bg-[#FFF8F5]"
     >
-      <div className="max-w-7xl mx-auto px-6 pt-8 lg:pt-12 pb-20 lg:pb-24">
+      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-10 pb-20">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-
-          {/* IMAGE FIRST ON MOBILE */}
-          <div className="relative order-1 lg:order-2">
-            <div className="bg-white rounded-[30px] lg:rounded-[40px] p-4 lg:p-5 shadow-[0_30px_100px_rgba(0,0,0,0.08)]">
-              <Image
-                src="/product-1.jpg"
-                alt="Premium Himalayan Pink Salt"
-                width={1000}
-                height={1000}
-                priority
-                className="rounded-[24px] lg:rounded-[30px]"
-              />
-            </div>
-
-            <div className="hidden lg:flex absolute top-10 right-[-20px] bg-white px-5 py-4 rounded-2xl shadow-xl border">
-              <div>
-                <p className="text-[#C98A92] font-bold text-xl">
-                  100%
-                </p>
-
-                <p className="text-sm text-slate-500">
-                  Natural & Pure
-                </p>
-              </div>
-            </div>
-
-            <div className="hidden lg:flex absolute bottom-10 left-[-20px] bg-white px-5 py-4 rounded-2xl shadow-xl border">
-              <div>
-                <p className="text-[#C98A92] font-bold text-xl">
-                  50+
-                </p>
-
-                <p className="text-sm text-slate-500">
-                  Export Markets
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CONTENT */}
-          <div className="order-2 lg:order-1">
-            <span className="uppercase tracking-[6px] lg:tracking-[7px] text-[#C98A92] font-semibold text-xs lg:text-sm">
-              Premium Himalayan Pink Salt Exporter
+          <div>
+            <span className="uppercase tracking-[5px] text-[#C98A92] font-bold text-xs">
+              Premium Himalayan Pink Salt
             </span>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mt-5 lg:mt-6 text-slate-900">
-              Pure.
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mt-5 text-slate-950">
+              Premium
               <br />
-              Natural.
+              Himalayan Pink Salt
               <br />
-              Globally
-              <br />
-              Trusted.
+              For Global Brands
             </h1>
 
-            <p className="mt-6 lg:mt-8 text-base lg:text-xl text-slate-600 leading-relaxed max-w-xl">
-              We supply premium Himalayan Pink Salt products for
-              importers, distributors, wholesalers, supermarkets and
-              private label brands worldwide.
+            <p className="mt-6 text-base lg:text-lg text-slate-600 leading-relaxed max-w-xl">
+              Supplying retail packaging, private label solutions and bulk
+              Himalayan Pink Salt products to importers, distributors and
+              wholesalers worldwide.
             </p>
 
-            <div className="flex flex-wrap gap-4 mt-8 lg:mt-10">
+            <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <Link
                 href="/contact"
-                className="bg-[#C98A92] text-white px-8 py-4 rounded-full font-semibold hover:opacity-90 transition"
+                className="bg-[#C98A92] text-white px-7 py-4 rounded-full font-semibold text-center hover:opacity-90 transition"
               >
-                Request Quotation
+                Get Quote
               </Link>
 
               <Link
                 href="/products"
-                className="border border-slate-300 px-8 py-4 rounded-full font-semibold hover:bg-white transition"
+                className="bg-white border border-[#E7CBD0] text-slate-900 px-7 py-4 rounded-full font-semibold text-center hover:bg-[#fff1f3] transition"
               >
-                Explore Products
+                View Products
               </Link>
             </div>
 
-            {/* TRUST BADGES */}
-            <div className="flex flex-wrap gap-3 mt-8 lg:mt-10">
-              <span className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-                Packed In Certified Facility
-              </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
+              {[
+                ["100%", "Natural Salt"],
+                ["Private", "Label Ready"],
+                ["Bulk", "Supply"],
+                ["Global", "Shipping"],
+              ].map(([title, text]) => (
+                <div
+                  key={title}
+                  className="bg-white border border-[#F0DDE1] rounded-2xl p-4"
+                >
+                  <h3 className="font-bold text-[#C98A92]">
+                    {title}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-              <span className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-                HACCP Compliant Facility
-              </span>
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#F4D5DA] blur-3xl opacity-40 rounded-full" />
 
-              <span className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-                HALAL Production Facility
-              </span>
+            <div className="relative bg-white rounded-[34px] p-4 shadow-[0_30px_100px_rgba(201,138,146,0.22)]">
+              <Image
+                src="/product-1.jpg"
+                alt="Premium Himalayan Pink Salt Packaging"
+                width={900}
+                height={900}
+                priority
+                className="rounded-[26px] w-full h-[420px] lg:h-[560px] object-cover object-center"
+              />
+            </div>
 
-              <span className="px-4 py-2 bg-white border rounded-full text-sm font-medium">
-                Worldwide Export
-              </span>
+            <div className="absolute hidden lg:block top-8 right-[-18px] bg-white border border-[#F0DDE1] rounded-2xl px-5 py-4 shadow-xl">
+              <p className="text-2xl font-bold text-[#C98A92]">
+                50+
+              </p>
+              <p className="text-sm text-slate-500">
+                Export Markets
+              </p>
+            </div>
+
+            <div className="absolute hidden lg:block bottom-8 left-[-18px] bg-white border border-[#F0DDE1] rounded-2xl px-5 py-4 shadow-xl">
+              <p className="text-2xl font-bold text-[#C98A92]">
+                Packed
+              </p>
+              <p className="text-sm text-slate-500">
+                In Certified Facility
+              </p>
             </div>
           </div>
         </div>
 
-        {/* STATS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mt-12 lg:mt-20">
-          <div className="bg-white border rounded-3xl p-4 lg:p-6 text-center">
-            <h3 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              10+
-            </h3>
-
-            <p className="text-slate-500 mt-2 text-sm lg:text-base">
-              Years Experience
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-3xl p-4 lg:p-6 text-center">
-            <h3 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              50+
-            </h3>
-
-            <p className="text-slate-500 mt-2 text-sm lg:text-base">
-              Countries Exported
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-3xl p-4 lg:p-6 text-center">
-            <h3 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              500+
-            </h3>
-
-            <p className="text-slate-500 mt-2 text-sm lg:text-base">
-              Global Buyers
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-3xl p-4 lg:p-6 text-center">
-            <h3 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              100%
-            </h3>
-
-            <p className="text-slate-500 mt-2 text-sm lg:text-base">
-              Export Quality
-            </p>
+        <div className="mt-16 bg-white border border-[#F0DDE1] rounded-[32px] shadow-sm">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-slate-100">
+            {[
+              ["10+", "Years of Experience"],
+              ["50+", "Countries Exported"],
+              ["500+", "Global Buyers"],
+              ["100%", "Export Quality"],
+            ].map(([number, label]) => (
+              <div key={label} className="p-6 text-center">
+                <h3 className="text-3xl lg:text-4xl font-bold text-slate-950">
+                  {number}
+                </h3>
+                <p className="text-sm text-slate-500 mt-2">
+                  {label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
