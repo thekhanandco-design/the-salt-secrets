@@ -11,59 +11,87 @@ export default function ExportMarkets() {
   ];
 
   return (
-    <section className="py-32">
+    <section className="bg-[#FFF8F5] py-24">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <span className="uppercase tracking-[6px] text-[#C98A92] font-semibold">
-            Export Markets
-          </span>
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* LEFT */}
+          <div>
+            <span className="uppercase tracking-[5px] text-[#C98A92] font-bold text-xs">
+              We Export To
+            </span>
 
-          <h2 className="text-5xl lg:text-6xl font-bold mt-5">
-            Trusted By Buyers Worldwide
-          </h2>
+            <h2 className="text-5xl font-bold mt-4 text-slate-950">
+              Delivering To 50+
+              <br />
+              Countries Worldwide
+            </h2>
 
-          <p className="text-slate-600 mt-6 max-w-2xl mx-auto">
-            We export premium Himalayan Pink Salt products to
-            distributors, retailers and private label brands
-            across major international markets.
-          </p>
-        </div>
+            <p className="text-slate-600 mt-6 text-lg leading-relaxed">
+              We supply premium Himalayan Pink Salt products to importers,
+              distributors, wholesalers and private label brands across
+              major international markets.
+            </p>
 
-        <div className="grid md:grid-cols-4 gap-6">
-          {countries.map((country) => (
-            <div
-              key={country}
-              className="bg-white border rounded-3xl p-8 text-center shadow-sm hover:shadow-xl transition"
-            >
-              <div className="text-3xl mb-3">🌍</div>
-
-              <h3 className="font-bold text-lg">
-                {country}
-              </h3>
+            <div className="flex flex-wrap gap-3 mt-8">
+              {countries.map((country) => (
+                <span
+                  key={country}
+                  className="bg-white border border-[#F0DDE1] rounded-full px-5 py-3 text-sm font-medium"
+                >
+                  {country}
+                </span>
+              ))}
             </div>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
-          <div className="bg-[#faf7f3] rounded-3xl p-8 text-center">
-            <h3 className="text-5xl font-bold">50+</h3>
-            <p className="text-slate-600 mt-3">
-              Export Destinations
-            </p>
           </div>
 
-          <div className="bg-[#faf7f3] rounded-3xl p-8 text-center">
-            <h3 className="text-5xl font-bold">500+</h3>
-            <p className="text-slate-600 mt-3">
-              International Clients
-            </p>
-          </div>
+          {/* RIGHT */}
+          <div className="bg-white rounded-[32px] border border-[#F0DDE1] p-10">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="text-center">
+                <h3 className="text-5xl font-bold text-[#C98A92]">
+                  50+
+                </h3>
+                <p className="text-slate-500 mt-2">
+                  Export Destinations
+                </p>
+              </div>
 
-          <div className="bg-[#faf7f3] rounded-3xl p-8 text-center">
-            <h3 className="text-5xl font-bold">100%</h3>
-            <p className="text-slate-600 mt-3">
-              Export Quality
-            </p>
+              <div className="text-center">
+                <h3 className="text-5xl font-bold text-[#C98A92]">
+                  500+
+                </h3>
+                <p className="text-slate-500 mt-2">
+                  Global Buyers
+                </p>
+              </div>
+
+              <div className="text-center">
+                <h3 className="text-5xl font-bold text-[#C98A92]">
+                  Bulk
+                </h3>
+                <p className="text-slate-500 mt-2">
+                  Supply Capability
+                </p>
+              </div>
+
+              <div className="text-center">
+                <h3 className="text-5xl font-bold text-[#C98A92]">
+                  100%
+                </h3>
+                <p className="text-slate-500 mt-2">
+                  Export Quality
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 border-t pt-8 text-center">
+              <div className="text-7xl mb-4">🌎</div>
+
+              <p className="text-slate-600">
+                Serving international buyers across North America,
+                Europe, Middle East, Asia and Australia.
+              </p>
+            </div>
           </div>
         </div>
       </div>
