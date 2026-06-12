@@ -9,10 +9,8 @@ import {
 export default function Hero() {
   return (
     <section className="bg-[#FFF8F5]">
-
-      {/* HERO BANNER */}
-      <div className="relative w-full overflow-hidden min-h-[540px] lg:min-h-[650px]">
-
+      <div className="relative w-full overflow-hidden min-h-[700px] lg:min-h-[650px]">
+        
         {/* DESKTOP IMAGE */}
         <img
           src="/hero-banner.png"
@@ -24,7 +22,7 @@ export default function Hero() {
         <img
           src="/hero-banner.png"
           alt="Premium Himalayan Pink Salt"
-          className="lg:hidden absolute bottom-0 right-0 w-[42%] h-auto object-contain"
+          className="lg:hidden absolute bottom-6 right-0 w-[48%] h-auto object-contain"
         />
 
         {/* DESKTOP OVERLAY */}
@@ -35,8 +33,7 @@ export default function Hero() {
 
         {/* CONTENT */}
         <div className="relative z-10 px-6 lg:px-0">
-
-          <div className="max-w-[650px] pt-8 lg:absolute lg:left-[5%] lg:top-1/2 lg:-translate-y-1/2">
+          <div className="max-w-[650px] pt-12 lg:pt-0 lg:absolute lg:left-[5%] lg:top-1/2 lg:-translate-y-1/2">
 
             <span className="uppercase tracking-[6px] text-[#C54B5B] font-bold text-[11px] lg:text-xs">
               PREMIUM HIMALAYAN PINK SALT
@@ -73,7 +70,7 @@ export default function Hero() {
             </div>
 
             {/* FEATURES */}
-            <div className="grid grid-cols-2 lg:flex lg:items-center gap-4 lg:gap-10 mt-8 lg:mt-12">
+            <div className="grid grid-cols-2 lg:flex lg:items-center gap-5 lg:gap-10 mt-10 lg:mt-12">
 
               <div className="flex items-center gap-3">
                 <Leaf className="w-5 h-5 lg:w-6 lg:h-6 text-[#C54B5B]" />
@@ -134,7 +131,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
     </section>
   );
 }
