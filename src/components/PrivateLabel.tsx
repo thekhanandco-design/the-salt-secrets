@@ -24,11 +24,7 @@ useEffect(() => {
 const interval = setInterval(() => {
 setActive((prev) => (prev + 1) % images.length);
 }, 3500);
-
-```
 return () => clearInterval(interval);
-```
-
 }, []);
 
 return ( <section className="py-16 lg:py-20 bg-white"> <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
@@ -198,3 +194,5 @@ return ( <section className="py-16 lg:py-20 bg-white"> <div className="max-w-[17
 
   </div>
 </section>
+);
+}
