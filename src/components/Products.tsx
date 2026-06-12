@@ -34,7 +34,7 @@ export default function Products() {
       <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
         {/* HEADER */}
         <div className="text-center mb-12">
-          <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-sm">
+          <span className="uppercase tracking-[7px] text-[#C23B4A] font-black text-base lg:text-lg">
             Our Products
           </span>
 
@@ -59,7 +59,7 @@ export default function Products() {
               className="group bg-white rounded-[28px] border border-[#EFE3E5] overflow-hidden hover:shadow-[0_20px_50px_rgba(194,59,74,0.10)] transition-all duration-300"
             >
               {/* BADGES */}
-              <div className="flex justify-between items-center px-5 pt-5">
+              <div className="flex justify-between items-center px-5 py-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[2px] text-[#C23B4A]">
                   Export Quality
                 </span>
@@ -69,19 +69,18 @@ export default function Products() {
                 </span>
               </div>
 
-              {/* IMAGE */}
-              <div className="h-[250px] flex items-center justify-center px-4">
+              {/* SQUARE IMAGE AREA */}
+              <div className="relative aspect-square w-full bg-[#FAFAFA] border-y border-[#F2E5E7] overflow-hidden">
                 <Image
                   src={product.image}
                   alt={product.title}
-                  width={400}
-                  height={400}
-                  className="max-h-[220px] w-auto object-contain transition duration-500 group-hover:scale-105"
+                  fill
+                  className="object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
 
               {/* CONTENT */}
-              <div className="border-t border-[#F2E5E7] p-5">
+              <div className="p-5">
                 <h3 className="font-bold text-xl text-[#07142B]">
                   {product.title}
                 </h3>
