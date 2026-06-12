@@ -9,31 +9,37 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] bg-[#F9F4F2]/95 backdrop-blur-md border-b border-white/50">
-        <div className="w-full max-w-[1800px] mx-auto px-8 lg:px-16 h-24 flex items-center justify-between">
+      <header className="sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 h-[88px] flex items-center justify-between">
           {/* LOGO */}
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
               alt="The Salt Secrets"
-              width={120}
-              height={120}
+              width={110}
+              height={110}
               priority
-              className="h-[70px] w-auto object-contain"
+              className="h-[62px] w-auto object-contain"
             />
           </Link>
 
           {/* DESKTOP MENU */}
-          <nav className="hidden lg:flex items-center gap-12 text-[16px] font-semibold text-[#07142B]">
+          <nav className="hidden lg:flex items-center gap-12 text-[16px] font-semibold text-[#111827]">
             <Link href="/" className="hover:text-[#C54B5B] transition">
               Home
             </Link>
 
-            <Link href="/about" className="hover:text-[#C54B5B] transition">
+            <Link
+              href="/about"
+              className="hover:text-[#C54B5B] transition"
+            >
               About Us
             </Link>
 
-            <Link href="/products" className="hover:text-[#C54B5B] transition">
+            <Link
+              href="/products"
+              className="hover:text-[#C54B5B] transition"
+            >
               Products
             </Link>
 
@@ -51,7 +57,10 @@ export default function Navbar() {
               Certifications
             </Link>
 
-            <Link href="/contact" className="hover:text-[#C54B5B] transition">
+            <Link
+              href="/contact"
+              className="hover:text-[#C54B5B] transition"
+            >
               Contact
             </Link>
           </nav>
@@ -70,9 +79,9 @@ export default function Navbar() {
               className="lg:hidden flex flex-col gap-1.5"
               aria-label="Open menu"
             >
-              <span className="w-7 h-[2px] bg-[#07142B]"></span>
-              <span className="w-7 h-[2px] bg-[#07142B]"></span>
-              <span className="w-7 h-[2px] bg-[#07142B]"></span>
+              <span className="w-7 h-[2px] bg-[#111827]"></span>
+              <span className="w-7 h-[2px] bg-[#111827]"></span>
+              <span className="w-7 h-[2px] bg-[#111827]"></span>
             </button>
           </div>
         </div>
@@ -85,7 +94,7 @@ export default function Navbar() {
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="fixed top-0 right-0 h-screen w-[85%] max-w-[380px] bg-[#F9F4F2] z-[100] shadow-2xl">
+          <div className="fixed top-0 right-0 h-screen w-[85%] max-w-[380px] bg-white z-[100] shadow-2xl">
             <div className="p-6 border-b border-[#F0DDE1] flex items-center justify-between">
               <Image
                 src="/logo.png"
@@ -97,14 +106,14 @@ export default function Navbar() {
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-3xl leading-none text-[#07142B]"
+                className="text-3xl leading-none text-[#111827]"
                 aria-label="Close menu"
               >
                 ×
               </button>
             </div>
 
-            <div className="p-8 flex flex-col gap-6 text-lg font-semibold text-[#07142B]">
+            <div className="p-8 flex flex-col gap-6 text-lg font-semibold text-[#111827]">
               <Link href="/" onClick={() => setIsOpen(false)}>
                 Home
               </Link>
@@ -121,7 +130,10 @@ export default function Navbar() {
                 Private Label
               </Link>
 
-              <Link href="/#certifications" onClick={() => setIsOpen(false)}>
+              <Link
+                href="/#certifications"
+                onClick={() => setIsOpen(false)}
+              >
                 Certifications
               </Link>
 
