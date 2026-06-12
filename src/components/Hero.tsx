@@ -9,8 +9,10 @@ import {
 export default function Hero() {
   return (
     <section className="bg-[#FFF8F5]">
-      <div className="relative w-full overflow-hidden min-h-[700px] lg:min-h-[650px]">
-        
+
+      {/* HERO BANNER */}
+      <div className="relative w-full overflow-hidden min-h-[680px] lg:min-h-[650px]">
+
         {/* DESKTOP IMAGE */}
         <img
           src="/hero-banner.png"
@@ -22,18 +24,19 @@ export default function Hero() {
         <img
           src="/hero-banner.png"
           alt="Premium Himalayan Pink Salt"
-          className="lg:hidden absolute bottom-6 right-0 w-[48%] h-auto object-contain"
+          className="lg:hidden absolute bottom-0 right-0 w-[50%] h-auto object-contain"
         />
 
         {/* DESKTOP OVERLAY */}
         <div className="hidden lg:block absolute inset-0 bg-gradient-to-r from-white via-white/88 to-white/5" />
 
         {/* MOBILE OVERLAY */}
-        <div className="lg:hidden absolute inset-0 bg-gradient-to-r from-white via-white/98 to-white/70" />
+        <div className="lg:hidden absolute inset-0 bg-gradient-to-r from-white via-white/96 to-white/65" />
 
         {/* CONTENT */}
         <div className="relative z-10 px-6 lg:px-0">
-          <div className="max-w-[650px] pt-12 lg:pt-0 lg:absolute lg:left-[5%] lg:top-1/2 lg:-translate-y-1/2">
+
+          <div className="max-w-[650px] pt-12 lg:absolute lg:left-[5%] lg:top-1/2 lg:-translate-y-1/2">
 
             <span className="uppercase tracking-[6px] text-[#C54B5B] font-bold text-[11px] lg:text-xs">
               PREMIUM HIMALAYAN PINK SALT
@@ -131,6 +134,7 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
     </section>
   );
 }
