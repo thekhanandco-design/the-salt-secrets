@@ -34,7 +34,7 @@ export default function Products() {
       <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
         {/* HEADER */}
         <div className="text-center mb-10">
-          <span className="uppercase tracking-[7px] text-[#C23B4A] font-black text-lg lg:text-xl">
+          <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-xl lg:text-2xl">
             Our Products
           </span>
 
@@ -68,14 +68,14 @@ export default function Products() {
                 </span>
               </div>
 
-              {/* IMAGE */}
-              <div className="h-[210px] flex items-center justify-center px-4 border-y border-[#F2E5E7] bg-white">
+              {/* IMAGE AREA */}
+              <div className="aspect-square bg-[#FAFAFA] border-y border-[#F2E5E7] flex items-center justify-center p-6">
                 <Image
                   src={product.image}
                   alt={product.title}
-                  width={300}
-                  height={300}
-                  className="max-h-[170px] w-auto object-contain transition duration-500 group-hover:scale-105"
+                  width={260}
+                  height={260}
+                  className="max-w-full max-h-full object-contain transition duration-500 group-hover:scale-105"
                 />
               </div>
 
