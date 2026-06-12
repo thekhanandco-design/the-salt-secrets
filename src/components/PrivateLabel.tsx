@@ -198,7 +198,3 @@ return ( <section className="py-16 lg:py-20 bg-white"> <div className="max-w-[17
 
   </div>
 </section>
-```
-
-);
-}
