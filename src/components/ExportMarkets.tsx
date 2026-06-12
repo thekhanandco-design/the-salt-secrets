@@ -14,14 +14,14 @@ export default function ExportMarkets() {
           <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-center">
 
             {/* MAP */}
-            <div className="bg-white rounded-[24px] overflow-hidden">
+            <div className="relative h-[420px] lg:h-[500px] rounded-[24px] overflow-hidden bg-white">
 
               <Image
                 src="/world-map.png"
                 alt="World Map"
-                width={1400}
-                height={600}
-                className="w-full h-auto opacity-70"
+                fill
+                className="object-cover opacity-70"
+                priority
               />
 
             </div>
