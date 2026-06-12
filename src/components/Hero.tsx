@@ -1,178 +1,77 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Leaf,
   FlaskConical,
   Truck,
   PackageCheck,
-  Factory,
-  FileText,
-  ShieldCheck,
-  Globe,
-  Tags,
 } from "lucide-react";
 
 export default function Hero() {
   return (
     <section className="bg-[#fff8f5]">
-      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-6 pb-0">
-        <div className="grid lg:grid-cols-2 gap-14 items-center">
-          {/* LEFT */}
-          <div>
+      <div className="max-w-7xl mx-auto px-5 lg:px-6 pt-8 pb-10">
+        <div className="relative overflow-hidden rounded-[28px] min-h-[560px] bg-[url('/hero-banner.png')] bg-contain bg-right-bottom bg-no-repeat">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#fff8f5] via-[#fff8f5]/90 to-transparent" />
+
+          <div className="relative z-10 max-w-2xl px-4 lg:px-0 py-20">
             <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
               Premium Himalayan Pink Salt
             </span>
 
-            <h1 className="mt-5 text-5xl md:text-6xl lg:text-[78px] leading-[0.92] font-black text-[#07142B]">
-              Pure. Natural.
+            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-black leading-[0.95] text-[#07142B]">
+              Reliable Supply.
               <br />
               <span className="text-[#C23B4A]">
-                Globally Trusted.
+                Premium Quality.
               </span>
             </h1>
 
-            <p className="mt-6 text-slate-600 text-lg leading-relaxed max-w-xl">
-              Leading manufacturer and exporter of 100% natural Himalayan
-              Pink Salt products for retail, wholesale, supermarkets and
-              private label brands worldwide.
+            <p className="mt-6 text-slate-600 text-base lg:text-lg leading-relaxed max-w-xl">
+              Leading manufacturer and exporter of 100% natural Himalayan Pink
+              Salt for distributors, wholesalers, retailers and private label
+              brands worldwide.
             </p>
 
             <div className="flex flex-wrap gap-4 mt-8">
               <Link
                 href="/products"
-                className="bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-semibold hover:opacity-90 transition"
+                className="bg-[#C23B4A] text-white px-7 py-4 rounded-lg font-semibold hover:opacity-90 transition"
               >
                 Explore Products →
               </Link>
 
               <Link
                 href="/contact"
-                className="bg-white border border-[#E8D2D6] text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-[#fff4f6] transition"
+                className="bg-white border border-[#E8D2D6] text-[#07142B] px-7 py-4 rounded-lg font-semibold hover:bg-[#fff4f6] transition"
               >
                 Get Quote →
               </Link>
             </div>
-          </div>
 
-          {/* RIGHT BANNER */}
-          <div className="relative">
-            <Image
-              src="/hero-banner.png"
-              alt="Premium Himalayan Pink Salt"
-              width={1600}
-              height={900}
-              priority
-              className="w-full h-[620px] object-contain"
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10 max-w-3xl">
+              <div>
+                <Leaf className="w-6 h-6 text-[#C23B4A] mb-2" />
+                <h3 className="font-bold text-sm">100% Natural</h3>
+                <p className="text-xs text-slate-500">No Additives</p>
+              </div>
 
-        {/* TRUST STRIP */}
-        <div className="bg-white border border-[#EEDDE1] rounded-t-[24px] mt-8 overflow-hidden">
-          <div className="grid grid-cols-2 lg:grid-cols-4">
-            <div className="px-5 py-2 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
-              <Leaf className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
+              <div>
+                <FlaskConical className="w-6 h-6 text-[#C23B4A] mb-2" />
+                <h3 className="font-bold text-sm">Lab Tested</h3>
+                <p className="text-xs text-slate-500">Premium Quality</p>
+              </div>
 
-              <h3 className="font-semibold text-base">
-                100% Natural
-              </h3>
+              <div>
+                <Truck className="w-6 h-6 text-[#C23B4A] mb-2" />
+                <h3 className="font-bold text-sm">On-Time Delivery</h3>
+                <p className="text-xs text-slate-500">Worldwide</p>
+              </div>
 
-              <p className="text-sm text-slate-500">
-                No Additives
-              </p>
-            </div>
-
-            <div className="px-5 py-2 text-center border-r border-b lg:border-b-0 border-[#EEDDE1]">
-              <FlaskConical className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
-
-              <h3 className="font-semibold text-base">
-                Lab Tested
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Premium Quality
-              </p>
-            </div>
-
-            <div className="px-5 py-2 text-center border-r border-[#EEDDE1]">
-              <Truck className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
-
-              <h3 className="font-semibold text-base">
-                On-Time Delivery
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Worldwide
-              </p>
-            </div>
-
-            <div className="px-5 py-2 text-center">
-              <PackageCheck className="w-5 h-5 mx-auto mb-2 text-[#C23B4A]" />
-
-              <h3 className="font-semibold text-base">
-                Private Label
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Custom Packaging
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* DARK STRIP */}
-      <div className="bg-[#081528]">
-        <div className="max-w-7xl mx-auto px-5 lg:px-6">
-          <div className="grid md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-700">
-            <div className="p-5 text-center text-white">
-              <Factory className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-              <h3 className="font-bold uppercase text-sm">
-                Manufacturer
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Direct Factory Pricing
-              </p>
-            </div>
-
-            <div className="p-5 text-center text-white">
-              <FileText className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-              <h3 className="font-bold uppercase text-sm">
-                Export Expertise
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Documentation Support
-              </p>
-            </div>
-
-            <div className="p-5 text-center text-white">
-              <ShieldCheck className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-              <h3 className="font-bold uppercase text-sm">
-                Quality Control
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Strict Quality Checks
-              </p>
-            </div>
-
-            <div className="p-5 text-center text-white">
-              <Globe className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-              <h3 className="font-bold uppercase text-sm">
-                Global Shipping
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Fast & Reliable Delivery
-              </p>
-            </div>
-
-            <div className="p-5 text-center text-white">
-              <Tags className="w-7 h-7 mx-auto mb-2 text-[#C23B4A]" />
-              <h3 className="font-bold uppercase text-sm">
-                Private Label
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Custom Packaging
-              </p>
+              <div>
+                <PackageCheck className="w-6 h-6 text-[#C23B4A] mb-2" />
+                <h3 className="font-bold text-sm">Private Label</h3>
+                <p className="text-xs text-slate-500">Custom Branding</p>
+              </div>
             </div>
           </div>
         </div>
