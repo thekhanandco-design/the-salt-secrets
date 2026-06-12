@@ -10,34 +10,37 @@ export default function Hero() {
   return (
     <section className="bg-[#FFF8F5]">
 
-      {/* FULL WIDTH HERO */}
-      <div className="relative w-full overflow-hidden">
+      {/* HERO BANNER */}
+      <div className="relative w-full overflow-hidden h-[420px] lg:h-[520px]">
 
         <img
           src="/hero-banner.png"
           alt="Premium Himalayan Pink Salt"
-          className="w-full h-auto block"
+          className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* TEXT OVERLAY */}
-        <div className="absolute left-[5%] top-1/2 -translate-y-1/2 max-w-[620px]">
+        {/* WHITE OVERLAY FOR TEXT READABILITY */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-transparent" />
 
-          <span className="uppercase tracking-[6px] text-[#C98A92] font-bold text-xs">
+        {/* TEXT */}
+        <div className="absolute left-[5%] top-[46%] -translate-y-1/2 max-w-[620px] z-10">
+
+          <span className="uppercase tracking-[6px] text-[#C47B86] font-bold text-xs">
             Premium Himalayan Pink Salt
           </span>
 
           <h1 className="mt-5 text-5xl md:text-6xl lg:text-7xl font-black leading-[0.92] text-[#07142B]">
             Pure. Natural.
             <br />
-            <span className="text-[#C98A92]">
+            <span className="text-[#C47B86]">
               Globally Trusted.
             </span>
           </h1>
 
-          <p className="mt-6 text-slate-600 text-lg leading-relaxed">
-            Premium Himalayan Pink Salt manufacturer and exporter
-            supplying distributors, wholesalers, retailers and
-            private label brands worldwide.
+          <p className="mt-6 text-slate-600 text-lg leading-relaxed max-w-[560px]">
+            Premium Himalayan Pink Salt manufacturer and exporter supplying
+            distributors, wholesalers, retailers and private label brands
+            worldwide.
           </p>
 
           <div className="flex flex-wrap gap-4 mt-8">
@@ -50,7 +53,7 @@ export default function Hero() {
 
             <Link
               href="/contact"
-              className="bg-white border border-[#E8D2D6] text-[#07142B] px-8 py-4 rounded-xl font-semibold"
+              className="bg-white border border-[#E8D2D6] text-[#07142B] px-8 py-4 rounded-xl font-semibold hover:bg-[#FFF4F5] transition"
             >
               Get Quote
             </Link>
