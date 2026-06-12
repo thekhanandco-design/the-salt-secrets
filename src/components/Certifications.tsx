@@ -1,115 +1,59 @@
-import {
-  ShieldCheck,
-  BadgeCheck,
-  Factory,
-  FileCheck,
-  Globe2,
-  PackageCheck,
-} from "lucide-react";
+import Image from "next/image";
+
+const certifications = [
+  "/cert-haccp.png",
+  "/cert-halal.png",
+  "/cert-fda.png",
+  "/cert-iso.png",
+  "/cert-gmp.png",
+  "/cert-food.png",
+];
 
 export default function Certifications() {
-  const standards = [
-    {
-      icon: ShieldCheck,
-      title: "HACCP Facility",
-    },
-    {
-      icon: BadgeCheck,
-      title: "HALAL Production",
-    },
-    {
-      icon: Factory,
-      title: "Food Grade Manufacturing",
-    },
-    {
-      icon: Globe2,
-      title: "Export Quality Standards",
-    },
-  ];
-
-  const commitments = [
-    "Food Grade Himalayan Pink Salt",
-    "Export Documentation Support",
-    "Global Supply Capability",
-    "Private Label Manufacturing",
-    "Quality Checked Before Dispatch",
-    "Reliable Production Partners",
-  ];
-
   return (
-    <section className="bg-white py-28">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* LEFT */}
-          <div>
-            <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
-              Manufacturing Standards
-            </span>
+    <section className="py-16 lg:py-20 bg-[#FFF8F5]">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
 
-            <h2 className="text-4xl lg:text-5xl font-black mt-4 text-[#07142B] leading-tight">
-              Produced Through Trusted
-              <br />
-              Manufacturing Partners
-            </h2>
+        {/* HEADER */}
+        <div className="text-center mb-12">
 
-            <p className="text-slate-600 mt-6 text-lg leading-relaxed">
-              Our Himalayan Pink Salt products are sourced and packed
-              through manufacturing facilities operating under recognized
-              food safety and quality management systems to support
-              international export requirements.
-            </p>
+          <span className="uppercase tracking-[7px] text-[#C23B4A] font-black text-lg">
+            Certified Manufacturing
+          </span>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-10">
-              {standards.map((item) => {
-                const Icon = item.icon;
+          {/* SMLHDNG */}
+          <h2 className="text-3xl lg:text-5xl font-black mt-3 text-[#07142B]">
+            Certified Facility Standards
+          </h2>
 
-                return (
-                  <div
-                    key={item.title}
-                    className="bg-[#FFF8F5] border border-[#EFE3E5] rounded-2xl p-5"
-                  >
-                    <Icon className="w-6 h-6 text-[#C23B4A] mb-3" />
+          <p className="max-w-3xl mx-auto text-slate-600 mt-4 text-base lg:text-lg">
+            Manufactured and packed in compliance with recognized food
+            safety, quality assurance and export standards for
+            international markets.
+          </p>
 
-                    <h3 className="font-bold text-[#07142B]">
-                      {item.title}
-                    </h3>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT */}
-          <div className="bg-[#FFF8F5] border border-[#EFE3E5] rounded-[36px] p-10">
-            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-6">
-              <PackageCheck className="w-8 h-8 text-[#C23B4A]" />
-            </div>
-
-            <h3 className="text-3xl font-black text-[#07142B]">
-              Quality Commitment
-            </h3>
-
-            <p className="text-slate-600 mt-4">
-              Every shipment is prepared with focus on quality,
-              consistency and export readiness.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              {commitments.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-3 bg-white border border-[#EFE3E5] rounded-xl px-4 py-4"
-                >
-                  <FileCheck className="w-5 h-5 text-[#C23B4A] shrink-0" />
-
-                  <span className="text-slate-700">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
+
+        {/* CERTIFICATE LOGOS */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+
+          {certifications.map((cert, index) => (
+            <div
+              key={index}
+              className="bg-white border border-[#EFE3E5] rounded-[24px] h-[150px] flex items-center justify-center p-6 hover:shadow-[0_12px_35px_rgba(194,59,74,0.08)] transition-all duration-300"
+            >
+              <Image
+                src={cert}
+                alt="Certification"
+                width={120}
+                height={120}
+                className="max-w-full max-h-[80px] object-contain"
+              />
+            </div>
+          ))}
+
+        </div>
+
       </div>
     </section>
   );
