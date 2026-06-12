@@ -11,22 +11,22 @@ export default function Hero() {
     <section className="bg-[#FFF8F5]">
 
       {/* HERO BANNER */}
-      <div className="relative w-full overflow-hidden h-[450px] lg:h-[560px]">
+      <div className="relative w-full overflow-hidden h-[520px] lg:h-[650px]">
 
         <img
           src="/hero-banner.png"
           alt="Premium Himalayan Pink Salt"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover scale-[1.05]"
         />
 
-        {/* STRONGER WHITE OVERLAY */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/20" />
+        {/* OVERLAY */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/88 to-white/5" />
 
         {/* TEXT CONTENT */}
         <div className="absolute left-[5%] top-1/2 -translate-y-1/2 max-w-[650px] z-10">
 
           <span className="uppercase tracking-[6px] text-[#C54B5B] font-bold text-xs">
-            Premium Himalayan Pink Salt
+            PREMIUM HIMALAYAN PINK SALT
           </span>
 
           <h1 className="mt-5 text-5xl md:text-6xl lg:text-7xl font-black leading-[0.92] text-[#07142B]">
@@ -59,8 +59,8 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* FEATURES INLINE LIKE REFERENCE */}
-          <div className="hidden lg:flex items-center gap-10 mt-10">
+          {/* FEATURES */}
+          <div className="hidden lg:flex items-center gap-10 mt-12">
 
             <div className="flex items-center gap-3">
               <Leaf className="w-6 h-6 text-[#C54B5B]" />
@@ -74,6 +74,8 @@ export default function Hero() {
               </div>
             </div>
 
+            <div className="w-px h-10 bg-[#E9D7DA]" />
+
             <div className="flex items-center gap-3">
               <FlaskConical className="w-6 h-6 text-[#C54B5B]" />
               <div>
@@ -86,6 +88,8 @@ export default function Hero() {
               </div>
             </div>
 
+            <div className="w-px h-10 bg-[#E9D7DA]" />
+
             <div className="flex items-center gap-3">
               <Truck className="w-6 h-6 text-[#C54B5B]" />
               <div>
@@ -97,6 +101,8 @@ export default function Hero() {
                 </p>
               </div>
             </div>
+
+            <div className="w-px h-10 bg-[#E9D7DA]" />
 
             <div className="flex items-center gap-3">
               <PackageCheck className="w-6 h-6 text-[#C54B5B]" />
