@@ -30,19 +30,20 @@ const products = [
 
 export default function Products() {
   return (
-    <section className="py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-20 bg-white">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
         {/* HEADER */}
-        <div className="text-center mb-16">
-          <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
+        <div className="text-center mb-12">
+          <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-sm">
             Our Products
           </span>
 
-          <h2 className="text-4xl lg:text-5xl font-black mt-4 text-[#07142B]">
+          {/* SMLHDNG */}
+          <h2 className="text-3xl lg:text-5xl font-black mt-4 text-[#07142B]">
             Premium Himalayan Pink Salt Range
           </h2>
 
-          <p className="max-w-2xl mx-auto text-slate-600 mt-5 text-lg">
+          <p className="max-w-3xl mx-auto text-slate-600 mt-4 text-base lg:text-lg">
             Premium retail packaging, bulk supply and private label
             manufacturing solutions for distributors, wholesalers and
             global brands.
@@ -50,14 +51,14 @@ export default function Products() {
         </div>
 
         {/* PRODUCTS */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => (
             <Link
               key={product.title}
               href={product.link}
-              className="group bg-white rounded-[32px] border border-[#EFE3E5] overflow-hidden hover:shadow-[0_25px_60px_rgba(194,59,74,0.12)] transition-all duration-300"
+              className="group bg-white rounded-[28px] border border-[#EFE3E5] overflow-hidden hover:shadow-[0_20px_50px_rgba(194,59,74,0.10)] transition-all duration-300"
             >
-              {/* BADGE */}
+              {/* BADGES */}
               <div className="flex justify-between items-center px-5 pt-5">
                 <span className="text-[11px] font-semibold uppercase tracking-[2px] text-[#C23B4A]">
                   Export Quality
@@ -69,27 +70,27 @@ export default function Products() {
               </div>
 
               {/* IMAGE */}
-              <div className="h-[300px] flex items-center justify-center px-5">
+              <div className="h-[250px] flex items-center justify-center px-4">
                 <Image
                   src={product.image}
                   alt={product.title}
                   width={400}
                   height={400}
-                  className="max-h-[260px] w-auto object-contain transition duration-500 group-hover:scale-110"
+                  className="max-h-[220px] w-auto object-contain transition duration-500 group-hover:scale-105"
                 />
               </div>
 
               {/* CONTENT */}
-              <div className="border-t border-[#F2E5E7] p-6">
+              <div className="border-t border-[#F2E5E7] p-5">
                 <h3 className="font-bold text-xl text-[#07142B]">
                   {product.title}
                 </h3>
 
-                <p className="text-slate-500 text-sm mt-2">
+                <p className="text-slate-500 text-sm mt-1.5">
                   {product.size}
                 </p>
 
-                <div className="mt-5 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between">
                   <span className="text-[#C23B4A] font-semibold">
                     View Product
                   </span>
@@ -104,12 +105,12 @@ export default function Products() {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-14">
+        <div className="text-center mt-12">
           <Link
             href="/products"
             className="inline-flex items-center bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-semibold hover:opacity-90 transition"
           >
-            View Complete Collection
+            View All Products
           </Link>
         </div>
       </div>
