@@ -4,9 +4,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Instagram,
-  Facebook,
-  Linkedin,
   MessageCircle,
 } from "lucide-react";
 
@@ -42,7 +39,25 @@ export default function Footer() {
               distributors, wholesalers and international buyers.
             </p>
 
-            {/* SOCIALS */}
+            <div className="flex flex-wrap gap-3 mt-8">
+              <span className="px-4 py-2 rounded-full border border-slate-700 text-sm">
+                HACCP Facility
+              </span>
+
+              <span className="px-4 py-2 rounded-full border border-slate-700 text-sm">
+                HALAL Production
+              </span>
+
+              <span className="px-4 py-2 rounded-full border border-slate-700 text-sm">
+                Export Quality
+              </span>
+
+              <span className="px-4 py-2 rounded-full border border-slate-700 text-sm">
+                Private Label
+              </span>
+            </div>
+
+            {/* SOCIAL */}
             <div className="flex gap-3 mt-8">
               <Link
                 href="https://wa.me/923462771693"
@@ -51,57 +66,57 @@ export default function Footer() {
               >
                 <MessageCircle className="w-5 h-5" />
               </Link>
-
-              <Link
-                href="#"
-                className="w-11 h-11 rounded-full border border-slate-700 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
-              >
-                <Instagram className="w-5 h-5" />
-              </Link>
-
-              <Link
-                href="#"
-                className="w-11 h-11 rounded-full border border-slate-700 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
-              >
-                <Facebook className="w-5 h-5" />
-              </Link>
-
-              <Link
-                href="#"
-                className="w-11 h-11 rounded-full border border-slate-700 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
-              >
-                <Linkedin className="w-5 h-5" />
-              </Link>
             </div>
           </div>
 
           {/* QUICK LINKS */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-6">
+            <h4 className="font-bold text-lg mb-6">
               Quick Links
             </h4>
 
             <ul className="space-y-4 text-slate-400">
               <li>
-                <Link href="/" className="hover:text-[#C23B4A] transition">
+                <Link
+                  href="/"
+                  className="hover:text-[#C23B4A] transition"
+                >
                   Home
                 </Link>
               </li>
 
               <li>
-                <Link href="/about" className="hover:text-[#C23B4A] transition">
+                <Link
+                  href="/about"
+                  className="hover:text-[#C23B4A] transition"
+                >
                   About Us
                 </Link>
               </li>
 
               <li>
-                <Link href="/products" className="hover:text-[#C23B4A] transition">
+                <Link
+                  href="/products"
+                  className="hover:text-[#C23B4A] transition"
+                >
                   Products
                 </Link>
               </li>
 
               <li>
-                <Link href="/contact" className="hover:text-[#C23B4A] transition">
+                <Link
+                  href="/private-label"
+                  className="hover:text-[#C23B4A] transition"
+                >
+                  Private Label
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/contact"
+                  className="hover:text-[#C23B4A] transition"
+                >
                   Contact
                 </Link>
               </li>
@@ -110,7 +125,7 @@ export default function Footer() {
 
           {/* PRODUCTS */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-6">
+            <h4 className="font-bold text-lg mb-6">
               Products
             </h4>
 
@@ -125,7 +140,7 @@ export default function Footer() {
 
           {/* CONTACT INFO */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-6">
+            <h4 className="font-bold text-lg mb-6">
               Contact Info
             </h4>
 
