@@ -16,8 +16,8 @@ import {
 export default function Footer() {
   return (
     <footer className="bg-[#3A3A3A] text-white">
-      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-16">
-        <div className="grid lg:grid-cols-[1.8fr_1fr_1fr] gap-12">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-10">
+        <div className="grid lg:grid-cols-[1.8fr_1fr_1fr] gap-10 items-start">
           {/* BRAND */}
           <div>
             <div className="flex items-center gap-4">
@@ -39,7 +39,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <p className="text-gray-300 mt-6 leading-relaxed max-w-md">
+            <p className="text-gray-300 mt-5 leading-relaxed max-w-md">
               Premium Himalayan Pink Salt supplier offering retail
               packaging, bulk supply and private label solutions for
               distributors, wholesalers and international buyers
@@ -47,7 +47,7 @@ export default function Footer() {
             </p>
 
             {/* SOCIAL ICONS */}
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6">
               <Link
                 href="https://wa.me/923462771693"
                 target="_blank"
@@ -84,65 +84,26 @@ export default function Footer() {
 
           {/* QUICK LINKS */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-6">
+            <h4 className="font-bold text-white text-lg mb-5">
               Quick Links
             </h4>
 
-            <ul className="space-y-4 text-gray-300">
-              <li>
-                <Link
-                  href="/"
-                  className="hover:text-[#C23B4A] transition"
-                >
-                  Home
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/about"
-                  className="hover:text-[#C23B4A] transition"
-                >
-                  About Us
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/products"
-                  className="hover:text-[#C23B4A] transition"
-                >
-                  Products
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/private-label"
-                  className="hover:text-[#C23B4A] transition"
-                >
-                  Private Label
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/contact"
-                  className="hover:text-[#C23B4A] transition"
-                >
-                  Contact
-                </Link>
-              </li>
+            <ul className="space-y-3 text-gray-300">
+              <li><Link href="/" className="hover:text-[#C23B4A] transition">Home</Link></li>
+              <li><Link href="/about" className="hover:text-[#C23B4A] transition">About Us</Link></li>
+              <li><Link href="/products" className="hover:text-[#C23B4A] transition">Products</Link></li>
+              <li><Link href="/private-label" className="hover:text-[#C23B4A] transition">Private Label</Link></li>
+              <li><Link href="/contact" className="hover:text-[#C23B4A] transition">Contact</Link></li>
             </ul>
           </div>
 
           {/* CONTACT INFO */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-6">
+            <h4 className="font-bold text-white text-lg mb-5">
               Contact Info
             </h4>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="flex items-start gap-3 text-gray-300">
                 <Mail className="w-5 h-5 mt-0.5 text-[#C23B4A]" />
                 <span>thekhanandco@gmail.com</span>
@@ -161,7 +122,7 @@ export default function Footer() {
 
             <Link
               href="/contact"
-              className="inline-flex items-center mt-8 bg-[#C23B4A] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition"
+              className="inline-flex items-center mt-6 bg-[#C23B4A] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition"
             >
               Request Quote
             </Link>
@@ -169,7 +130,7 @@ export default function Footer() {
         </div>
 
         {/* COPYRIGHT */}
-        <div className="border-t border-white/10 mt-14 pt-8 flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/10 mt-8 pt-5 flex flex-col lg:flex-row items-center justify-between gap-3">
           <p className="text-gray-400 text-sm text-center lg:text-left">
             © 2026 The Salt Secrets by Khan & Co. All Rights Reserved.
           </p>
