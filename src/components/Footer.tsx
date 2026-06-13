@@ -16,126 +16,121 @@ import {
 export default function Footer() {
   return (
     <footer className="bg-[#3A3A3A] text-white">
-      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-10">
-        <div className="grid lg:grid-cols-[1.8fr_1fr_1fr] gap-10 items-start">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-7">
+        <div className="grid lg:grid-cols-[1.8fr_1fr_1fr] gap-8 items-start">
           {/* BRAND */}
           <div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Image
                 src="/logo.png"
                 alt="The Salt Secrets"
-                width={70}
-                height={70}
+                width={60}
+                height={60}
               />
 
               <div>
-                <h3 className="text-2xl font-black">
+                <h3 className="text-xl font-black">
                   The Salt Secrets
                 </h3>
 
-                <p className="text-gray-300 text-sm">
+                <p className="text-gray-300 text-xs">
                   Himalayan Pink Salt Exporter
                 </p>
               </div>
             </div>
 
-            <p className="text-gray-300 mt-5 leading-relaxed max-w-md">
+            <p className="text-gray-300 mt-4 leading-8 max-w-md">
               Premium Himalayan Pink Salt supplier offering retail
               packaging, bulk supply and private label solutions for
-              distributors, wholesalers and international buyers
-              worldwide.
+              distributors, wholesalers and international buyers worldwide.
             </p>
 
             {/* SOCIAL ICONS */}
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 mt-4">
               <Link
                 href="https://wa.me/923462771693"
                 target="_blank"
-                className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] transition"
               >
-                <MessageCircle className="w-5 h-5 text-white" />
+                <MessageCircle className="w-4 h-4 text-white" />
               </Link>
 
               <Link
                 href="#"
-                target="_blank"
-                className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] transition"
               >
-                <FaInstagram className="text-white text-[18px]" />
+                <FaInstagram className="text-white text-[15px]" />
               </Link>
 
               <Link
                 href="#"
-                target="_blank"
-                className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] transition"
               >
-                <FaFacebookF className="text-white text-[16px]" />
+                <FaFacebookF className="text-white text-[14px]" />
               </Link>
 
               <Link
                 href="#"
-                target="_blank"
-                className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] transition"
               >
-                <FaLinkedinIn className="text-white text-[16px]" />
+                <FaLinkedinIn className="text-white text-[14px]" />
               </Link>
             </div>
           </div>
 
           {/* QUICK LINKS */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-5">
+            <h4 className="font-bold text-lg mb-4">
               Quick Links
             </h4>
 
-            <ul className="space-y-3 text-gray-300">
-              <li><Link href="/" className="hover:text-[#C23B4A] transition">Home</Link></li>
-              <li><Link href="/about" className="hover:text-[#C23B4A] transition">About Us</Link></li>
-              <li><Link href="/products" className="hover:text-[#C23B4A] transition">Products</Link></li>
-              <li><Link href="/private-label" className="hover:text-[#C23B4A] transition">Private Label</Link></li>
-              <li><Link href="/contact" className="hover:text-[#C23B4A] transition">Contact</Link></li>
+            <ul className="space-y-2 text-gray-300">
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/about">About Us</Link></li>
+              <li><Link href="/products">Products</Link></li>
+              <li><Link href="/private-label">Private Label</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
             </ul>
           </div>
 
-          {/* CONTACT INFO */}
+          {/* CONTACT */}
           <div>
-            <h4 className="font-bold text-white text-lg mb-5">
+            <h4 className="font-bold text-lg mb-4">
               Contact Info
             </h4>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 text-gray-300">
-                <Mail className="w-5 h-5 mt-0.5 text-[#C23B4A]" />
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-gray-300">
+                <Mail className="w-4 h-4 text-[#C23B4A]" />
                 <span>thekhanandco@gmail.com</span>
               </div>
 
-              <div className="flex items-start gap-3 text-gray-300">
-                <Phone className="w-5 h-5 mt-0.5 text-[#C23B4A]" />
+              <div className="flex items-center gap-3 text-gray-300">
+                <Phone className="w-4 h-4 text-[#C23B4A]" />
                 <span>+92 346 2771693</span>
               </div>
 
-              <div className="flex items-start gap-3 text-gray-300">
-                <MapPin className="w-5 h-5 mt-0.5 text-[#C23B4A]" />
+              <div className="flex items-center gap-3 text-gray-300">
+                <MapPin className="w-4 h-4 text-[#C23B4A]" />
                 <span>Pakistan</span>
               </div>
             </div>
 
             <Link
               href="/contact"
-              className="inline-flex items-center mt-6 bg-[#C23B4A] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition"
+              className="inline-flex items-center mt-5 bg-[#C23B4A] text-white px-5 py-2.5 rounded-lg font-semibold hover:opacity-90 transition"
             >
               Request Quote
             </Link>
           </div>
         </div>
 
-        {/* COPYRIGHT */}
-        <div className="border-t border-white/10 mt-8 pt-5 flex flex-col lg:flex-row items-center justify-between gap-3">
-          <p className="text-gray-400 text-sm text-center lg:text-left">
+        <div className="border-t border-white/10 mt-5 pt-4 flex flex-col lg:flex-row items-center justify-between gap-2">
+          <p className="text-gray-400 text-xs">
             © 2026 The Salt Secrets by Khan & Co. All Rights Reserved.
           </p>
 
-          <p className="text-gray-400 text-sm text-center lg:text-right">
+          <p className="text-gray-400 text-xs">
             Premium Himalayan Pink Salt Supplier & Private Label Partner
           </p>
         </div>
