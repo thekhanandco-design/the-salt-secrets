@@ -9,35 +9,7 @@ import {
   Package,
   ShoppingBag,
   Tag,
-  Weight,
-  Wheat,
 } from "lucide-react";
-
-const filters = [
-  {
-    label: "Packaging Type",
-    icon: Package,
-    options: [
-      "All",
-      "PET Bottles",
-      "PET Jars",
-      "Grinder Bottle (Plastic)",
-      "Grinder Bottle (Ceramic)",
-      "Stand-Up Pouch",
-      "PP Woven Bags",
-    ],
-  },
-  {
-    label: "Grain Type",
-    icon: Wheat,
-    options: ["All", "Fine Grain (Powder Form)", "Coarse Grain"],
-  },
-  {
-    label: "Weight / Size",
-    icon: Weight,
-    options: ["All", "100 g", "200 g", "250 g", "500 g", "750 g", "1 kg", "2 kg", "5 kg+", "25 kg+", "50 kg"],
-  },
-];
 
 const retailProducts = [
   {
@@ -106,42 +78,6 @@ export default function ProductsPage() {
             packaging, grinder bottles, stand-up pouches, bulk supply and
             private label solutions.
           </p>
-        </section>
-
-        {/* FILTERS */}
-        <section className="bg-white border border-[#EFE3E5] rounded-[24px] p-5 mt-10 shadow-[0_12px_35px_rgba(194,59,74,0.06)]">
-          <div className="space-y-4">
-            {filters.map((filter) => {
-              const Icon = filter.icon;
-
-              return (
-                <div
-                  key={filter.label}
-                  className="grid lg:grid-cols-[190px_1fr] gap-4 items-center border-b last:border-b-0 border-[#F1E2E5] pb-4 last:pb-0"
-                >
-                  <div className="flex items-center gap-3 text-[#07142B] font-black text-sm">
-                    <Icon className="w-5 h-5 text-[#C23B4A]" />
-                    {filter.label}
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    {filter.options.map((option, index) => (
-                      <button
-                        key={option}
-                        className={`px-5 py-2 rounded-md border text-sm font-semibold transition ${
-                          index === 0
-                            ? "border-[#C23B4A] text-[#C23B4A] bg-[#FFF4F5]"
-                            : "border-[#E7DDE0] text-slate-600 bg-white hover:border-[#C23B4A]"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </section>
 
         {/* RETAIL PACKAGING */}
