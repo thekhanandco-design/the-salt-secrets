@@ -4,184 +4,155 @@ import {
   Phone,
   MapPin,
   MessageCircle,
-  Clock3,
-  Package,
 } from "lucide-react";
 
 import ContactForm from "@/components/ContactForm";
 
 export default function ContactPage() {
   return (
-    <div className="bg-[#FFF8F5]">
-      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-16 lg:py-20">
-        {/* HERO */}
-        <div className="text-center mb-12">
-          <span className="uppercase tracking-[7px] text-[#C23B4A] font-black text-lg">
-            Contact Us
-          </span>
+    <div className="bg-white">
+      {/* HERO */}
+      <section className="bg-gradient-to-b from-[#FFF4F5] to-white border-b border-[#F3E5E7]">
+        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-20 lg:py-24">
+          <div className="text-center">
+            <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-xl">
+              Contact Us
+            </span>
 
-          {/* SMLHDNG */}
-          <h1 className="text-3xl lg:text-5xl font-black mt-3 text-[#07142B]">
-            Let's Discuss Your Salt Requirements
-          </h1>
+            <h1
+              className="mt-5 text-[#07142B] font-black leading-[0.95]"
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "clamp(3rem,6vw,6rem)",
+              }}
+            >
+              Let&apos;s Discuss Your
+              <br />
+              Pink Salt Requirements
+            </h1>
 
-          <p className="max-w-3xl mx-auto text-slate-600 mt-4 text-base lg:text-lg">
-            Contact our export team for quotations, private label
-            manufacturing, bulk supply opportunities and international
-            distribution inquiries.
-          </p>
-        </div>
-
-        {/* QUICK CONTACT */}
-        <div className="grid md:grid-cols-3 gap-5 mb-10">
-          <a
-            href="mailto:thekhanandco@gmail.com"
-            className="bg-white border border-[#EFE3E5] rounded-[24px] p-6 hover:shadow-[0_15px_40px_rgba(194,59,74,0.08)] transition-all duration-300"
-          >
-            <Mail className="w-8 h-8 text-[#C23B4A] mb-4" />
-
-            <h3 className="font-bold text-xl text-[#07142B]">
-              Email Us
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              thekhanandco@gmail.com
-            </p>
-          </a>
-
-          <a
-            href="https://wa.me/923462771693"
-            target="_blank"
-            className="bg-white border border-[#EFE3E5] rounded-[24px] p-6 hover:shadow-[0_15px_40px_rgba(194,59,74,0.08)] transition-all duration-300"
-          >
-            <MessageCircle className="w-8 h-8 text-[#C23B4A] mb-4" />
-
-            <h3 className="font-bold text-xl text-[#07142B]">
-              WhatsApp
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              Fastest Response
-            </p>
-          </a>
-
-          <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-6">
-            <Package className="w-8 h-8 text-[#C23B4A] mb-4" />
-
-            <h3 className="font-bold text-xl text-[#07142B]">
-              Bulk & Private Label
-            </h3>
-
-            <p className="text-slate-500 mt-2">
-              OEM Packaging & Export Orders
-            </p>
-          </div>
-        </div>
-
-        {/* MAIN SECTION */}
-        <div className="grid lg:grid-cols-[1.3fr_0.7fr] gap-8">
-          {/* FORM */}
-          <div className="bg-white rounded-[32px] border border-[#EFE3E5] p-8 lg:p-10 shadow-[0_15px_40px_rgba(0,0,0,0.03)]">
-            <h2 className="text-2xl lg:text-3xl font-black text-[#07142B] mb-2">
-              Send Us Your Inquiry
-            </h2>
-
-            <p className="text-slate-600 mb-8">
-              Share your requirements and our team will get back to you
-              with pricing, packaging options and export information.
+            <p className="max-w-3xl mx-auto text-slate-600 mt-8 text-lg leading-relaxed">
+              Whether you need private label packaging, bulk supply,
+              retail-ready products or export solutions, our team is
+              ready to assist.
             </p>
 
-            <ContactForm />
-          </div>
+            <div className="flex flex-wrap justify-center gap-5 mt-10">
+              <Link
+                href="#contact-form"
+                className="bg-[#C23B4A] text-white px-12 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition"
+              >
+                Get a Quote →
+              </Link>
 
-          {/* INFO PANEL */}
-          <div className="bg-white rounded-[32px] border border-[#EFE3E5] p-8 lg:p-10 shadow-[0_15px_40px_rgba(0,0,0,0.03)]">
-            <h2 className="text-2xl lg:text-3xl font-black text-[#07142B] mb-8">
-              Contact Information
-            </h2>
-
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <Mail className="w-6 h-6 text-[#C23B4A] mt-1 shrink-0" />
-
-                <div>
-                  <h3 className="font-bold text-[#07142B]">
-                    Email Address
-                  </h3>
-
-                  <p className="text-slate-600 mt-1">
-                    thekhanandco@gmail.com
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Phone className="w-6 h-6 text-[#C23B4A] mt-1 shrink-0" />
-
-                <div>
-                  <h3 className="font-bold text-[#07142B]">
-                    Phone / WhatsApp
-                  </h3>
-
-                  <p className="text-slate-600 mt-1">
-                    +92 346 2771693
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <MapPin className="w-6 h-6 text-[#C23B4A] mt-1 shrink-0" />
-
-                <div>
-                  <h3 className="font-bold text-[#07142B]">
-                    Location
-                  </h3>
-
-                  <p className="text-slate-600 mt-1">
-                    Pakistan
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Clock3 className="w-6 h-6 text-[#C23B4A] mt-1 shrink-0" />
-
-                <div>
-                  <h3 className="font-bold text-[#07142B]">
-                    Business Hours
-                  </h3>
-
-                  <p className="text-slate-600 mt-1">
-                    Monday - Friday
-                    <br />
-                    9:00 AM - 6:00 PM
-                  </p>
-                </div>
-              </div>
+              <Link
+                href="https://wa.me/923462771693"
+                target="_blank"
+                className="bg-white border-2 border-[#E8C9CF] text-[#07142B] px-12 py-4 rounded-xl font-bold text-lg hover:bg-[#FFF8F5] transition"
+              >
+                WhatsApp Us
+              </Link>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="mt-10 p-6 rounded-[24px] bg-[#FFF4F5] border border-[#F3DADD]">
-              <h3 className="text-xl font-black text-[#07142B]">
-                Export & Wholesale Orders
+      {/* CONTACT CARDS */}
+      <section className="py-10 bg-white">
+        <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
+                <MapPin className="w-8 h-8 text-[#C23B4A]" />
+              </div>
+
+              <h3
+                className="font-bold text-[#07142B]"
+                style={{ fontFamily: "Georgia, serif", fontSize: "2rem" }}
+              >
+                Office
               </h3>
 
-              <p className="text-slate-600 mt-3">
-                For bulk orders, distributor partnerships and private
-                label projects, contact us directly on WhatsApp for
-                faster assistance.
+              <p className="text-slate-600 mt-2">
+                Pakistan
               </p>
             </div>
 
-            <Link
-              href="https://wa.me/923462771693"
-              target="_blank"
-              className="mt-8 inline-flex items-center justify-center w-full bg-[#C23B4A] text-white py-4 rounded-xl font-semibold hover:opacity-90 transition"
-            >
-              Chat On WhatsApp
-            </Link>
+            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
+                <Mail className="w-8 h-8 text-[#C23B4A]" />
+              </div>
+
+              <h3
+                className="font-bold text-[#07142B]"
+                style={{ fontFamily: "Georgia, serif", fontSize: "2rem" }}
+              >
+                Email
+              </h3>
+
+              <p className="text-slate-600 mt-2">
+                thekhanandco@gmail.com
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
+                <Phone className="w-8 h-8 text-[#C23B4A]" />
+              </div>
+
+              <h3
+                className="font-bold text-[#07142B]"
+                style={{ fontFamily: "Georgia, serif", fontSize: "2rem" }}
+              >
+                Phone
+              </h3>
+
+              <p className="text-slate-600 mt-2">
+                +92 346 2771693
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
+                <MessageCircle className="w-8 h-8 text-[#C23B4A]" />
+              </div>
+
+              <h3
+                className="font-bold text-[#07142B]"
+                style={{ fontFamily: "Georgia, serif", fontSize: "2rem" }}
+              >
+                WhatsApp
+              </h3>
+
+              <p className="text-slate-600 mt-2">
+                Chat With Sales Team
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* FORM */}
+      <section
+        id="contact-form"
+        className="pb-20"
+      >
+        <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
+          <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-8 lg:p-12 shadow-sm">
+            <h2
+              className="text-center font-bold text-[#07142B] mb-10"
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "clamp(2rem,3vw,3.5rem)",
+              }}
+            >
+              Send Us A Message
+            </h2>
+
+            <ContactForm />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -28,6 +28,8 @@ export default function ContactForm() {
         company: formData.get("company"),
         whatsapp: formData.get("whatsapp"),
         country: formData.get("country"),
+        product: formData.get("product"),
+        quantity: formData.get("quantity"),
         message: formData.get("message"),
       }),
     });
@@ -41,69 +43,96 @@ export default function ContactForm() {
   }
 
   return (
-    <div className="bg-white p-10 rounded-[30px] shadow-lg">
-      <h2 className="text-3xl font-bold mb-8">
-        Send an Inquiry
-      </h2>
-
+    <>
       {success && (
-        <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6">
+        <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6 text-center">
           Inquiry sent successfully.
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5"
+        className="space-y-4"
       >
-        <input
-          name="name"
-          placeholder="Your Name"
-          required
-          className="w-full border border-slate-300 rounded-xl p-4"
-        />
+        <div className="grid md:grid-cols-2 gap-4">
+          <input
+            name="name"
+            placeholder="Full Name"
+            required
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          />
 
-        <input
-          name="email"
-          type="email"
-          placeholder="Email Address"
-          required
-          className="w-full border border-slate-300 rounded-xl p-4"
-        />
+          <input
+            name="company"
+            placeholder="Company Name"
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          />
+        </div>
 
-        <input
-          name="company"
-          placeholder="Company Name"
-          className="w-full border border-slate-300 rounded-xl p-4"
-        />
+        <div className="grid md:grid-cols-2 gap-4">
+          <input
+            name="email"
+            type="email"
+            placeholder="Email Address"
+            required
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          />
 
-        <input
-          name="whatsapp"
-          placeholder="WhatsApp Number"
-          className="w-full border border-slate-300 rounded-xl p-4"
-        />
+          <input
+            name="whatsapp"
+            placeholder="Phone Number"
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          />
+        </div>
 
-        <input
-          name="country"
-          placeholder="Country"
-          className="w-full border border-slate-300 rounded-xl p-4"
-        />
+        <div className="grid md:grid-cols-3 gap-4">
+          <input
+            name="country"
+            placeholder="Country"
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          />
+
+          <select
+            name="product"
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          >
+            <option>Product Interest</option>
+            <option>Salt Grinder</option>
+            <option>Pink Salt Jar</option>
+            <option>Salt Shaker</option>
+            <option>Rock Salt Chunks</option>
+            <option>Private Label</option>
+          </select>
+
+          <select
+            name="quantity"
+            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+          >
+            <option>Quantity Required</option>
+            <option>100 KG - 500 KG</option>
+            <option>500 KG - 1 Ton</option>
+            <option>1 Ton - 5 Tons</option>
+            <option>5 Tons+</option>
+          </select>
+        </div>
 
         <textarea
           name="message"
-          rows={6}
-          placeholder="Tell us about your requirements..."
-          className="w-full border border-slate-300 rounded-xl p-4"
+          rows={5}
+          placeholder="Message"
+          className="w-full p-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-[#C98A92] text-white px-8 py-4 rounded-full font-semibold w-full"
-        >
-          {loading ? "Sending..." : "Send Inquiry"}
-        </button>
+        <div className="text-center pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-[#C23B4A] text-white px-14 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition"
+          >
+            {loading ? "Sending..." : "Request Quotation →"}
+          </button>
+        </div>
       </form>
-    </div>
+    </>
   );
 }
