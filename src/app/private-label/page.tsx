@@ -1,149 +1,280 @@
+import Image from "next/image";
 import Link from "next/link";
+import {
+  BadgeDollarSign,
+  ShieldCheck,
+  Package,
+  Globe,
+  Leaf,
+  Award,
+  Tag,
+  Factory,
+  CheckCircle2,
+  Truck,
+  Clock3,
+  Box,
+} from "lucide-react";
 
 export default function PrivateLabelPage() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24">
-      <div className="text-center max-w-4xl mx-auto">
-        <span className="uppercase tracking-[5px] text-[#C98A92] font-semibold">
-          Private Label Solutions
-        </span>
+    <div className="bg-[#fffafa]">
 
-        <h1 className="text-6xl font-bold mt-4">
+      {/* HERO */}
+      <section className="max-w-7xl mx-auto px-6 pt-20 pb-12 text-center">
+        <p className="uppercase tracking-[5px] text-[#c23b4a] font-bold">
+          Private Label Manufacturer
+        </p>
+
+        <h1 className="text-5xl lg:text-7xl font-black text-[#081325] mt-4 leading-tight">
           Launch Your Own
           <br />
           Himalayan Pink Salt Brand
         </h1>
 
-        <p className="text-xl text-slate-600 mt-6">
-          We help importers, distributors, retailers and entrepreneurs create
-          premium private label Himalayan Pink Salt products ready for global
-          markets.
+        <p className="max-w-3xl mx-auto mt-6 text-slate-600 text-lg">
+          From custom labels and packaging to complete private label
+          manufacturing, we help brands create retail-ready Himalayan Pink Salt
+          products for global markets.
         </p>
-      </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mt-20">
-        <div className="bg-white p-8 rounded-[30px] shadow-lg">
-          <h3 className="text-2xl font-bold mb-4">Custom Packaging</h3>
-          <p className="text-slate-600">
-            Retail jars, grinders, pouches and bulk packaging tailored to your
-            brand.
-          </p>
+        <div className="flex flex-wrap justify-center gap-4 mt-10">
+          <Link
+            href="/contact"
+            className="bg-[#c23b4a] text-white px-8 py-4 rounded-xl font-bold"
+          >
+            Request Private Label Quote
+          </Link>
+
+          <Link
+            href="/contact"
+            className="border-2 border-[#c23b4a] text-[#c23b4a] px-8 py-4 rounded-xl font-bold"
+          >
+            Download Catalog
+          </Link>
         </div>
 
-        <div className="bg-white p-8 rounded-[30px] shadow-lg">
-          <h3 className="text-2xl font-bold mb-4">Custom Labels</h3>
-          <p className="text-slate-600">
-            Professional label design and branding with your logo and product
-            information.
-          </p>
-        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-14 text-sm font-semibold">
+          <div className="flex items-center justify-center gap-2">
+            <Leaf className="w-5 h-5 text-[#c23b4a]" />
+            100% Natural
+          </div>
 
-        <div className="bg-white p-8 rounded-[30px] shadow-lg">
-          <h3 className="text-2xl font-bold mb-4">Export Support</h3>
-          <p className="text-slate-600">
-            Complete export documentation and international shipping support.
-          </p>
-        </div>
+          <div className="flex items-center justify-center gap-2">
+            <Award className="w-5 h-5 text-[#c23b4a]" />
+            Premium Quality
+          </div>
 
-        <div className="bg-white p-8 rounded-[30px] shadow-lg">
-          <h3 className="text-2xl font-bold mb-4">Quality Assurance</h3>
-          <p className="text-slate-600">
-            Consistent product quality with food-grade manufacturing standards.
-          </p>
-        </div>
-      </div>
+          <div className="flex items-center justify-center gap-2">
+            <Tag className="w-5 h-5 text-[#c23b4a]" />
+            Custom Branding
+          </div>
 
-      <div className="bg-white rounded-[40px] p-12 mt-20 shadow-lg">
-        <h2 className="text-4xl font-bold mb-6">
-          Why Choose Our Private Label Program?
+          <div className="flex items-center justify-center gap-2">
+            <Globe className="w-5 h-5 text-[#c23b4a]" />
+            Global Shipping
+          </div>
+        </div>
+      </section>
+
+      {/* WHY PRIVATE LABEL */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <h2 className="text-center text-4xl font-black mb-10">
+          Why Private Label?
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-8 text-slate-600 text-lg">
-          <div>
-            ✓ Low-risk brand launch
-            <br />
-            ✓ Premium Himalayan Pink Salt
-            <br />
-            ✓ Multiple packaging options
-            <br />
-            ✓ Flexible order quantities
+        <div className="grid md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-3xl p-8 border">
+            <BadgeDollarSign className="w-12 h-12 text-[#c23b4a] mx-auto" />
+            <h3 className="font-black text-center mt-4">
+              Higher Profit Margins
+            </h3>
           </div>
 
-          <div>
-            ✓ International export experience
-            <br />
-            ✓ Fast production timelines
-            <br />
-            ✓ Custom branding support
-            <br />
-            ✓ Long-term supply partnership
+          <div className="bg-white rounded-3xl p-8 border">
+            <ShieldCheck className="w-12 h-12 text-[#c23b4a] mx-auto" />
+            <h3 className="font-black text-center mt-4">
+              Brand Ownership
+            </h3>
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border">
+            <Package className="w-12 h-12 text-[#c23b4a] mx-auto" />
+            <h3 className="font-black text-center mt-4">
+              Custom Packaging
+            </h3>
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border">
+            <Globe className="w-12 h-12 text-[#c23b4a] mx-auto" />
+            <h3 className="font-black text-center mt-4">
+              Global Market Reach
+            </h3>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mt-24">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold">
+      {/* WHAT WE CUSTOMIZE */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <h2 className="text-center text-4xl font-black mb-10">
+          What We Customize
+        </h2>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="bg-white border rounded-3xl overflow-hidden">
+            <Image
+              src="/custom-logo-design.png"
+              alt=""
+              width={600}
+              height={400}
+              className="w-full h-[260px] object-contain p-6"
+            />
+            <div className="p-6 text-center">
+              <h3 className="font-black text-xl">Logo Design</h3>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-3xl overflow-hidden">
+            <Image
+              src="/custom-labels.png"
+              alt=""
+              width={600}
+              height={400}
+              className="w-full h-[260px] object-contain p-6"
+            />
+            <div className="p-6 text-center">
+              <h3 className="font-black text-xl">Product Labels</h3>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-3xl overflow-hidden">
+            <Image
+              src="/custom-packaging.png"
+              alt=""
+              width={600}
+              height={400}
+              className="w-full h-[260px] object-contain p-6"
+            />
+            <div className="p-6 text-center">
+              <h3 className="font-black text-xl">Packaging Design</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* PACKAGING OPTIONS */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <h2 className="text-center text-4xl font-black mb-10">
+          Packaging Options
+        </h2>
+
+        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[
+            ["/pet-bottles.png", "PET Bottles"],
+            ["/pet-jars.png", "PET Jars"],
+            ["/grinder-bottles1.png", "Grinder Bottles"],
+            ["/ceramic-grinders.png", "Ceramic Grinders"],
+            ["/shaker-bottles.png", "Shaker Bottles"],
+            ["/standup-pouch.png", "Stand-Up Pouches"],
+          ].map(([img, title]) => (
+            <div
+              key={title}
+              className="bg-white border rounded-2xl p-4 text-center"
+            >
+              <Image
+                src={img}
+                alt={title}
+                width={300}
+                height={300}
+                className="h-32 object-contain mx-auto"
+              />
+              <h3 className="font-black mt-3">{title}</h3>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PROCESS */}
+      <section
+        className="py-16 bg-center bg-cover"
+        style={{
+          backgroundImage: "url('/mountains-bg.png')",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-center text-4xl font-black mb-12">
             Our Private Label Process
           </h2>
 
-          <p className="text-slate-600 mt-4">
-            From idea to shelf-ready product.
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <CheckCircle2 className="w-14 h-14 mx-auto text-[#c23b4a]" />
+              <h3 className="font-black mt-4">Consultation</h3>
+            </div>
+
+            <div className="text-center">
+              <Tag className="w-14 h-14 mx-auto text-[#c23b4a]" />
+              <h3 className="font-black mt-4">Design Approval</h3>
+            </div>
+
+            <div className="text-center">
+              <Factory className="w-14 h-14 mx-auto text-[#c23b4a]" />
+              <h3 className="font-black mt-4">Production</h3>
+            </div>
+
+            <div className="text-center">
+              <Truck className="w-14 h-14 mx-auto text-[#c23b4a]" />
+              <h3 className="font-black mt-4">Worldwide Delivery</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MOQ */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="bg-white border rounded-3xl p-10 text-center">
+            <Box className="w-12 h-12 mx-auto text-[#c23b4a]" />
+            <h3 className="text-5xl font-black text-[#c23b4a] mt-4">1200</h3>
+            <p className="font-bold">PCS MOQ</p>
+          </div>
+
+          <div className="bg-white border rounded-3xl p-10 text-center">
+            <Clock3 className="w-12 h-12 mx-auto text-[#c23b4a]" />
+            <h3 className="text-5xl font-black text-[#c23b4a] mt-4">
+              15-30
+            </h3>
+            <p className="font-bold">Days Lead Time</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-[#b81f32] text-white py-16">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-5xl font-black">
+            Ready To Launch Your Own Salt Brand?
+          </h2>
+
+          <p className="mt-4 text-white/90">
+            Partner with a trusted Himalayan Pink Salt manufacturer.
           </p>
-        </div>
 
-        <div className="grid md:grid-cols-4 gap-8">
-          <div className="bg-white p-8 rounded-[30px] shadow-lg">
-            <div className="text-4xl font-bold text-[#C98A92] mb-4">01</div>
-            <h3 className="text-xl font-bold">Consultation</h3>
-            <p className="text-slate-600 mt-3">
-              Discuss product requirements and target market.
-            </p>
-          </div>
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <Link
+              href="/contact"
+              className="bg-white text-[#b81f32] px-8 py-4 rounded-xl font-bold"
+            >
+              Get Free Quote
+            </Link>
 
-          <div className="bg-white p-8 rounded-[30px] shadow-lg">
-            <div className="text-4xl font-bold text-[#C98A92] mb-4">02</div>
-            <h3 className="text-xl font-bold">Branding</h3>
-            <p className="text-slate-600 mt-3">
-              Create packaging and private label design.
-            </p>
-          </div>
-
-          <div className="bg-white p-8 rounded-[30px] shadow-lg">
-            <div className="text-4xl font-bold text-[#C98A92] mb-4">03</div>
-            <h3 className="text-xl font-bold">Production</h3>
-            <p className="text-slate-600 mt-3">
-              Manufacturing and quality inspection.
-            </p>
-          </div>
-
-          <div className="bg-white p-8 rounded-[30px] shadow-lg">
-            <div className="text-4xl font-bold text-[#C98A92] mb-4">04</div>
-            <h3 className="text-xl font-bold">Export</h3>
-            <p className="text-slate-600 mt-3">
-              Documentation, shipping and delivery.
-            </p>
+            <Link
+              href="/contact"
+              className="border border-white px-8 py-4 rounded-xl font-bold"
+            >
+              WhatsApp Us
+            </Link>
           </div>
         </div>
-      </div>
-
-      <div className="text-center mt-20">
-        <h2 className="text-4xl font-bold">
-          Ready To Build Your Salt Brand?
-        </h2>
-
-        <p className="text-slate-600 text-lg mt-4">
-          Contact us today to discuss your private label requirements.
-        </p>
-
-        <Link
-          href="/contact"
-          className="inline-block mt-8 bg-[#C98A92] text-white px-10 py-4 rounded-full font-semibold text-lg hover:opacity-90"
-        >
-          Request Private Label Quote
-        </Link>
-      </div>
+      </section>
     </div>
   );
 }
-
