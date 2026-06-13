@@ -114,7 +114,6 @@ const productGroups = [
     ],
   },
 ];
-
 export default function ProductsPage() {
   return (
     <div className="bg-[#FFF8F5]">
@@ -124,23 +123,19 @@ export default function ProductsPage() {
           <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-lg">
             Products
           </span>
-
           <h1 className="text-3xl lg:text-5xl font-black mt-4 text-[#07142B] leading-tight">
             Himalayan Pink Salt Product Range
           </h1>
-
           <p className="text-slate-600 mt-5 text-base lg:text-lg leading-relaxed">
             Export-ready Himalayan Pink Salt products available in retail
             packaging, grinder bottles, stand-up pouches, PET jars and bulk
             export bags with private label support.
           </p>
         </div>
-
         {/* CATEGORY NAV */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
           {productGroups.map((group) => {
             const Icon = group.icon;
-
             return (
               <a
                 key={group.title}
@@ -151,6 +146,8 @@ export default function ProductsPage() {
                   <Image
                     src={group.image}
                     alt={group.title}
+                    width={300}
+                    height={300}
                     className="max-h-[140px] w-auto object-contain"
                   />
                 </div>
@@ -180,7 +177,7 @@ export default function ProductsPage() {
               <section
                 id={group.id}
                 key={group.title}
-                className="scroll-mt-28 bg-white border border-[#EFE3E5] rounded-[36px] p-6 lg:p-8 shadow-[0_18px_50px_rgba(194,59,74,0.06)]"
+                className="scroll-mt-28 bg-white border border-[#EFE3E5] rounded-[28px] p-5 lg:p-6 shadow-[0_10px_25px_rgba(194,59,74,0.05)]"
               >
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-14 h-14 rounded-2xl bg-[#FFF4F5] flex items-center justify-center">
@@ -202,22 +199,24 @@ export default function ProductsPage() {
                   {group.description}
                 </p>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                   {group.items.map((item) => (
                     <div
                       key={item.name}
                       className="bg-[#FFF8F5] border border-[#EFE3E5] rounded-[28px] overflow-hidden hover:shadow-[0_18px_45px_rgba(194,59,74,0.08)] transition"
                     >
-                      <div className="h-[280px] bg-white flex items-center justify-center p-6 border-b border-[#EFE3E5]">
+                      <div className="h-[170px] bg-white flex items-center justify-center p-4 border-b border-[#EFE3E5]">
                         <Image
                           src={item.image}
                           alt={item.name}
-                          className="max-h-[240px] w-auto object-contain"
+                          width={300}
+                          height={300}
+                          className="max-h-[120px] w-auto object-contain"
                         />
                       </div>
 
                       <div className="p-6">
-                        <h3 className="text-2xl font-black text-[#07142B]">
+                        <h3 className="text-lg font-black text-[#07142B]">
                           {item.name}
                         </h3>
 
@@ -283,6 +282,8 @@ export default function ProductsPage() {
                 <Image
                   src={privateLabel}
                   alt="Private Label Solutions"
+                  width={500}
+                  height={500}
                   className="max-h-[300px] w-auto object-contain"
                 />
               </div>
