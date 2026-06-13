@@ -13,18 +13,17 @@ export default function ContactPage() {
     <div className="bg-white">
       {/* HERO */}
       <section className="bg-gradient-to-b from-[#FFF4F5] to-white border-b border-[#F3E5E7]">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-16 lg:py-20">
+        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-14 lg:py-16">
           <div className="text-center">
-            <span className="uppercase tracking-[10px] text-[#C23B4A] font-black text-2xl lg:text-3xl">
+            <span className="uppercase tracking-[12px] text-[#C23B4A] font-black text-3xl lg:text-4xl">
               CONTACT US
             </span>
 
-            {/* SMLHDNG SIZE */}
             <h1
-              className="mt-5 text-[#07142B] font-black leading-tight"
+              className="mt-4 text-[#07142B] font-black leading-tight"
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "clamp(2.6rem,4vw,4.2rem)",
+                fontSize: "clamp(2.1rem,3vw,3.2rem)",
               }}
             >
               Let&apos;s Discuss Your
@@ -32,13 +31,13 @@ export default function ContactPage() {
               Pink Salt Requirements
             </h1>
 
-            <p className="max-w-3xl mx-auto text-slate-600 mt-6 text-base lg:text-lg leading-relaxed">
+            <p className="max-w-3xl mx-auto text-slate-600 mt-5 text-base lg:text-lg leading-relaxed">
               Whether you need private label packaging, bulk supply,
               retail-ready products or export solutions, our team is
               ready to assist.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <div className="flex flex-wrap justify-center gap-4 mt-7">
               <Link
                 href="#contact-form"
                 className="bg-[#C23B4A] text-white px-10 py-4 rounded-xl font-bold hover:opacity-90 transition"
@@ -59,7 +58,7 @@ export default function ContactPage() {
       </section>
 
       {/* CONTACT CARDS */}
-      <section className="py-10 bg-white">
+      <section className="py-8 bg-white">
         <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
@@ -71,7 +70,7 @@ export default function ContactPage() {
                 className="font-bold text-[#07142B]"
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "1.75rem",
+                  fontSize: "1.5rem",
                 }}
               >
                 Office
@@ -91,7 +90,7 @@ export default function ContactPage() {
                 className="font-bold text-[#07142B]"
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "1.75rem",
+                  fontSize: "1.5rem",
                 }}
               >
                 Email
@@ -111,7 +110,7 @@ export default function ContactPage() {
                 className="font-bold text-[#07142B]"
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "1.75rem",
+                  fontSize: "1.5rem",
                 }}
               >
                 Phone
@@ -131,7 +130,7 @@ export default function ContactPage() {
                 className="font-bold text-[#07142B]"
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "1.75rem",
+                  fontSize: "1.5rem",
                 }}
               >
                 WhatsApp
@@ -148,15 +147,15 @@ export default function ContactPage() {
       {/* FORM */}
       <section
         id="contact-form"
-        className="pb-20"
+        className="pb-6"
       >
         <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
           <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-8 lg:p-12 shadow-sm">
             <h2
-              className="text-center font-bold text-[#07142B] mb-10"
+              className="text-center font-bold text-[#07142B] mb-8"
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "clamp(2rem,2.5vw,3rem)",
+                fontSize: "clamp(1.8rem,2vw,2.5rem)",
               }}
             >
               Send Us A Message
