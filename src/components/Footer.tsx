@@ -7,6 +7,12 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+import {
+  FaInstagram,
+  FaFacebookF,
+  FaLinkedinIn,
+} from "react-icons/fa";
+
 export default function Footer() {
   return (
     <footer className="bg-[#3A3A3A] text-white">
@@ -52,29 +58,26 @@ export default function Footer() {
 
               <Link
                 href="#"
+                target="_blank"
                 className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
               >
-                <span className="text-white text-sm font-bold">
-                  IG
-                </span>
+                <FaInstagram className="text-white text-[18px]" />
               </Link>
 
               <Link
                 href="#"
+                target="_blank"
                 className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
               >
-                <span className="text-white text-sm font-bold">
-                  FB
-                </span>
+                <FaFacebookF className="text-white text-[16px]" />
               </Link>
 
               <Link
                 href="#"
+                target="_blank"
                 className="w-11 h-11 rounded-full border border-white/20 flex items-center justify-center hover:bg-[#C23B4A] hover:border-[#C23B4A] transition"
               >
-                <span className="text-white text-sm font-bold">
-                  IN
-                </span>
+                <FaLinkedinIn className="text-white text-[16px]" />
               </Link>
             </div>
           </div>
