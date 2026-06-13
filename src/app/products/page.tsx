@@ -5,53 +5,46 @@ import {
   BottleWine,
   Boxes,
   Layers3,
+  Tag,
+  Globe,
   ArrowRight,
 } from "lucide-react";
-
-import retailPackaging from "./retail-packaging.png";
-import grinderBottles from "./grinder-bottles.png";
-import bulkSalt from "./bulk-salt.png";
-import pouches from "./pouches.png";
-import privateLabel from "./private-label.png";
 
 const categories = [
   {
     title: "Retail Packaging",
-    image: retailPackaging,
+    image: "/retail-packaging.png",
     icon: Package,
-    description:
-      "Shelf-ready packaging solutions for supermarkets, retailers and consumer brands.",
+    description: "PET Bottles & PET Jars for retail shelves.",
     products: ["PET Bottle", "PET Jar"],
     sizes: "100g - 2kg",
   },
   {
     title: "Grinder Bottles",
-    image: grinderBottles,
+    image: "/grinder-bottles.png",
     icon: BottleWine,
-    description:
-      "Premium grinder bottles for gourmet salt brands and retail shelves.",
+    description: "Plastic & Ceramic Grinder Bottles.",
     products: ["Plastic Grinder", "Ceramic Grinder"],
     sizes: "100g - 500g",
   },
   {
     title: "Bulk Salt",
-    image: bulkSalt,
+    image: "/white-sack.png",
     icon: Boxes,
-    description:
-      "Bulk Himalayan Pink Salt supply for wholesalers, distributors and food service buyers.",
+    description: "Industrial & Wholesale Bulk Supply.",
     products: ["Fine Grain", "Coarse Grain"],
     sizes: "5kg - 50kg",
   },
   {
     title: "Stand-Up Pouches",
-    image: pouches,
+    image: "/pouches.png",
     icon: Layers3,
-    description:
-      "Modern zip-lock pouch packaging for retail and e-commerce brands.",
+    description: "Zip Lock Retail Packaging.",
     products: ["Fine Grain Pouch", "Coarse Grain Pouch"],
     sizes: "250g - 1kg",
   },
 ];
+
 export default function ProductsPage() {
   return (
     <div className="bg-[#FFF8F5]">
@@ -67,13 +60,12 @@ export default function ProductsPage() {
           </h1>
 
           <p className="text-slate-600 text-lg mt-6 leading-relaxed">
-            Explore our export-ready Himalayan Pink Salt products available in
-            retail packaging, grinder bottles, stand-up pouches, bulk supply
-            and private label solutions.
+            Export-ready Himalayan Pink Salt products for distributors,
+            wholesalers, supermarkets and private label brands worldwide.
           </p>
         </div>
 
-        {/* CATEGORY GRID */}
+        {/* PRODUCT CATEGORIES */}
         <div className="grid lg:grid-cols-2 gap-8 mt-16">
           {categories.map((category) => {
             const Icon = category.icon;
@@ -81,35 +73,35 @@ export default function ProductsPage() {
             return (
               <div
                 key={category.title}
-                className="bg-white border border-[#EFE3E5] rounded-[32px] overflow-hidden hover:-translate-y-1 hover:shadow-[0_25px_60px_rgba(194,59,74,0.10)] transition-all duration-300"
+                className="bg-white border border-[#EFE3E5] rounded-[32px] overflow-hidden hover:shadow-xl transition"
               >
-                <div className="h-[300px] bg-[#FFF8F5] flex items-center justify-center p-8">
+                <div className="h-[220px] bg-[#FFF8F5] flex items-center justify-center p-6">
                   <Image
                     src={category.image}
                     alt={category.title}
                     width={500}
                     height={500}
-                    className="max-h-[240px] w-auto object-contain"
+                    className="max-h-[170px] w-auto object-contain"
                   />
                 </div>
 
                 <div className="p-8">
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-[#FFF4F5] flex items-center justify-center">
                       <Icon className="w-6 h-6 text-[#C23B4A]" />
                     </div>
 
-                    <h2 className="text-3xl font-black text-[#07142B]">
+                    <h2 className="text-2xl lg:text-3xl font-black text-[#07142B]">
                       {category.title}
                     </h2>
                   </div>
 
-                  <p className="text-slate-600 leading-relaxed">
+                  <p className="text-slate-600 mt-4">
                     {category.description}
                   </p>
 
                   <div className="mt-6">
-                    <p className="text-xs uppercase tracking-[3px] text-slate-400 font-bold mb-3">
+                    <p className="text-xs uppercase tracking-[3px] text-slate-400 font-bold mb-2">
                       Available Products
                     </p>
 
@@ -120,9 +112,9 @@ export default function ProductsPage() {
                     </ul>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-5">
                     <p className="text-xs uppercase tracking-[3px] text-slate-400 font-bold">
-                      Sizes
+                      Available Sizes
                     </p>
 
                     <p className="text-slate-700 mt-2">
@@ -132,7 +124,7 @@ export default function ProductsPage() {
 
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-2 mt-8 bg-[#C23B4A] text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition"
+                    className="inline-flex items-center gap-2 mt-8 bg-[#C23B4A] text-white px-6 py-3 rounded-xl font-bold"
                   >
                     Request Quote
                     <ArrowRight className="w-4 h-4" />
@@ -144,49 +136,54 @@ export default function ProductsPage() {
         </div>
 
         {/* PRIVATE LABEL */}
-        <section className="mt-12 bg-[#C23B4A] rounded-[36px] overflow-hidden text-white">
-          <div className="grid lg:grid-cols-2 items-center">
-            <div className="p-10 flex justify-center">
-              <Image
-                src={privateLabel}
-                alt="Private Label"
-                width={600}
-                height={600}
-                className="max-h-[350px] w-auto object-contain"
-              />
-            </div>
+        <section className="mt-16 bg-[#C23B4A] rounded-[36px] p-10 lg:p-14 text-white">
+          <span className="uppercase tracking-[6px] text-white/80 font-black text-sm">
+            Private Label Solutions
+          </span>
 
-            <div className="p-10 lg:p-14">
-              <span className="uppercase tracking-[6px] text-white/80 font-black text-sm">
-                Private Label Solutions
-              </span>
+          <h2 className="text-4xl lg:text-5xl font-black mt-4">
+            Build Your Own Himalayan Pink Salt Brand
+          </h2>
 
-              <h2 className="text-4xl lg:text-5xl font-black mt-4 leading-tight">
-                Build Your Own Himalayan Pink Salt Brand
-              </h2>
+          <p className="text-white/90 mt-5 max-w-3xl text-lg">
+            Custom packaging, branding and export-ready private label
+            solutions for distributors, retailers and importers worldwide.
+          </p>
 
-              <p className="text-white/90 mt-5 text-lg leading-relaxed">
-                Custom packaging, labeling, branding and export-ready private
-                label solutions for distributors, retailers and importers
-                worldwide.
+          <div className="grid md:grid-cols-3 gap-6 mt-10">
+            <div className="bg-white/10 rounded-2xl p-6">
+              <Tag className="w-10 h-10 mb-4" />
+              <h3 className="font-black text-xl">Custom Labels</h3>
+              <p className="text-white/80 mt-2">
+                Personalized branding and label design.
               </p>
-
-              <div className="flex flex-wrap gap-4 mt-8">
-                <Link
-                  href="/private-label"
-                  className="bg-white text-[#C23B4A] px-8 py-4 rounded-xl font-bold"
-                >
-                  View Private Label
-                </Link>
-
-                <Link
-                  href="/contact"
-                  className="border border-white px-8 py-4 rounded-xl font-bold"
-                >
-                  Get Quote
-                </Link>
-              </div>
             </div>
+
+            <div className="bg-white/10 rounded-2xl p-6">
+              <Package className="w-10 h-10 mb-4" />
+              <h3 className="font-black text-xl">Custom Packaging</h3>
+              <p className="text-white/80 mt-2">
+                PET Bottles, Jars, Pouches and Bulk Packaging.
+              </p>
+            </div>
+
+            <div className="bg-white/10 rounded-2xl p-6">
+              <Globe className="w-10 h-10 mb-4" />
+              <h3 className="font-black text-xl">Global Export</h3>
+              <p className="text-white/80 mt-2">
+                Worldwide shipping and export documentation support.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <Link
+              href="/contact"
+              className="bg-white text-[#C23B4A] px-8 py-4 rounded-xl font-bold inline-flex items-center gap-2"
+            >
+              Get Quote
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </section>
       </div>
