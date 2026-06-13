@@ -1,28 +1,36 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://thesaltsecrets.com";
-
   return [
     {
-      url: baseUrl,
+      url: "https://thesaltsecrets.com",
       lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 1,
     },
     {
-      url: `${baseUrl}/products`,
+      url: "https://thesaltsecrets.com/about",
       lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
-      url: `${baseUrl}/about`,
+      url: "https://thesaltsecrets.com/products",
       lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
     {
-      url: `${baseUrl}/contact`,
+      url: "https://thesaltsecrets.com/private-label",
       lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
-      url: `${baseUrl}/private-label`,
+      url: "https://thesaltsecrets.com/contact",
       lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
   ];
 }
