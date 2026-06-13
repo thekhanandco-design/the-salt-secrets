@@ -129,7 +129,41 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+{/* OUR STORY */}
 
+<div className="mt-24">
+  <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10 lg:p-14">
+    <div className="max-w-4xl">
+      <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-sm">
+        Our Story
+      </span>
+  <h2 className="text-4xl lg:text-5xl font-black text-[#07142B] mt-4">
+    Built On Trust, Quality
+    <br />
+    And Long-Term Relationships
+  </h2>
+
+  <p className="text-slate-600 text-lg leading-relaxed mt-8">
+    The Salt Secrets was established with a vision to connect
+    international buyers with premium Himalayan Pink Salt products
+    sourced with consistency, quality and care.
+  </p>
+
+  <p className="text-slate-600 text-lg leading-relaxed mt-6">
+    Over the years, we have focused on building reliable sourcing
+    networks, maintaining quality standards and helping importers,
+    wholesalers and private label brands confidently grow their
+    businesses.
+  </p>
+
+  <p className="text-slate-600 text-lg leading-relaxed mt-6">
+    Today, our mission remains simple — provide premium products,
+    dependable service and long-term value for customers around the
+    world.
+  </p>
+</div>
+  </div>
+</div>
         {/* MISSION & VISION */}
         <div className="grid lg:grid-cols-2 gap-8 mt-24">
           <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10">
@@ -160,7 +194,39 @@ export default function AboutPage() {
             </p>
           </div>
         </div>
+{/* EXPORT PROCESS */}
 
+<div className="mt-24">
+  <div className="text-center mb-14">
+    <h2 className="text-4xl lg:text-5xl font-black text-[#07142B]">
+      Our Export Process
+    </h2>
+<p className="text-slate-600 mt-4 max-w-3xl mx-auto">
+  A simple and efficient process designed for international buyers.
+</p>
+  </div>
+
+  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {[
+      ["01", "Inquiry"],
+      ["02", "Quotation"],
+      ["03", "Production"],
+      ["04", "Delivery"],
+    ].map(([num, title]) => (
+      <div
+        key={num}
+        className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center"
+      >
+        <div className="w-14 h-14 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center text-[#C23B4A] font-black text-xl mb-5">
+          {num}
+        </div>
+    <h3 className="font-bold text-xl text-[#07142B]">
+      {title}
+    </h3>
+  </div>
+))}
+  </div>
+</div>
         {/* CTA */}
         <div className="text-center mt-24">
           <h2 className="text-4xl font-black text-[#07142B]">
