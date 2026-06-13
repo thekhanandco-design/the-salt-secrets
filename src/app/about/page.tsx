@@ -1,9 +1,5 @@
 import Link from "next/link";
 import {
-  Globe2,
-  ShieldCheck,
-  Package,
-  Factory,
   Target,
   Eye,
 } from "lucide-react";
@@ -13,15 +9,21 @@ export default function AboutPage() {
     <div className="bg-[#FFF8F5]">
       <div className="max-w-7xl mx-auto px-6 py-24">
         {/* HERO */}
-        <div className="max-w-4xl">
-          <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
-            About The Salt Secrets
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-base">
+            ABOUT US
           </span>
 
-          <h1 className="text-5xl lg:text-7xl font-black mt-4 text-[#07142B] leading-tight">
-            Premium Himalayan
+          <h1
+            className="mt-4 text-[#07142B] font-black leading-[1.05]"
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(2.8rem,4vw,4.5rem)",
+            }}
+          >
+            Purity From The Himalayas,
             <br />
-            Pink Salt Exporter
+            Trust From The World.
           </h1>
 
           <p className="text-lg text-slate-600 mt-8 leading-relaxed">
@@ -38,132 +40,48 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* STATS */}
-        <div className="grid md:grid-cols-3 gap-6 mt-20">
-          <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8 text-center">
-            <h3 className="text-5xl font-black text-[#07142B]">
-              50+
-            </h3>
-
-            <p className="text-slate-500 mt-3">
-              Export Destinations
-            </p>
-          </div>
-
-          <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8 text-center">
-            <h3 className="text-5xl font-black text-[#07142B]">
-              100%
-            </h3>
-
-            <p className="text-slate-500 mt-3">
-              Natural Products
-            </p>
-          </div>
-
-          <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8 text-center">
-            <h3 className="text-5xl font-black text-[#07142B]">
-              OEM
-            </h3>
-
-            <p className="text-slate-500 mt-3">
-              Private Label Support
-            </p>
-          </div>
-        </div>
-
-        {/* WHY US */}
+        {/* OUR STORY */}
         <div className="mt-24">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl lg:text-5xl font-black text-[#07142B]">
-              Why Businesses Choose Us
-            </h2>
-          </div>
+          <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10 lg:p-14">
+            <div className="max-w-4xl mx-auto text-center">
+              <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-sm">
+                Our Story
+              </span>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8">
-              <Factory className="w-8 h-8 text-[#C23B4A] mb-5" />
+              <h2
+                className="mt-4 text-[#07142B] font-black"
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontSize: "clamp(2rem,3vw,3.5rem)",
+                }}
+              >
+                Built On Trust, Quality
+                <br />
+                And Long-Term Relationships
+              </h2>
 
-              <h3 className="font-bold text-xl text-[#07142B]">
-                Manufacturing Network
-              </h3>
-
-              <p className="text-slate-600 mt-3">
-                Reliable production partners and scalable supply capacity.
+              <p className="text-slate-600 text-lg leading-relaxed mt-8">
+                The Salt Secrets was established with a vision to connect
+                international buyers with premium Himalayan Pink Salt
+                products sourced with consistency, quality and care.
               </p>
-            </div>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8">
-              <ShieldCheck className="w-8 h-8 text-[#C23B4A] mb-5" />
-
-              <h3 className="font-bold text-xl text-[#07142B]">
-                Quality Focus
-              </h3>
-
-              <p className="text-slate-600 mt-3">
-                Strict quality standards and export-ready products.
+              <p className="text-slate-600 text-lg leading-relaxed mt-6">
+                Over the years, we have focused on building reliable
+                sourcing networks, maintaining quality standards and
+                helping importers, wholesalers and private label brands
+                confidently grow their businesses.
               </p>
-            </div>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8">
-              <Package className="w-8 h-8 text-[#C23B4A] mb-5" />
-
-              <h3 className="font-bold text-xl text-[#07142B]">
-                Private Label
-              </h3>
-
-              <p className="text-slate-600 mt-3">
-                Flexible packaging and custom branding solutions.
-              </p>
-            </div>
-
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8">
-              <Globe2 className="w-8 h-8 text-[#C23B4A] mb-5" />
-
-              <h3 className="font-bold text-xl text-[#07142B]">
-                Global Reach
-              </h3>
-
-              <p className="text-slate-600 mt-3">
-                Serving importers and distributors worldwide.
+              <p className="text-slate-600 text-lg leading-relaxed mt-6">
+                Today, our mission remains simple — provide premium
+                products, dependable service and long-term value for
+                customers around the world.
               </p>
             </div>
           </div>
         </div>
-{/* OUR STORY */}
 
-<div className="mt-24">
-  <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10 lg:p-14">
-    <div className="max-w-4xl">
-      <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-sm">
-        Our Story
-      </span>
-  <h2 className="text-4xl lg:text-5xl font-black text-[#07142B] mt-4">
-    Built On Trust, Quality
-    <br />
-    And Long-Term Relationships
-  </h2>
-
-  <p className="text-slate-600 text-lg leading-relaxed mt-8">
-    The Salt Secrets was established with a vision to connect
-    international buyers with premium Himalayan Pink Salt products
-    sourced with consistency, quality and care.
-  </p>
-
-  <p className="text-slate-600 text-lg leading-relaxed mt-6">
-    Over the years, we have focused on building reliable sourcing
-    networks, maintaining quality standards and helping importers,
-    wholesalers and private label brands confidently grow their
-    businesses.
-  </p>
-
-  <p className="text-slate-600 text-lg leading-relaxed mt-6">
-    Today, our mission remains simple — provide premium products,
-    dependable service and long-term value for customers around the
-    world.
-  </p>
-</div>
-  </div>
-</div>
         {/* MISSION & VISION */}
         <div className="grid lg:grid-cols-2 gap-8 mt-24">
           <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10">
@@ -194,55 +112,42 @@ export default function AboutPage() {
             </p>
           </div>
         </div>
-{/* EXPORT PROCESS */}
 
-<div className="mt-24">
-  <div className="text-center mb-14">
-    <h2 className="text-4xl lg:text-5xl font-black text-[#07142B]">
-      Our Export Process
-    </h2>
-<p className="text-slate-600 mt-4 max-w-3xl mx-auto">
-  A simple and efficient process designed for international buyers.
-</p>
-  </div>
-
-  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-    {[
-      ["01", "Inquiry"],
-      ["02", "Quotation"],
-      ["03", "Production"],
-      ["04", "Delivery"],
-    ].map(([num, title]) => (
-      <div
-        key={num}
-        className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center"
-      >
-        <div className="w-14 h-14 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center text-[#C23B4A] font-black text-xl mb-5">
-          {num}
-        </div>
-    <h3 className="font-bold text-xl text-[#07142B]">
-      {title}
-    </h3>
-  </div>
-))}
-  </div>
-</div>
         {/* CTA */}
-        <div className="text-center mt-24">
-          <h2 className="text-4xl font-black text-[#07142B]">
-            Ready To Work With Us?
-          </h2>
+        <div className="mt-24">
+          <div className="bg-[#C23B4A] rounded-[32px] p-10 lg:p-14 text-center text-white">
+            <h2
+              className="font-black"
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "clamp(2rem,3vw,3.5rem)",
+              }}
+            >
+              Ready To Work With Us?
+            </h2>
 
-          <p className="text-slate-600 text-lg mt-4">
-            Let's discuss your sourcing and private label requirements.
-          </p>
+            <p className="mt-4 text-white/90 text-lg max-w-2xl mx-auto">
+              Let's discuss your sourcing and private label requirements.
+              Our team is ready to assist you.
+            </p>
 
-          <Link
-            href="/contact"
-            className="inline-flex items-center mt-8 bg-[#C23B4A] text-white px-10 py-4 rounded-xl font-semibold hover:opacity-90 transition"
-          >
-            Contact Us Today
-          </Link>
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <Link
+                href="/contact"
+                className="bg-white text-[#C23B4A] px-8 py-4 rounded-xl font-bold hover:opacity-90 transition"
+              >
+                Get Quote
+              </Link>
+
+              <Link
+                href="https://wa.me/923462771693"
+                target="_blank"
+                className="border border-white text-white px-8 py-4 rounded-xl font-bold hover:bg-white hover:text-[#C23B4A] transition"
+              >
+                WhatsApp Us
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
