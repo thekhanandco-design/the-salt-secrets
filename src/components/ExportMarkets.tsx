@@ -2,75 +2,75 @@ import Image from "next/image";
 
 export default function ExportMarkets() {
   return (
-    <section className="py-16 lg:py-20 bg-white">
-      <div className="max-w-[1900px] mx-auto px-4 lg:px-10">
+    <section className="py-16 bg-white">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
 
-        <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-5 lg:p-6">
+        <div className="text-center mb-10">
+          <h2
+            className="font-black text-[#07142B]"
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(2rem,3vw,3.3rem)",
+            }}
+          >
+            TRUSTED BY BUYERS IN 50+ COUNTRIES
+          </h2>
 
-          <h3 className="text-center font-black tracking-[5px] text-[#07142B] text-[22px] mb-5 uppercase">
-            Trusted By Buyers In 50+ Countries
-          </h3>
+          <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
+        </div>
 
-          <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-center">
+        <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-center">
 
-            {/* MAP */}
-            <div className="relative h-[420px] lg:h-[500px] rounded-[24px] overflow-hidden bg-white">
+          {/* WORLD MAP */}
+          <div className="relative h-[450px] lg:h-[520px] rounded-[28px] border border-[#F1D9DD] overflow-hidden bg-[#FFF8F5]">
+            <Image
+              src="/world-map.png"
+              alt="Global Export Network"
+              fill
+              priority
+              className="object-contain p-8"
+            />
+          </div>
 
-              <Image
-                src="/world-map.png"
-                alt="World Map"
-                fill
-                className="object-cover opacity-70"
-                priority
-              />
+          {/* STATS CARD */}
+          <div className="bg-[#FFF4F5] border border-[#F1D9DD] rounded-[28px] p-8">
 
-            </div>
+            <div className="space-y-6">
 
-            {/* STATS */}
-            <div className="bg-[#FFF8F5] border border-[#EFE3E5] rounded-[24px] p-6 h-fit">
-
-              <div className="space-y-4">
-
-                <div className="flex items-center justify-between border-b border-[#F2E5E7] pb-4">
-                  <h3 className="text-4xl font-black text-[#C23B4A]">
-                    50+
-                  </h3>
-
-                  <span className="text-slate-600">
-                    Export Destinations
-                  </span>
+              <div className="border-b border-[#EFD6DA] pb-5">
+                <div className="text-5xl font-black text-[#C23B4A]">
+                  50+
                 </div>
+                <p className="text-slate-600 mt-2">
+                  Export Destinations
+                </p>
+              </div>
 
-                <div className="flex items-center justify-between border-b border-[#F2E5E7] pb-4">
-                  <h3 className="text-4xl font-black text-[#C23B4A]">
-                    500+
-                  </h3>
-
-                  <span className="text-slate-600">
-                    International Clients
-                  </span>
+              <div className="border-b border-[#EFD6DA] pb-5">
+                <div className="text-5xl font-black text-[#C23B4A]">
+                  500+
                 </div>
+                <p className="text-slate-600 mt-2">
+                  International Buyers
+                </p>
+              </div>
 
-                <div className="flex items-center justify-between border-b border-[#F2E5E7] pb-4">
-                  <h3 className="text-4xl font-black text-[#C23B4A]">
-                    Bulk
-                  </h3>
-
-                  <span className="text-slate-600">
-                    Supply Capability
-                  </span>
+              <div className="border-b border-[#EFD6DA] pb-5">
+                <div className="text-5xl font-black text-[#C23B4A]">
+                  Bulk
                 </div>
+                <p className="text-slate-600 mt-2">
+                  Supply Capability
+                </p>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <h3 className="text-4xl font-black text-[#C23B4A]">
-                    100%
-                  </h3>
-
-                  <span className="text-slate-600">
-                    Export Quality
-                  </span>
+              <div>
+                <div className="text-5xl font-black text-[#C23B4A]">
+                  100%
                 </div>
-
+                <p className="text-slate-600 mt-2">
+                  Export Quality Focused
+                </p>
               </div>
 
             </div>
