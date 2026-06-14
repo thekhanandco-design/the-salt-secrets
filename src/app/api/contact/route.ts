@@ -22,16 +22,21 @@ export async function POST(req: Request) {
       message,
     } = await req.json();
 
-    await supabase.from("inquiries").insert({
-      name,
-      email,
-      company,
-      whatsapp,
-      country,
-      product,
-      quantity,
-      message,
-    });
+    const { data, error } = await supabase
+  .from("inquiries")
+  .insert({
+    name,
+    email,
+    company,
+    whatsapp,
+    country,
+    product,
+    quantity,
+    message,
+  });
+
+console.log("SUPABASE DATA:", data);
+console.log("SUPABASE ERROR:", error);
 
     await resend.emails.send({
       from: "onboarding@resend.dev",
