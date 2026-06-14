@@ -15,7 +15,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center">
             <Image
               src="/logo.png"
-              alt="The Salt Secrets"
+              alt="The Salt Origin"
               width={110}
               height={110}
               priority
@@ -98,7 +98,7 @@ export default function Navbar() {
             <div className="p-6 border-b border-[#F0DDE1] flex items-center justify-between">
               <Image
                 src="/logo.png"
-                alt="The Salt Secrets"
+                alt="The Salt Origin"
                 width={80}
                 height={80}
                 className="h-[55px] w-auto object-contain"

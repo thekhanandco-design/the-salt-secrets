@@ -54,8 +54,8 @@ export async function generateMetadata({
 
   return {
     title: product
-      ? `${product.title} | The Salt Secrets`
-      : "Product | The Salt Secrets",
+      ? `${product.title} | The Salt Origin`
+      : "Product | The Salt Origin",
     description:
       product?.description ||
       "Premium Himalayan Pink Salt exporter supplying global markets.",
@@ -90,7 +90,7 @@ export default async function ProductDetailPage({
     image: `https://thesaltsecrets.com${product.image}`,
     brand: {
       "@type": "Brand",
-      name: "The Salt Secrets",
+      name: "The Salt Origin",
     },
     manufacturer: {
       "@type": "Organization",

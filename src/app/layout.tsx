@@ -16,23 +16,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://thesaltsecrets.com"),
 
-  title: "The Salt Secrets | Premium Himalayan Pink Salt Exporter",
+  title: "The Salt Origin | Premium Himalayan Pink Salt Exporter",
 
   description:
     "Premium Himalayan Pink Salt exporter by Khan & Co. Supplying global markets with private label solutions.",
 
   openGraph: {
-    title: "The Salt Secrets",
+    title: "The Salt Origin",
     description:
       "Premium Himalayan Pink Salt exporter by Khan & Co.",
     url: "https://thesaltsecrets.com",
-    siteName: "The Salt Secrets",
+    siteName: "The Salt Origin",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "The Salt Secrets",
+        alt: "The Salt Origin",
       },
     ],
     locale: "en_US",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "The Salt Secrets",
+    title: "The Salt Origin",
     description:
       "Premium Himalayan Pink Salt exporter by Khan & Co.",
     images: ["/og-image.jpg"],
@@ -79,7 +79,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              name: "The Salt Secrets",
+              name: "The Salt Origin",
               alternateName: "Khan & Co.",
               url: "https://thesaltsecrets.com",
               logo: "https://thesaltsecrets.com/logo.png",

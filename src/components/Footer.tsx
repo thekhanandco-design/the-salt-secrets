@@ -23,14 +23,14 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <Image
                 src="/logo.png"
-                alt="The Salt Secrets"
+                alt="The Salt Origin"
                 width={60}
                 height={60}
               />
 
               <div>
                 <h3 className="text-xl font-black">
-                  The Salt Secrets
+                  The Salt Origin
                 </h3>
 
                 <p className="text-gray-300 text-xs">
@@ -127,7 +127,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-5 pt-4 flex flex-col lg:flex-row items-center justify-between gap-2">
           <p className="text-gray-400 text-xs">
-            © 2026 The Salt Secrets by Khan & Co. All Rights Reserved.
+            © 2026 The Salt Origin by Khan & Co. All Rights Reserved.
           </p>
 
           <p className="text-gray-400 text-xs">

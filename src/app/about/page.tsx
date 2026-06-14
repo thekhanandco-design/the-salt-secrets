@@ -27,7 +27,7 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-lg text-slate-600 mt-8 leading-relaxed">
-            The Salt Secrets specializes in supplying premium Himalayan
+            The Salt Origin specializes in supplying premium Himalayan
             Pink Salt products to importers, distributors, wholesalers,
             supermarkets and private label brands across international
             markets.
@@ -61,7 +61,7 @@ export default function AboutPage() {
               </h2>
 
               <p className="text-slate-600 text-lg leading-relaxed mt-8">
-                The Salt Secrets was established with a vision to connect
+                The Salt Origin was established with a vision to connect
                 international buyers with premium Himalayan Pink Salt
                 products sourced with consistency, quality and care.
               </p>
