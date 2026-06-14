@@ -1,55 +1,108 @@
 import Link from "next/link";
 import {
+  Box,
+  Clock,
+  FileText,
+  Globe2,
   Mail,
-  Phone,
   MapPin,
   MessageCircle,
+  Package,
+  Phone,
+  Send,
+  Tags,
 } from "lucide-react";
 
 import ContactForm from "@/components/ContactForm";
 
+const helpItems = [
+  {
+    icon: Tags,
+    title: "Private Label Development",
+    text: "Custom branding and packaging solutions.",
+  },
+  {
+    icon: Box,
+    title: "Bulk Orders",
+    text: "Competitive pricing for bulk quantity orders.",
+  },
+  {
+    icon: FileText,
+    title: "Product Specifications",
+    text: "Detailed product information and data.",
+  },
+  {
+    icon: Globe2,
+    title: "Export Documentation",
+    text: "All necessary export documents support.",
+  },
+  {
+    icon: Package,
+    title: "Sample Requests",
+    text: "Product samples available on request.",
+  },
+  {
+    icon: Package,
+    title: "Packaging Options",
+    text: "Wide range of packaging solutions available.",
+  },
+];
+
 export default function ContactPage() {
   return (
-    <div className="bg-white">
+    <main className="bg-white text-[#081325]">
       {/* HERO */}
-      <section className="bg-gradient-to-b from-[#FFF4F5] to-white border-b border-[#F3E5E7]">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 py-14 lg:py-16">
-          <div className="text-center">
-            <span className="uppercase tracking-[12px] text-[#C23B4A] font-black text-3xl lg:text-4xl">
-              CONTACT US
-            </span>
+      <section className="relative overflow-hidden bg-gradient-to-r from-[#FFF0F2] via-[#FFF6F7] to-white">
+        <div
+          className="absolute inset-y-0 right-0 w-full lg:w-[65%] bg-right bg-no-repeat bg-contain opacity-40"
+          style={{
+            backgroundImage: "url('/mountains-bg.png')",
+          }}
+        />
+
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 py-20 lg:py-28">
+          <div className="max-w-xl">
+            <div className="flex items-center gap-4">
+              <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-sm">
+                Get In Touch
+              </span>
+              <span className="w-12 h-[2px] bg-[#C23B4A]" />
+            </div>
 
             <h1
-              className="mt-4 text-[#07142B] font-black leading-tight"
+              className="text-[#081325] font-black leading-tight mt-6"
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "clamp(2.1rem,3vw,3.2rem)",
+                fontSize: "clamp(2.4rem,4vw,4.5rem)",
               }}
             >
-              Let&apos;s Discuss Your
+              Let&apos;s Discuss
               <br />
-              Pink Salt Requirements
+              Your Requirements
             </h1>
 
-            <p className="max-w-3xl mx-auto text-slate-600 mt-5 text-base lg:text-lg leading-relaxed">
-              Whether you need private label packaging, bulk supply,
-              retail-ready products or export solutions, our team is
-              ready to assist.
+            <div className="w-20 h-[3px] bg-[#C23B4A] mt-6" />
+
+            <p className="text-slate-700 mt-6 leading-relaxed text-lg">
+              Whether you&apos;re looking for private label solutions, bulk
+              supply or product information, our team is ready to assist.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4 mt-7">
+            <div className="flex flex-wrap gap-4 mt-8">
               <Link
                 href="#contact-form"
-                className="bg-[#C23B4A] text-white px-10 py-4 rounded-xl font-bold hover:opacity-90 transition"
+                className="inline-flex items-center gap-3 bg-[#C23B4A] text-white px-8 py-4 rounded-md font-black hover:opacity-90 transition"
               >
-                Get a Quote →
+                <Send className="w-5 h-5" />
+                Request Quote
               </Link>
 
               <Link
                 href="https://wa.me/923462771693"
                 target="_blank"
-                className="bg-white border border-[#E8C9CF] text-[#07142B] px-10 py-4 rounded-xl font-bold hover:bg-[#FFF8F5] transition"
+                className="inline-flex items-center gap-3 bg-white border border-[#C23B4A] text-[#C23B4A] px-8 py-4 rounded-md font-black hover:bg-[#FFF4F5] transition"
               >
+                <MessageCircle className="w-5 h-5" />
                 WhatsApp Us
               </Link>
             </div>
@@ -57,114 +110,123 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* CONTACT CARDS */}
-      <section className="py-8 bg-white">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
-                <MapPin className="w-8 h-8 text-[#C23B4A]" />
-              </div>
-
-              <h3
-                className="font-bold text-[#07142B]"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "1.5rem",
-                }}
-              >
-                Office
-              </h3>
-
-              <p className="text-slate-600 mt-2">
-                Pakistan
-              </p>
+      {/* CONTACT INFO STRIP */}
+      <section className="max-w-[1400px] mx-auto px-6 lg:px-12 -mt-4 relative z-20">
+        <div className="bg-white border border-[#F1D9DD] rounded-[18px] shadow-[0_18px_45px_rgba(194,59,74,0.10)] grid md:grid-cols-2 lg:grid-cols-4">
+          <div className="p-8 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <MapPin className="w-8 h-8 text-[#C23B4A]" />
             </div>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
-                <Mail className="w-8 h-8 text-[#C23B4A]" />
-              </div>
+            <h3 className="font-black mt-5">Our Location</h3>
+            <p className="text-slate-600 mt-3 leading-relaxed">
+              Pakistan
+            </p>
+          </div>
 
-              <h3
-                className="font-bold text-[#07142B]"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "1.5rem",
-                }}
-              >
-                Email
-              </h3>
-
-              <p className="text-slate-600 mt-2 break-all">
-                thekhanandco@gmail.com
-              </p>
+          <div className="p-8 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Phone className="w-8 h-8 text-[#C23B4A]" />
             </div>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
-                <Phone className="w-8 h-8 text-[#C23B4A]" />
-              </div>
+            <h3 className="font-black mt-5">Phone / WhatsApp</h3>
+            <p className="text-slate-600 mt-3 leading-relaxed">
+              +92 346 2771693
+            </p>
+          </div>
 
-              <h3
-                className="font-bold text-[#07142B]"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "1.5rem",
-                }}
-              >
-                Phone
-              </h3>
-
-              <p className="text-slate-600 mt-2">
-                +92 346 2771693
-              </p>
+          <div className="p-8 text-center border-b md:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Mail className="w-8 h-8 text-[#C23B4A]" />
             </div>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-8 text-center shadow-sm">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center mb-5">
-                <MessageCircle className="w-8 h-8 text-[#C23B4A]" />
-              </div>
+            <h3 className="font-black mt-5">Email Address</h3>
+            <p className="text-slate-600 mt-3 leading-relaxed break-all">
+              thekhanandco@gmail.com
+            </p>
+          </div>
 
-              <h3
-                className="font-bold text-[#07142B]"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "1.5rem",
-                }}
-              >
-                WhatsApp
-              </h3>
-
-              <p className="text-slate-600 mt-2">
-                Chat With Sales Team
-              </p>
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Clock className="w-8 h-8 text-[#C23B4A]" />
             </div>
+
+            <h3 className="font-black mt-5">Business Hours</h3>
+            <p className="text-slate-600 mt-3 leading-relaxed">
+              Mon - Sat: 09:00 AM - 06:00 PM
+              <br />
+              Sunday: Closed
+            </p>
           </div>
         </div>
       </section>
 
       {/* FORM */}
-      <section
-        id="contact-form"
-        className="pb-6"
-      >
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
-          <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-8 lg:p-12 shadow-sm">
+      <section id="contact-form" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-10">
+        <div className="bg-white border border-[#F1D9DD] rounded-[22px] p-6 lg:p-12 shadow-[0_18px_45px_rgba(194,59,74,0.08)]">
+          <div className="text-center mb-9">
             <h2
-              className="text-center font-bold text-[#07142B] mb-8"
+              className="font-black text-[#081325]"
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "clamp(1.8rem,2vw,2.5rem)",
+                fontSize: "clamp(2rem,3vw,3rem)",
               }}
             >
               Send Us A Message
             </h2>
 
-            <ContactForm />
+            <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-4" />
+
+            <p className="text-slate-600 mt-5">
+              Fill out the form below and our team will get back to you promptly.
+            </p>
+          </div>
+
+          <ContactForm />
+        </div>
+      </section>
+
+      {/* HELP SECTION */}
+      <section className="bg-gradient-to-b from-white to-[#FFF0F2] py-12">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div className="flex items-center justify-center gap-4 mb-10">
+            <span className="w-12 h-[2px] bg-[#D9909A]" />
+            <h2 className="uppercase tracking-[5px] text-[#C23B4A] font-black text-lg text-center">
+              How We Can Help You
+            </h2>
+            <span className="w-12 h-[2px] bg-[#D9909A]" />
+          </div>
+
+          <div className="grid md:grid-cols-3 lg:grid-cols-6">
+            {helpItems.map((item, index) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.title}
+                  className={`p-6 text-center ${
+                    index !== helpItems.length - 1
+                      ? "lg:border-r border-[#F1C8CF]"
+                      : ""
+                  }`}
+                >
+                  <div className="w-16 h-16 mx-auto rounded-full bg-[#FFE8EC] border border-[#F1C8CF] flex items-center justify-center">
+                    <Icon className="w-8 h-8 text-[#C23B4A]" />
+                  </div>
+
+                  <h3 className="font-black text-[#081325] mt-5 leading-tight">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-slate-600 text-sm mt-3 leading-relaxed">
+                    {item.text}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

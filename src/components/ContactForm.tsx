@@ -1,14 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Building2,
+  Lock,
+  Mail,
+  MessageSquare,
+  Phone,
+  Send,
+  Tag,
+  User,
+} from "lucide-react";
 
 export default function ContactForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setLoading(true);
@@ -42,96 +50,118 @@ export default function ContactForm() {
     }
   }
 
+  const inputClass =
+    "h-14 w-full rounded-md border border-[#F1C8CF] bg-white px-12 text-[#081325] outline-none transition placeholder:text-slate-500 focus:border-[#C23B4A]";
+
   return (
     <>
       {success && (
-        <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6 text-center">
+        <div className="mb-6 rounded-md bg-green-100 p-4 text-center font-semibold text-green-700">
           Inquiry sent successfully.
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
-        <div className="grid md:grid-cols-2 gap-4">
-          <input
-            name="name"
-            placeholder="Full Name"
-            required
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-          />
+      <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto">
+        <div className="grid md:grid-cols-2 gap-5">
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              name="name"
+              placeholder="Full Name *"
+              required
+              className={inputClass}
+            />
+          </div>
 
-          <input
-            name="company"
-            placeholder="Company Name"
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-          />
+          <div className="relative">
+            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              name="company"
+              placeholder="Company Name"
+              className={inputClass}
+            />
+          </div>
+
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email Address *"
+              required
+              className={inputClass}
+            />
+          </div>
+
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              name="whatsapp"
+              placeholder="Phone / WhatsApp *"
+              required
+              className={inputClass}
+            />
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <input
-            name="email"
-            type="email"
-            placeholder="Email Address"
-            required
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-          />
+        <div className="grid md:grid-cols-3 gap-5 mt-5">
+          <div className="relative">
+            <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <select name="product" className={inputClass}>
+              <option>Product Interest *</option>
+              <option>Private Label</option>
+              <option>PET Bottles</option>
+              <option>PET Jars</option>
+              <option>Grinder Bottles</option>
+              <option>Stand-Up Pouches</option>
+              <option>Bulk Salt Supply</option>
+            </select>
+          </div>
 
-          <input
-            name="whatsapp"
-            placeholder="Phone Number"
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-          />
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4">
           <input
             name="country"
             placeholder="Country"
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+            className="h-14 w-full rounded-md border border-[#F1C8CF] bg-white px-5 text-[#081325] outline-none transition placeholder:text-slate-500 focus:border-[#C23B4A]"
           />
 
           <select
-            name="product"
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-          >
-            <option>Product Interest</option>
-            <option>Salt Grinder</option>
-            <option>Pink Salt Jar</option>
-            <option>Salt Shaker</option>
-            <option>Rock Salt Chunks</option>
-            <option>Private Label</option>
-          </select>
-
-          <select
             name="quantity"
-            className="h-14 px-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
+            className="h-14 w-full rounded-md border border-[#F1C8CF] bg-white px-5 text-[#081325] outline-none transition focus:border-[#C23B4A]"
           >
-            <option>Quantity Required</option>
-            <option>100 KG - 500 KG</option>
-            <option>500 KG - 1 Ton</option>
-            <option>1 Ton - 5 Tons</option>
+            <option>Estimated Quantity</option>
+            <option>6000 PCS</option>
+            <option>10,000 PCS</option>
+            <option>25,000 PCS</option>
+            <option>50,000 PCS+</option>
+            <option>1 Ton+</option>
             <option>5 Tons+</option>
           </select>
         </div>
 
-        <textarea
-          name="message"
-          rows={5}
-          placeholder="Message"
-          className="w-full p-5 border border-[#E5E7EB] rounded-xl outline-none focus:border-[#C23B4A]"
-        />
-
-        <div className="text-center pt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-[#C23B4A] text-white px-14 py-4 rounded-xl font-bold text-lg hover:opacity-90 transition"
-          >
-            {loading ? "Sending..." : "Request Quotation →"}
-          </button>
+        <div className="relative mt-5">
+          <MessageSquare className="absolute left-4 top-5 w-5 h-5 text-slate-400" />
+          <textarea
+            name="message"
+            rows={6}
+            placeholder="Your Message *"
+            required
+            className="w-full rounded-md border border-[#F1C8CF] bg-white p-5 pl-12 text-[#081325] outline-none transition placeholder:text-slate-500 focus:border-[#C23B4A]"
+          />
         </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-5 flex w-full items-center justify-center gap-3 rounded-md bg-[#C23B4A] px-8 py-4 font-black text-white shadow-[0_15px_35px_rgba(194,59,74,0.22)] transition hover:opacity-90 disabled:opacity-60"
+        >
+          <Send className="w-5 h-5" />
+          {loading ? "Sending..." : "Send Inquiry"}
+        </button>
+
+        <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
+          <Lock className="w-4 h-4" />
+          Your information is safe with us. We never share your details.
+        </p>
       </form>
     </>
   );
