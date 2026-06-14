@@ -1,88 +1,89 @@
 import {
-  Factory,
-  Globe2,
-  Tags,
   ShieldCheck,
-  Truck,
   Package,
+  Globe2,
+  Award,
+  Users,
+  Boxes,
 } from "lucide-react";
 
 const features = [
   {
-    icon: Factory,
-    title: "Direct From Source",
-    desc: "Reliable sourcing and competitive pricing from the origin.",
-  },
-  {
-    icon: Globe2,
-    title: "Global Export Network",
-    desc: "Serving importers, distributors and wholesalers worldwide.",
-  },
-  {
-    icon: Tags,
-    title: "Private Label Solutions",
-    desc: "Custom packaging and branding tailored to your business.",
-  },
-  {
     icon: ShieldCheck,
-    title: "Food Grade Quality",
-    desc: "Strict quality standards for premium Himalayan Pink Salt.",
+    title: "Reliable Supply",
+    desc: "On-time delivery with stable production capacity.",
   },
   {
-    icon: Truck,
-    title: "Consistent Supply Chain",
-    desc: "Stable production and dependable delivery schedules.",
+    icon: Boxes,
+    title: "Flexible MOQ",
+    desc: "Low minimum order quantity to support your business.",
   },
   {
     icon: Package,
-    title: "Bulk Supply Capacity",
-    desc: "Scalable volumes for distributors and retail partners.",
+    title: "Custom Packaging",
+    desc: "Wide range of packaging options tailored to your market.",
+  },
+  {
+    icon: Globe2,
+    title: "Export Support",
+    desc: "Complete documentation and export assistance provided.",
+  },
+  {
+    icon: Award,
+    title: "Quality Focused",
+    desc: "Strict quality control ensuring 100% pure Himalayan salt.",
+  },
+  {
+    icon: Users,
+    title: "Global Reach",
+    desc: "Serving clients in 50+ countries across the world.",
   },
 ];
 
 export default function WhyChooseUs() {
   return (
-    <section className="py-14 lg:py-16 bg-[#FFF8F5]">
+    <section className="py-16 bg-white">
       <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
 
-        {/* HEADER */}
-        <div className="text-center mb-10">
-
-          <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
-            Why Choose Us
-          </span>
-
-          <h2 className="text-3xl lg:text-4xl font-black mt-3 text-[#07142B]">
-            Your Trusted Export Partner
+        {/* HEADING */}
+        <div className="text-center mb-12">
+          <h2
+            className="font-black text-[#07142B]"
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(2rem,3vw,3.3rem)",
+            }}
+          >
+            WHY CHOOSE US
           </h2>
 
-          <p className="max-w-3xl mx-auto text-slate-600 mt-3 text-base">
-            Delivering premium Himalayan Pink Salt products with dependable
-            sourcing, private label expertise and global export support.
-          </p>
-
+          <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
         </div>
 
-        {/* CARDS */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* FEATURES */}
+        <div className="grid md:grid-cols-3 lg:grid-cols-6">
 
-          {features.map((item) => {
+          {features.map((item, index) => {
             const Icon = item.icon;
 
             return (
               <div
                 key={item.title}
-                className="group bg-white border border-[#EFE3E5] rounded-[20px] p-5 hover:shadow-[0_10px_25px_rgba(194,59,74,0.06)] transition-all duration-300"
+                className={`text-center px-5 py-4 ${
+                  index !== features.length - 1
+                    ? "lg:border-r border-[#F1D9DD]"
+                    : ""
+                }`}
               >
-                <div className="w-10 h-10 rounded-lg bg-[#FFF4F5] flex items-center justify-center mb-3">
-                  <Icon className="w-5 h-5 text-[#C23B4A]" />
+                <div className="w-20 h-20 mx-auto rounded-full bg-[#FFF4F5] flex items-center justify-center">
+                  <Icon className="w-9 h-9 text-[#C23B4A]" />
                 </div>
 
-                <h3 className="text-lg font-bold text-[#07142B]">
+                <h3 className="font-black text-[#07142B] mt-5 text-lg">
                   {item.title}
                 </h3>
 
-                <p className="text-slate-600 mt-2 text-sm leading-relaxed">
+                <p className="text-slate-600 text-sm mt-3 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -90,7 +91,6 @@ export default function WhyChooseUs() {
           })}
 
         </div>
-
       </div>
     </section>
   );
