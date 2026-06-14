@@ -11,49 +11,54 @@ const certifications = [
 
 export default function Certifications() {
   return (
-    <section className="py-16 lg:py-20 bg-[#FFF8F5]">
+    <section className="py-16 bg-[#FFF8F5]">
       <div className="max-w-[1700px] mx-auto px-6 lg:px-16">
 
-        {/* HEADER */}
+        {/* HEADING */}
         <div className="text-center mb-12">
-
-          <span className="uppercase tracking-[7px] text-[#C23B4A] font-black text-lg">
-            Certified Manufacturing
-          </span>
-
-          {/* SMLHDNG */}
-          <h2 className="text-3xl lg:text-5xl font-black mt-3 text-[#07142B]">
-            Certified Facility Standards
+          <h2
+            className="font-black text-[#07142B]"
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(2rem,3vw,3.3rem)",
+            }}
+          >
+            QUALITY STANDARDS
           </h2>
 
-          <p className="max-w-3xl mx-auto text-slate-600 mt-4 text-base lg:text-lg">
-            Manufactured and packed in compliance with recognized food
-            safety, quality assurance and export standards for
-            international markets.
-          </p>
+          <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
 
+          <p className="max-w-3xl mx-auto text-slate-600 mt-5">
+            Manufactured according to internationally recognized food safety
+            and quality standards for global export markets.
+          </p>
         </div>
 
-        {/* CERTIFICATE LOGOS */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+        {/* CERTIFICATIONS */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
 
           {certifications.map((cert, index) => (
             <div
               key={index}
-              className="bg-white border border-[#EFE3E5] rounded-[24px] h-[150px] flex items-center justify-center p-6 hover:shadow-[0_12px_35px_rgba(194,59,74,0.08)] transition-all duration-300"
+              className={`flex flex-col items-center justify-center py-6 px-4 ${
+                index !== certifications.length - 1
+                  ? "lg:border-r border-[#EFD6DA]"
+                  : ""
+              }`}
             >
-              <Image
-                src={cert}
-                alt="Certification"
-                width={120}
-                height={120}
-                className="max-w-full max-h-[80px] object-contain"
-              />
+              <div className="w-28 h-28 rounded-full bg-white border border-[#F1D9DD] flex items-center justify-center shadow-sm">
+                <Image
+                  src={cert}
+                  alt="Certification"
+                  width={90}
+                  height={90}
+                  className="max-w-[70px] max-h-[70px] object-contain"
+                />
+              </div>
             </div>
           ))}
 
         </div>
-
       </div>
     </section>
   );
