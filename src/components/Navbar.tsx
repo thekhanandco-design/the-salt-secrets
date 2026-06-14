@@ -51,7 +51,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/#certifications"
+               href="/certifications"
               className="hover:text-[#C54B5B] transition"
             >
               Certifications
@@ -147,7 +147,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/#certifications"
+                href="/certifications"
                 onClick={() => setIsOpen(false)}
                 className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
               >
