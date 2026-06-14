@@ -105,18 +105,46 @@ export default function ContactForm() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-5 mt-5">
-          <div className="relative">
-            <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <select name="product" className={inputClass}>
-              <option>Product Interest *</option>
-              <option>Private Label</option>
-              <option>PET Bottles</option>
-              <option>PET Jars</option>
-              <option>Grinder Bottles</option>
-              <option>Stand-Up Pouches</option>
-              <option>Bulk Salt Supply</option>
-            </select>
-          </div>
+          <div className="rounded-md border border-[#F1C8CF] bg-white p-4">
+  <div className="flex items-center gap-2 mb-3">
+    <Tag className="w-5 h-5 text-slate-400" />
+    <span className="font-semibold text-[#081325]">
+      Product Interest *
+    </span>
+  </div>
+
+  <div className="grid grid-cols-2 gap-3 text-sm">
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="Private Label" />
+      Private Label
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="PET Bottles" />
+      PET Bottles
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="PET Jars" />
+      PET Jars
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="Grinder Bottles" />
+      Grinder Bottles
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="Stand-Up Pouches" />
+      Stand-Up Pouches
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" name="product" value="Bulk Salt Supply" />
+      Bulk Salt Supply
+    </label>
+  </div>
+</div>
 
           <input
             name="country"
