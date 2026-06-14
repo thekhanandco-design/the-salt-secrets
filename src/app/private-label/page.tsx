@@ -26,8 +26,18 @@ const packagingOptions = [
   { image: "/standup-pouch.png", title: "STAND-UP POUCHES", sizes: "250g, 500g, 1kg, 2kg, 5kg" },
 ];
 
-const receiveItemsLeft = ["Product Manufacturing", "Custom Labels", "Packaging Design", "Export Documentation"];
-const receiveItemsRight = ["Quality Inspection", "Worldwide Shipping", "Private Label Support"];
+const receiveItemsLeft = [
+  "Private Label Manufacturing",
+  "Custom Label Design",
+  "Custom Packaging",
+  "Export Documentation",
+];
+
+const receiveItemsRight = [
+  "Quality Control",
+  "Worldwide Delivery",
+  "Dedicated Account Support",
+];
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +45,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       <span className="hidden sm:block w-14 h-[2px] bg-[#D9909A]" />
       <h2
         className="text-center text-[#081325] font-black uppercase leading-tight"
-        style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.8rem,3vw,2.8rem)" }}
+        style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.8rem,2.8vw,3rem)" }}
       >
         {children}
       </h2>
@@ -100,13 +110,13 @@ export default function PrivateLabelPage() {
         <div className="max-w-[1400px] mx-auto px-6 pt-20 pb-10 text-center">
           <div className="flex items-center justify-center gap-4">
             <span className="hidden sm:block w-16 h-[2px] bg-[#D9909A]" />
-            <span className="uppercase tracking-[5px] text-[#C23B4A] font-black text-sm">Private Label Manufacturer</span>
+            <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-lg lg:text-xl">Private Label Manufacturer</span>
             <span className="hidden sm:block w-16 h-[2px] bg-[#D9909A]" />
           </div>
 
           <h1
             className="mt-6 text-[#081325] font-black leading-[0.95]"
-            style={{ fontFamily: "Georgia, serif", fontSize: "clamp(3rem,6vw,6.8rem)" }}
+            style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.4rem,4.2vw,4.8rem)" }}
           >
             Launch Your Own
             <br />
@@ -208,14 +218,14 @@ export default function PrivateLabelPage() {
               <div className="bg-white border border-[#F1D9DD] rounded-[18px] p-7 text-center shadow-sm">
                 <Box className="w-10 h-10 text-[#C23B4A] mx-auto" />
                 <p className="font-black uppercase text-sm mt-3">MOQ</p>
-                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>1200</div>
+                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>6000</div>
                 <p className="font-black">PCS</p>
                 <p className="text-slate-600 text-sm mt-2">Minimum order quantity for private label.</p>
               </div>
               <div className="bg-white border border-[#F1D9DD] rounded-[18px] p-7 text-center shadow-sm">
                 <Clock3 className="w-10 h-10 text-[#C23B4A] mx-auto" />
                 <p className="font-black uppercase text-sm mt-3">Lead Time</p>
-                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>15-30</div>
+                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>45-60</div>
                 <p className="font-black">DAYS</p>
                 <p className="text-slate-600 text-sm mt-2">Production time after design approval.</p>
               </div>
