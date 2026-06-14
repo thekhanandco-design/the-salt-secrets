@@ -60,7 +60,7 @@ export default function ContactPage() {
           }}
         />
 
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 py-20 lg:py-28">
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 py-10 lg:py-14">
           <div className="max-w-xl">
             <div className="flex items-center gap-4">
               <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-sm">
@@ -73,7 +73,7 @@ export default function ContactPage() {
               className="text-[#081325] font-black leading-tight mt-6"
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "clamp(2.4rem,4vw,4.5rem)",
+                fontSize: "clamp(2rem,3.2vw,3.4rem)",
               }}
             >
               Let&apos;s Discuss
@@ -113,9 +113,9 @@ export default function ContactPage() {
       {/* CONTACT INFO STRIP */}
       <section className="max-w-[1400px] mx-auto px-6 lg:px-12 -mt-4 relative z-20">
         <div className="bg-white border border-[#F1D9DD] rounded-[18px] shadow-[0_18px_45px_rgba(194,59,74,0.10)] grid md:grid-cols-2 lg:grid-cols-4">
-          <div className="p-8 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-[#C23B4A]" />
+          <div className="p-5 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-[#C23B4A]" />
             </div>
 
             <h3 className="font-black mt-5">Our Location</h3>
@@ -124,9 +124,9 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="p-8 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
-              <Phone className="w-8 h-8 text-[#C23B4A]" />
+          <div className="p-5 text-center border-b lg:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Phone className="w-6 h-6 text-[#C23B4A]" />
             </div>
 
             <h3 className="font-black mt-5">Phone / WhatsApp</h3>
@@ -135,9 +135,9 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="p-8 text-center border-b md:border-b-0 lg:border-r border-[#F1D9DD]">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
-              <Mail className="w-8 h-8 text-[#C23B4A]" />
+          <div className="p-5 text-center border-b md:border-b-0 lg:border-r border-[#F1D9DD]">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Mail className="w-6 h-6 text-[#C23B4A]" />
             </div>
 
             <h3 className="font-black mt-5">Email Address</h3>
@@ -146,9 +146,9 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
-              <Clock className="w-8 h-8 text-[#C23B4A]" />
+          <div className="p-5 text-center">
+            <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF0F2] border border-[#F1C8CF] flex items-center justify-center">
+              <Clock className="w-6 h-6 text-[#C23B4A]" />
             </div>
 
             <h3 className="font-black mt-5">Business Hours</h3>
@@ -210,8 +210,8 @@ export default function ContactPage() {
                       : ""
                   }`}
                 >
-                  <div className="w-16 h-16 mx-auto rounded-full bg-[#FFE8EC] border border-[#F1C8CF] flex items-center justify-center">
-                    <Icon className="w-8 h-8 text-[#C23B4A]" />
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[#FFE8EC] border border-[#F1C8CF] flex items-center justify-center">
+                    <Icon className="w-6 h-6 text-[#C23B4A]" />
                   </div>
 
                   <h3 className="font-black text-[#081325] mt-5 leading-tight">
