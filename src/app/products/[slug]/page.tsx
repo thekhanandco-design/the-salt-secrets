@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { notFound } from "next/navigation";
+import React from "react";
 import { ArrowRight, CheckCircle2, Globe2, Package, ShieldCheck, Tag } from "lucide-react";
 
 import ProductInquiryForm from "@/components/ProductInquiryForm";
@@ -191,19 +192,30 @@ export default async function ProductDetailPage({
                 </Link>
               </div>
             </div>
-          </section>
-            <TrustCard
-              icon={<Package className="w-10 h-10 text-[#C23B4A]" />}
-              title="Bulk"
-              subtitle="Export Supply"
-            />
+         </section>
 
-            <TrustCard
-              icon={<ShieldCheck className="w-10 h-10 text-[#C23B4A]" />}
-              title="100%"
-              subtitle="Natural Salt"
-            />
-          </section>
+{/* TRUST */}
+<section className="grid md:grid-cols-3 gap-6 mt-12">
+
+  <TrustCard
+    icon={<CheckCircle2 className="w-10 h-10 text-[#C23B4A]" />}
+    title="OEM"
+    subtitle="Private Label Support"
+  />
+
+  <TrustCard
+    icon={<Package className="w-10 h-10 text-[#C23B4A]" />}
+    title="Bulk"
+    subtitle="Export Supply"
+  />
+
+  <TrustCard
+    icon={<ShieldCheck className="w-10 h-10 text-[#C23B4A]" />}
+    title="100%"
+    subtitle="Natural Salt"
+  />
+
+</section>
 
           {/* WHY BUY FROM US */}
           <section className="mt-14 bg-white border border-[#EFE3E5] rounded-[30px] p-8 lg:p-10">

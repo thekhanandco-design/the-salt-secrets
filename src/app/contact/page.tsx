@@ -131,7 +131,7 @@ export default function ContactPage() {
 
             <h3 className="font-black mt-5">Phone / WhatsApp</h3>
             <p className="text-slate-600 mt-3 leading-relaxed">
-              +92 346 2771693
+              +92 331 1281289
             </p>
           </div>
 
@@ -204,7 +204,7 @@ export default function ContactPage() {
               return (
                 <div
                   key={item.title}
-                  className={`p-6 text-center ${
+                  className={`p-4 text-center ${
                     index !== helpItems.length - 1
                       ? "lg:border-r border-[#F1C8CF]"
                       : ""
