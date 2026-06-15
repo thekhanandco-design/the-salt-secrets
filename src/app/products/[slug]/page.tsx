@@ -2,47 +2,39 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
+import { notFound } from "next/navigation";
+import { ArrowRight, CheckCircle2, Globe2, Package, ShieldCheck, Tag } from "lucide-react";
 
 import ProductInquiryForm from "@/components/ProductInquiryForm";
+import { supabase } from "@/lib/supabase";
 
-const products = {
-  "coarse-grain-salt": {
-    title: "Coarse Grain Salt",
-    image: "/product-1.jpg",
-    description:
-      "Premium food-grade coarse Himalayan Pink Salt suitable for retail, food service and wholesale distribution.",
-  },
-  "fine-salt": {
-    title: "Fine Salt",
-    image: "/product-2.png",
-    description:
-      "Finely ground Himalayan Pink Salt ideal for cooking, seasoning and retail packaging.",
-  },
-  "salt-grinder": {
-    title: "Salt Grinder",
-    image: "/product-3.png",
-    description:
-      "Premium grinder packaging designed for supermarkets, retailers and private label brands.",
-  },
-  "salt-shaker": {
-    title: "Salt Shaker",
-    image: "/product-4.png",
-    description:
-      "Convenient shaker packaging for household and retail markets.",
-  },
-  "bulk-salt": {
-    title: "Bulk Salt",
-    image: "/product-1.jpg",
-    description:
-      "Bulk Himalayan Pink Salt for food processing, wholesale distribution and industrial buyers.",
-  },
-  "private-label": {
-    title: "Private Label Solutions",
-    image: "/product-5.png",
-    description:
-      "Custom branding, packaging and export-ready private label salt solutions.",
-  },
+type Product = {
+  id: number;
+  created_at: string;
+  title: string;
+  slug: string;
+  category: string | null;
+  description: string | null;
+  image: string | null;
+  moq: string | null;
+  packaging: string | null;
+  status: string | null;
 };
+
+async function getProduct(slug: string): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "active")
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as Product;
+}
 
 export async function generateMetadata({
   params,
@@ -50,15 +42,28 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = products[slug as keyof typeof products];
+  const product = await getProduct(slug);
+
+  if (!product) {
+    return {
+      title: "Product Not Found | The Salt Origin",
+      description:
+        "Premium Himalayan Pink Salt exporter supplying global markets.",
+    };
+  }
 
   return {
-    title: product
-      ? `${product.title} | The Salt Origin`
-      : "Product | The Salt Origin",
+    title: `${product.title} | The Salt Origin`,
     description:
-      product?.description ||
-      "Premium Himalayan Pink Salt exporter supplying global markets.",
+      product.description ||
+      "Premium Himalayan Pink Salt products for private label, retail packaging, bulk supply and global export markets.",
+    openGraph: {
+      title: `${product.title} | The Salt Origin`,
+      description:
+        product.description ||
+        "Premium Himalayan Pink Salt products for global buyers.",
+      images: product.image ? [product.image] : [],
+    },
   };
 }
 
@@ -68,26 +73,23 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = products[slug as keyof typeof products];
+  const product = await getProduct(slug);
 
   if (!product) {
-    return (
-      <div className="bg-[#FFF8F5]">
-        <div className="max-w-7xl mx-auto px-6 py-24">
-          <h1 className="text-5xl font-black text-[#07142B]">
-            Product Not Found
-          </h1>
-        </div>
-      </div>
-    );
+    notFound();
   }
+
+  const productImage = product.image || "/product-2.png";
+  const productDescription =
+    product.description ||
+    "Premium Himalayan Pink Salt product available for private label, retail packaging, bulk supply and global export markets.";
 
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description,
-    image: `https://thesaltsecrets.com${product.image}`,
+    description: productDescription,
+    image: productImage,
     brand: {
       "@type": "Brand",
       name: "The Salt Origin",
@@ -96,7 +98,7 @@ export default async function ProductDetailPage({
       "@type": "Organization",
       name: "Khan & Co.",
     },
-    category: "Himalayan Pink Salt",
+    category: product.category || "Himalayan Pink Salt",
     countryOfOrigin: "Pakistan",
     offers: {
       "@type": "Offer",
@@ -116,160 +118,225 @@ export default async function ProductDetailPage({
         }}
       />
 
-      <div className="bg-[#FFF8F5]">
-        <div className="max-w-7xl mx-auto px-6 py-24">
+      <main className="bg-[#FFF8F5]">
+        <div className="max-w-[1500px] mx-auto px-5 lg:px-12 py-14 lg:py-20">
           {/* HERO */}
-          <div className="grid lg:grid-cols-2 gap-14 items-center">
-            <div className="bg-white border border-[#EFE3E5] rounded-[36px] p-8">
-              <Image
-                src={product.image}
-                alt={product.title}
-                width={900}
-                height={900}
-                priority
-                className="w-full h-[520px] object-contain"
-              />
+          <section className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-6 lg:p-8 shadow-[0_18px_45px_rgba(194,59,74,0.06)]">
+              <div className="h-[360px] lg:h-[520px] flex items-center justify-center bg-[#FFF8F5] rounded-[24px] overflow-hidden">
+                {productImage.startsWith("http") ? (
+                  <img
+                    src={productImage}
+                    alt={product.title}
+                    className="max-h-full w-auto object-contain"
+                  />
+                ) : (
+                  <Image
+                    src={productImage}
+                    alt={product.title}
+                    width={900}
+                    height={900}
+                    priority
+                    className="max-h-full w-auto object-contain"
+                  />
+                )}
+              </div>
             </div>
 
             <div>
-              <span className="uppercase tracking-[6px] text-[#C23B4A] font-bold text-xs">
+              <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-xs">
                 Product Details
               </span>
 
-              <h1 className="text-5xl lg:text-7xl font-black mt-4 text-[#07142B] leading-tight">
+              <h1
+                className="mt-4 text-[#07142B] font-black leading-tight"
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontSize: "clamp(2.5rem,4.5vw,5.4rem)",
+                }}
+              >
                 {product.title}
               </h1>
 
               <p className="text-lg text-slate-600 mt-6 leading-relaxed">
-                {product.description}
+                {productDescription}
               </p>
 
               <div className="grid grid-cols-2 gap-4 mt-8">
-                <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
-                  <p className="text-sm text-slate-500">
-                    Origin
-                  </p>
-                  <h3 className="font-bold text-[#07142B] mt-1">
-                    Pakistan
-                  </h3>
-                </div>
-
-                <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
-                  <p className="text-sm text-slate-500">
-                    Quality
-                  </p>
-                  <h3 className="font-bold text-[#07142B] mt-1">
-                    Food Grade
-                  </h3>
-                </div>
-
-                <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
-                  <p className="text-sm text-slate-500">
-                    Packaging
-                  </p>
-                  <h3 className="font-bold text-[#07142B] mt-1">
-                    Retail & Bulk
-                  </h3>
-                </div>
-
-                <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
-                  <p className="text-sm text-slate-500">
-                    Private Label
-                  </p>
-                  <h3 className="font-bold text-[#07142B] mt-1">
-                    Available
-                  </h3>
-                </div>
+                <InfoCard label="Origin" value="Pakistan" />
+                <InfoCard label="Quality" value="Food Grade" />
+                <InfoCard label="MOQ" value={product.moq || "Available"} />
+                <InfoCard
+                  label="Packaging"
+                  value={product.packaging || "Custom / Retail"}
+                />
               </div>
 
-              <div className="flex flex-wrap gap-4 mt-10">
+              <div className="flex flex-wrap gap-4 mt-9">
                 <Link
                   href="/contact"
-                  className="bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-semibold hover:opacity-90 transition"
+                  className="inline-flex items-center gap-3 bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-black hover:opacity-90 transition"
                 >
                   Request Quotation
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
 
                 <Link
                   href="https://wa.me/923462771693"
                   target="_blank"
-                  className="bg-white border border-[#EFE3E5] text-[#07142B] px-8 py-4 rounded-xl font-semibold hover:bg-[#FFF4F5] transition"
+                  className="inline-flex items-center gap-3 bg-white border border-[#EFE3E5] text-[#07142B] px-8 py-4 rounded-xl font-black hover:bg-[#FFF4F5] transition"
                 >
                   WhatsApp Inquiry
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
-          </div>
+          </section>
+            <TrustCard
+              icon={<Package className="w-10 h-10 text-[#C23B4A]" />}
+              title="Bulk"
+              subtitle="Export Supply"
+            />
 
-          {/* SPECIFICATIONS */}
-          <div className="grid lg:grid-cols-2 gap-8 mt-20">
-            <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10">
-              <h2 className="text-3xl font-black text-[#07142B] mb-8">
-                Product Specifications
-              </h2>
+            <TrustCard
+              icon={<ShieldCheck className="w-10 h-10 text-[#C23B4A]" />}
+              title="100%"
+              subtitle="Natural Salt"
+            />
+          </section>
 
-              <div className="grid sm:grid-cols-2 gap-5 text-slate-600">
-                <p><strong>Origin:</strong> Pakistan</p>
-                <p><strong>Color:</strong> Natural Pink</p>
-                <p><strong>Purity:</strong> Food Grade</p>
-                <p><strong>MOQ:</strong> Available</p>
-                <p><strong>Private Label:</strong> Available</p>
-                <p><strong>Export:</strong> Worldwide</p>
-              </div>
+          {/* WHY BUY FROM US */}
+          <section className="mt-14 bg-white border border-[#EFE3E5] rounded-[30px] p-8 lg:p-10">
+            <h2 className="text-3xl font-black text-[#07142B] mb-8">
+              Why Buy From The Salt Origin?
+            </h2>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              <FeatureBox
+                icon={<Globe2 className="w-8 h-8 text-[#C23B4A]" />}
+                title="Global Export"
+                text="Serving importers, wholesalers and distributors worldwide."
+              />
+
+              <FeatureBox
+                icon={<Package className="w-8 h-8 text-[#C23B4A]" />}
+                title="Flexible Packaging"
+                text="Retail, bulk and custom packaging options available."
+              />
+
+              <FeatureBox
+                icon={<ShieldCheck className="w-8 h-8 text-[#C23B4A]" />}
+                title="Food Grade Quality"
+                text="Strict quality control and export standards."
+              />
+
+              <FeatureBox
+                icon={<Tag className="w-8 h-8 text-[#C23B4A]" />}
+                title="Private Label"
+                text="OEM and custom branding support available."
+              />
+
             </div>
+          </section>
 
-            <div className="bg-white border border-[#EFE3E5] rounded-[32px] p-10">
-              <h2 className="text-3xl font-black text-[#07142B] mb-8">
-                Packaging Options
-              </h2>
-
-              <div className="grid sm:grid-cols-2 gap-4 text-slate-600">
-                <p>✓ 200g Retail Jar</p>
-                <p>✓ 500g Retail Jar</p>
-                <p>✓ Grinder Bottles</p>
-                <p>✓ Shaker Bottles</p>
-                <p>✓ Stand-Up Pouches</p>
-                <p>✓ 25kg Bulk Bags</p>
-              </div>
+          {/* PRODUCT INQUIRY */}
+          <section className="mt-16">
+            <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
+              <ProductInquiryForm product={product.title} />
             </div>
-          </div>
+          </section>
 
-          {/* TRUST */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center">
-              <h3 className="text-4xl font-black text-[#07142B]">
-                OEM
-              </h3>
-              <p className="text-slate-500 mt-2">
-                Private Label Support
-              </p>
-            </div>
-
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center">
-              <h3 className="text-4xl font-black text-[#07142B]">
-                Bulk
-              </h3>
-              <p className="text-slate-500 mt-2">
-                Export Supply
-              </p>
-            </div>
-
-            <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center">
-              <h3 className="text-4xl font-black text-[#07142B]">
-                100%
-              </h3>
-              <p className="text-slate-500 mt-2">
-                Natural Salt
-              </p>
-            </div>
-          </div>
-
-          {/* INQUIRY FORM */}
-          <div className="mt-20 bg-white border border-[#EFE3E5] rounded-[36px] p-8">
-            <ProductInquiryForm product={product.title} />
-          </div>
         </div>
-      </div>
+      </main>
     </>
+  );
+}
+
+/* ---------------- HELPERS ---------------- */
+
+function InfoCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
+      <p className="text-sm text-slate-500">
+        {label}
+      </p>
+
+      <h3 className="font-bold text-[#07142B] mt-1">
+        {value}
+      </h3>
+    </div>
+  );
+}
+
+function SpecItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <p>
+      <strong>{label}:</strong> {value}
+    </p>
+  );
+}
+
+function TrustCard({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center">
+      <div className="flex justify-center mb-4">
+        {icon}
+      </div>
+
+      <h3 className="text-4xl font-black text-[#07142B]">
+        {title}
+      </h3>
+
+      <p className="text-slate-500 mt-2">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+function FeatureBox({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="border border-[#EFE3E5] rounded-2xl p-6">
+      <div className="mb-4">
+        {icon}
+      </div>
+
+      <h3 className="font-black text-lg text-[#07142B]">
+        {title}
+      </h3>
+
+      <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+        {text}
+      </p>
+    </div>
   );
 }
