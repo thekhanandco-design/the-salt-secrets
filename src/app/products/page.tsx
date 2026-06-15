@@ -1,8 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BottleWine,
   Boxes,
   Check,
   Globe2,
@@ -10,6 +12,19 @@ import {
   ShoppingBag,
   Tag,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase-client";
+
+type CmsProduct = {
+  id: number;
+  title: string;
+  slug: string;
+  category: string;
+  description: string;
+  image: string;
+  moq: string;
+  packaging: string;
+  status: string;
+};
 
 const retailProducts = [
   {
@@ -60,10 +75,25 @@ const comparisonRows = [
 ];
 
 export default function ProductsPage() {
+  const [cmsProducts, setCmsProducts] = useState<CmsProduct[]>([]);
+
+  useEffect(() => {
+    loadCmsProducts();
+  }, []);
+
+  async function loadCmsProducts() {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    setCmsProducts((data as CmsProduct[]) || []);
+  }
+
   return (
     <main className="bg-[#FFF8F5]">
       <div className="max-w-[1500px] mx-auto px-5 lg:px-12 py-14">
-        {/* HERO */}
         <section className="text-center max-w-4xl mx-auto">
           <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-sm">
             Products
@@ -80,7 +110,66 @@ export default function ProductsPage() {
           </p>
         </section>
 
-        {/* RETAIL PACKAGING */}
+        {cmsProducts.length > 0 && (
+          <section className="mt-10">
+            <SectionHeading
+              title="Latest Products"
+              subtitle="Products added from admin CMS."
+            />
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              {cmsProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white border border-[#EFE3E5] rounded-[24px] p-6 shadow-[0_12px_30px_rgba(194,59,74,0.05)]"
+                >
+                  {product.image && (
+                    <div className="h-[240px] flex items-center justify-center bg-[#FFF8F5] rounded-[18px] overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        className="max-h-[220px] w-auto object-contain"
+                      />
+                    </div>
+                  )}
+
+                  <h3 className="text-2xl font-black text-[#07142B] mt-5">
+                    {product.title}
+                  </h3>
+
+                  <p className="text-sm text-[#C23B4A] font-bold mt-1">
+                    {product.category}
+                  </p>
+
+                  <p className="text-slate-600 text-sm mt-3 leading-relaxed">
+                    {product.description}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 mt-5 text-sm">
+                    <div className="bg-[#FFF4F5] rounded-xl p-3">
+                      <p className="font-black text-[#07142B]">MOQ</p>
+                      <p className="text-slate-600">{product.moq || "Ask for MOQ"}</p>
+                    </div>
+
+                    <div className="bg-[#FFF4F5] rounded-xl p-3">
+                      <p className="font-black text-[#07142B]">Packaging</p>
+                      <p className="text-slate-600">{product.packaging || "Custom"}</p>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/contact"
+                    className="mt-5 flex items-center justify-center gap-3 bg-[#C23B4A] text-white rounded-lg py-3 font-black hover:opacity-90 transition"
+                  >
+                    Request Quote
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="mt-10">
           <SectionHeading
             title="Retail Packaging"
@@ -129,7 +218,6 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        {/* GRINDER COLLECTION */}
         <section className="mt-10">
           <SectionHeading
             title="Grinder Collection"
@@ -184,7 +272,6 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        {/* BULK SALT */}
         <section className="mt-10">
           <SectionHeading
             title="Bulk Salt Packaging"
@@ -197,7 +284,6 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        {/* PRIVATE LABEL */}
         <section className="mt-10">
           <SectionHeading
             title="Private Label Solutions"
@@ -223,7 +309,6 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        {/* COMPARISON */}
         <section className="mt-10">
           <SectionHeading
             title="Product Comparison"
@@ -265,7 +350,6 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        {/* CTA */}
         <section className="mt-10 bg-[#C23B4A] rounded-[24px] p-8 lg:p-10 text-white grid lg:grid-cols-[1fr_auto] gap-8 items-center">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center shrink-0">
