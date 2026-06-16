@@ -12,6 +12,20 @@ export default function HomepageCMS() {
     useState("");
   const [heroImage, setHeroImage] = useState("");
 
+  const [privateLabelTitle, setPrivateLabelTitle] =
+    useState("");
+
+  const [
+    privateLabelDescription,
+    setPrivateLabelDescription,
+  ] = useState("");
+
+  const [exportCountries, setExportCountries] =
+    useState("");
+
+  const [buyersCount, setBuyersCount] =
+    useState("");
+
   useEffect(() => {
     loadHomepage();
   }, []);
@@ -29,6 +43,22 @@ export default function HomepageCMS() {
         data.hero_description || ""
       );
       setHeroImage(data.hero_image || "");
+
+      setPrivateLabelTitle(
+        data.private_label_title || ""
+      );
+
+      setPrivateLabelDescription(
+        data.private_label_description || ""
+      );
+
+      setExportCountries(
+        data.export_countries || ""
+      );
+
+      setBuyersCount(
+        data.buyers_count || ""
+      );
     }
 
     setLoading(false);
@@ -44,6 +74,17 @@ export default function HomepageCMS() {
           hero_title: heroTitle,
           hero_description: heroDescription,
           hero_image: heroImage,
+
+          private_label_title:
+            privateLabelTitle,
+
+          private_label_description:
+            privateLabelDescription,
+
+          export_countries:
+            exportCountries,
+
+          buyers_count: buyersCount,
         })
         .eq("id", 1);
 
@@ -52,7 +93,9 @@ export default function HomepageCMS() {
         return;
       }
 
-      alert("Homepage Updated Successfully");
+      alert(
+        "Homepage Updated Successfully"
+      );
     } finally {
       setSaving(false);
     }
@@ -78,6 +121,8 @@ export default function HomepageCMS() {
 
           <div className="space-y-5">
 
+            {/* HERO */}
+
             <div>
               <label className="block font-semibold mb-2">
                 Hero Title
@@ -86,7 +131,9 @@ export default function HomepageCMS() {
               <input
                 value={heroTitle}
                 onChange={(e) =>
-                  setHeroTitle(e.target.value)
+                  setHeroTitle(
+                    e.target.value
+                  )
                 }
                 className="w-full border rounded-xl p-4"
               />
@@ -116,7 +163,9 @@ export default function HomepageCMS() {
               <input
                 value={heroImage}
                 onChange={(e) =>
-                  setHeroImage(e.target.value)
+                  setHeroImage(
+                    e.target.value
+                  )
                 }
                 className="w-full border rounded-xl p-4"
               />
@@ -129,6 +178,80 @@ export default function HomepageCMS() {
                 className="w-64 rounded-xl border"
               />
             )}
+
+            <hr className="my-6" />
+
+            {/* PRIVATE LABEL */}
+
+            <div>
+              <label className="block font-semibold mb-2">
+                Private Label Title
+              </label>
+
+              <input
+                value={privateLabelTitle}
+                onChange={(e) =>
+                  setPrivateLabelTitle(
+                    e.target.value
+                  )
+                }
+                className="w-full border rounded-xl p-4"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-2">
+                Private Label Description
+              </label>
+
+              <textarea
+                value={
+                  privateLabelDescription
+                }
+                onChange={(e) =>
+                  setPrivateLabelDescription(
+                    e.target.value
+                  )
+                }
+                className="w-full border rounded-xl p-4 h-32"
+              />
+            </div>
+
+            <hr className="my-6" />
+
+            {/* EXPORT SECTION */}
+
+            <div>
+              <label className="block font-semibold mb-2">
+                Export Countries
+              </label>
+
+              <input
+                value={exportCountries}
+                onChange={(e) =>
+                  setExportCountries(
+                    e.target.value
+                  )
+                }
+                className="w-full border rounded-xl p-4"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-2">
+                International Buyers
+              </label>
+
+              <input
+                value={buyersCount}
+                onChange={(e) =>
+                  setBuyersCount(
+                    e.target.value
+                  )
+                }
+                className="w-full border rounded-xl p-4"
+              />
+            </div>
 
             <button
               onClick={saveHomepage}
