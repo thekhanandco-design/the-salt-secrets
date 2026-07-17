@@ -172,27 +172,42 @@ export default function InquiriesPage() {
         </div>
 
         {selectedInquiry && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5">
-            <div className="bg-white w-full max-w-3xl rounded-[28px] p-8 relative">
-              <button onClick={() => setSelectedInquiry(null)} className="absolute top-5 right-5 bg-slate-100 px-4 py-2 rounded-xl font-bold">Close</button>
-              <h2 className="text-3xl font-black text-[#081325] mb-6">Inquiry Details</h2>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <Info label="Name" value={selectedInquiry.name} />
-                <Info label="Email" value={selectedInquiry.email} />
-                <Info label="Company" value={selectedInquiry.company} />
-                <Info label="WhatsApp" value={selectedInquiry.whatsapp} />
-                <Info label="Country" value={selectedInquiry.country} />
-                <Info label="Product" value={selectedInquiry.product} />
-                <Info label="Quantity" value={selectedInquiry.quantity} />
-                <Info label="Status" value={selectedInquiry.status || "new"} />
+          <div
+            className="fixed inset-0 bg-black/70 z-[2000] p-3 sm:p-6 flex items-center justify-center"
+            onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedInquiry(null); }}
+          >
+            <div className="cms-panel bg-white w-full max-w-4xl max-h-[92vh] rounded-[28px] border border-[#EFE3E5] shadow-2xl overflow-hidden flex flex-col">
+              <div className="shrink-0 flex items-center justify-between gap-4 px-5 sm:px-8 py-5 border-b border-[#EFE3E5] bg-white">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[3px] text-[#C23B4A] font-black">Lead Details</p>
+                  <h2 className="text-2xl sm:text-3xl font-black text-[#081325] mt-1">Inquiry Details</h2>
+                </div>
+                <button onClick={() => setSelectedInquiry(null)} aria-label="Close inquiry" className="w-11 h-11 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-xl font-black">×</button>
               </div>
-              <div className="mt-6 bg-[#FFF8F5] border border-[#EFE3E5] rounded-2xl p-5">
-                <p className="font-black mb-2">Message</p>
-                <p className="text-slate-700 whitespace-pre-wrap">{selectedInquiry.message || "No message provided"}</p>
+
+              <div className="cms-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 sm:px-8 py-6">
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <Info label="Name" value={selectedInquiry.name} />
+                  <Info label="Email" value={selectedInquiry.email} />
+                  <Info label="Company" value={selectedInquiry.company} />
+                  <Info label="WhatsApp" value={selectedInquiry.whatsapp} />
+                  <Info label="Country" value={selectedInquiry.country} />
+                  <Info label="Product" value={selectedInquiry.product} />
+                  <Info label="Quantity" value={selectedInquiry.quantity} />
+                  <Info label="Status" value={selectedInquiry.status || "new"} />
+                </div>
+                <div className="mt-6 bg-[#FFF8F5] border border-[#EFE3E5] rounded-2xl p-5">
+                  <p className="font-black mb-3">Message</p>
+                  <div className="cms-scrollbar max-h-[48vh] overflow-y-auto overscroll-contain pr-3">
+                    <p className="text-slate-700 whitespace-pre-wrap break-words leading-7">{selectedInquiry.message || "No message provided"}</p>
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
+
+              <div className="shrink-0 border-t border-[#EFE3E5] bg-white px-5 sm:px-8 py-4 flex flex-wrap justify-end gap-3">
+                <button onClick={() => setSelectedInquiry(null)} className="border border-[#EFE3E5] px-5 py-3 rounded-xl font-black">Close</button>
                 {selectedInquiry.email && <a href={`mailto:${selectedInquiry.email}`} className="bg-[#C23B4A] text-white px-5 py-3 rounded-xl font-black">Email Customer</a>}
-                {selectedInquiry.whatsapp && <a target="_blank" href={`https://wa.me/${selectedInquiry.whatsapp.replace(/[^0-9]/g, "")}`} className="bg-green-600 text-white px-5 py-3 rounded-xl font-black">WhatsApp</a>}
+                {selectedInquiry.whatsapp && <a target="_blank" rel="noreferrer" href={`https://wa.me/${selectedInquiry.whatsapp.replace(/[^0-9]/g, "")}`} className="bg-green-600 text-white px-5 py-3 rounded-xl font-black">WhatsApp</a>}
               </div>
             </div>
           </div>

@@ -124,8 +124,19 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </div>
 
       <style jsx global>{`
-        [data-cms-theme="dark"] input,[data-cms-theme="dark"] textarea,[data-cms-theme="dark"] select{background:#0d1b2d!important;border-color:rgba(255,255,255,.12)!important;color:#e7eef8!important}
-        [data-cms-theme="dark"] input::placeholder,[data-cms-theme="dark"] textarea::placeholder{color:#64748b!important}
+        [data-cms-theme="dark"] { color-scheme: dark; }
+        [data-cms-theme="light"] { color-scheme: light; }
+        [data-cms-theme="dark"] input,[data-cms-theme="dark"] textarea,[data-cms-theme="dark"] select{background:#0d1b2d!important;border-color:rgba(255,255,255,.13)!important;color:#f4f7fb!important}
+        [data-cms-theme="dark"] input::placeholder,[data-cms-theme="dark"] textarea::placeholder{color:#718096!important}
+        [data-cms-theme="dark"] .bg-white{background-color:#0d1b2d!important}
+        [data-cms-theme="dark"] .bg-\[\#FFF4F5\],[data-cms-theme="dark"] .bg-\[\#FFF8F5\],[data-cms-theme="dark"] .bg-slate-50,[data-cms-theme="dark"] .bg-slate-100{background-color:#101f33!important}
+        [data-cms-theme="dark"] .text-\[\#081325\],[data-cms-theme="dark"] .text-slate-900,[data-cms-theme="dark"] .text-slate-800,[data-cms-theme="dark"] .text-slate-700{color:#f3f6fb!important}
+        [data-cms-theme="dark"] .text-slate-600,[data-cms-theme="dark"] .text-slate-500{color:#a8b6ca!important}
+        [data-cms-theme="dark"] .border-\[\#EFE3E5\],[data-cms-theme="dark"] .border-slate-200,[data-cms-theme="dark"] .border-slate-100{border-color:#26364e!important}
+        [data-cms-theme="light"] input,[data-cms-theme="light"] textarea,[data-cms-theme="light"] select{background:#fff!important;color:#0c1728!important;border-color:#dbe2ea!important}
+        [data-cms-theme="light"] .cms-panel{background:#fff!important;border-color:#dbe2ea!important;color:#0c1728!important}
+        .cms-scrollbar{scrollbar-width:thin;scrollbar-color:#64748b transparent}
+        .cms-scrollbar::-webkit-scrollbar{width:9px;height:9px}.cms-scrollbar::-webkit-scrollbar-thumb{background:#64748b;border-radius:99px}
       `}</style>
     </main>
   );

@@ -83,13 +83,55 @@ export async function sendCustomerAutoReply(payload: LeadPayload) {
   });
 }
 
+function buildWhatsAppText(payload: LeadPayload) {
+  return [
+    "NEW WEBSITE INQUIRY — THE SALT ORIGIN",
+    "",
+    `Name: ${payload.name || "Not provided"}`,
+    `Email: ${payload.email || "Not provided"}`,
+    `Company: ${payload.company || "Not provided"}`,
+    `WhatsApp: ${payload.whatsapp || "Not provided"}`,
+    `Country: ${payload.country || "Not provided"}`,
+    `Product: ${payload.product || "General Inquiry"}`,
+    `Quantity: ${payload.quantity || "Not provided"}`,
+    "",
+    "Message:",
+    payload.message || "No message provided",
+  ].join("\n");
+}
+
 export async function sendWhatsAppWebhook(payload: LeadPayload) {
   const webhook = process.env.WHATSAPP_WEBHOOK_URL;
-  if (!webhook) return;
+  if (webhook) {
+    await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source: "The Salt Origin Website", text: buildWhatsAppText(payload), ...payload }),
+    });
+  }
 
-  await fetch(webhook, {
+  const token = process.env.WHATSAPP_CLOUD_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID;
+  const recipient = process.env.WHATSAPP_NOTIFICATION_TO;
+  if (!token || !phoneNumberId || !recipient) return;
+
+  const response = await fetch(`https://graph.facebook.com/${process.env.WHATSAPP_GRAPH_VERSION || "v23.0"}/${phoneNumberId}/messages`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source: "The Salt Origin Website", ...payload }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: recipient.replace(/[^0-9]/g, ""),
+      type: "text",
+      text: { preview_url: false, body: buildWhatsAppText(payload).slice(0, 4096) },
+    }),
   });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`WhatsApp notification failed: ${detail}`);
+  }
 }

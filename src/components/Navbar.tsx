@@ -18,7 +18,12 @@ export default function Navbar() {
   const [logo,setLogo]=useState("/logo.png");
 
   useEffect(()=>{
-    const saved=localStorage.getItem("salt-language")||"en"; setLanguage(saved); load(saved);
+    const saved=localStorage.getItem("salt-language")||"en";
+    setLanguage(saved);
+    document.documentElement.lang=saved;
+    document.documentElement.dir="ltr";
+    document.documentElement.dataset.siteLanguage=saved;
+    load(saved);
   },[]);
 
   async function load(lang:string){
@@ -44,7 +49,9 @@ export default function Navbar() {
   function changeLanguage(code:string){
     setLanguage(code); localStorage.setItem("salt-language",code); load(code);
     window.dispatchEvent(new CustomEvent("salt-language-change",{detail:code}));
-    const selected=languages.find(l=>l.code===code); document.documentElement.dir=selected?.direction||"ltr"; document.documentElement.lang=code;
+    document.documentElement.dir="ltr";
+    document.documentElement.lang=code;
+    document.documentElement.dataset.siteLanguage=code;
   }
 
   const links=[

@@ -176,15 +176,15 @@ export default function HomepageClone() {
               </p>
 
               <ul className="mt-6 space-y-3 text-[#081325] font-medium">
-                <li>✓ Custom Bottles</li>
-                <li>✓ Custom Packaging</li>
+                <li>✓ {cmsText["home.private_label.bullet_bottles"] || "Custom Bottles"}</li>
+                <li>✓ {cmsText["home.private_label.bullet_packaging"] || "Custom Packaging"}</li>
               </ul>
 
               <Link
                 href="/private-label"
                 className="inline-flex mt-7 bg-[#C23B4A] text-white px-8 py-4 rounded-md font-bold"
               >
-                Learn More
+                {cmsText["home.private_label.button"] || "Learn More"}
               </Link>
             </div>
 
@@ -193,17 +193,16 @@ export default function HomepageClone() {
                 <div className="flex items-center gap-3 mb-3">
                   <Package className="w-6 h-6 text-[#C23B4A]" />
                   <h3 className="font-black text-lg">
-                    Custom Bottles
+                    {cmsText["home.private_label.bottles_title"] || "Custom Bottles"}
                   </h3>
                 </div>
 
                 <p className="text-slate-600 text-sm mb-4">
-                  Choose your bottle style, size and design to
-                  match your brand identity.
+                  {cmsText["home.private_label.bottles_text"] || "Choose your bottle style, size and design to match your brand identity."}
                 </p>
 
                 <Image
-                  src={cmsImages["home.private-label.custom_labels"]?.url || "/custom-labels.png"}
+                  src={cmsImages["home.private_label.custom_labels"]?.url || "/custom-labels.png"}
                   alt="Custom Labels"
                   width={600}
                   height={400}
@@ -215,17 +214,16 @@ export default function HomepageClone() {
                 <div className="flex items-center gap-3 mb-3">
                   <Package className="w-6 h-6 text-[#C23B4A]" />
                   <h3 className="font-black text-lg">
-                    Custom Packaging
+                    {cmsText["home.private_label.packaging_title"] || "Custom Packaging"}
                   </h3>
                 </div>
 
                 <p className="text-slate-600 text-sm mb-4">
-                  Custom printed pouches and jars with your logo,
-                  colors and design.
+                  {cmsText["home.private_label.packaging_text"] || "Custom printed pouches and jars with your logo, colors and design."}
                 </p>
 
                 <Image
-                  src={cmsImages["home.private-label.custom_packaging"]?.url || "/custom-packaging.png"}
+                  src={cmsImages["home.private_label.custom_packaging"]?.url || "/custom-packaging.png"}
                   alt="Custom Packaging"
                   width={600}
                   height={400}
@@ -258,24 +256,24 @@ export default function HomepageClone() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
-                title: "PET Bottles",
+                title: cmsText["home.products.pet_bottles_title"] || "PET Bottles",
                 image: cmsImages["home.products.pet_bottles"]?.url || "/pet-bottles.png",
-                desc: "Multiple sizes for everyday use and retail.",
+                desc: cmsText["home.products.pet_bottles_text"] || "Multiple sizes for everyday use and retail.",
               },
               {
-                title: "PET Jars",
+                title: cmsText["home.products.pet_jars_title"] || "PET Jars",
                 image: cmsImages["home.products.pet_jars"]?.url || "/pet-jars.png",
-                desc: "Fine grain salt in convenient PET jars.",
+                desc: cmsText["home.products.pet_jars_text"] || "Fine grain salt in convenient PET jars.",
               },
               {
-                title: "Grinder Collection",
+                title: cmsText["home.products.grinders_title"] || "Grinder Collection",
                 image: cmsImages["home.products.grinders"]?.url || "/grinder-bottles.png",
-                desc: "Plastic and ceramic grinder bottles.",
+                desc: cmsText["home.products.grinders_text"] || "Plastic and ceramic grinder bottles.",
               },
               {
-                title: "Stand-Up Pouches",
+                title: cmsText["home.products.pouches_title"] || "Stand-Up Pouches",
                 image: cmsImages["home.products.pouches"]?.url || "/standup-pouch.png",
-                desc: "Premium zip-lock pouches for maximum freshness.",
+                desc: cmsText["home.products.pouches_text"] || "Premium zip-lock pouches for maximum freshness.",
               },
             ].map((item) => (
               <div
@@ -303,7 +301,7 @@ export default function HomepageClone() {
                     href="/products"
                     className="inline-flex mt-5 border border-[#C23B4A] text-[#C23B4A] px-5 py-2 rounded-md font-semibold"
                   >
-                    View Products
+                    {cmsText["home.products.view_button"] || "View Products"}
                   </Link>
                 </div>
               </div>
@@ -329,16 +327,12 @@ export default function HomepageClone() {
           </div>
 
           <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {[
-              "Reliable Supply",
-              "Flexible MOQ",
-              "Custom Packaging",
-              "Export Support",
-              "Quality Focused",
-              "Global Reach",
-            ].map((item) => (
+            {Array.from({ length: 6 }, (_, index) => ({
+              title: cmsText[`home.why_choose.item_${index + 1}_title`] || ["Reliable Supply", "Flexible MOQ", "Custom Packaging", "Export Support", "Quality Focused", "Global Reach"][index],
+              text: cmsText[`home.why_choose.item_${index + 1}_text`] || "Premium Himalayan Pink Salt solutions for international buyers.",
+            })).map((item) => (
               <div
-                key={item}
+                key={item.title}
                 className="text-center border-r border-[#F0E3E6] last:border-r-0"
               >
                 <div className="w-20 h-20 rounded-full bg-[#FFF2F4] flex items-center justify-center mx-auto mb-4">
@@ -346,12 +340,11 @@ export default function HomepageClone() {
                 </div>
 
                 <h3 className="font-black text-[#081325]">
-                  {item}
+                  {item.title}
                 </h3>
 
                 <p className="text-slate-600 text-sm mt-3 px-2">
-                  Premium Himalayan Pink Salt solutions for
-                  international buyers.
+                  {item.text}
                 </p>
               </div>
             ))}
@@ -376,7 +369,7 @@ export default function HomepageClone() {
             <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
 
             <p className="text-slate-600 mt-4">
-              Certified quality you can trust.
+              {cmsText["home.quality.description"] || "Certified quality you can trust."}
             </p>
           </div>
 
@@ -442,7 +435,7 @@ export default function HomepageClone() {
                   </h3>
 
                   <p className="text-slate-600 mt-1">
-                    Export Destinations
+                    {cmsText["home.export.destinations_label"] || "Export Destinations"}
                   </p>
                 </div>
 
@@ -452,27 +445,27 @@ export default function HomepageClone() {
                   </h3>
 
                   <p className="text-slate-600 mt-1">
-                    International Buyers
+                    {cmsText["home.export.buyers_label"] || "International Buyers"}
                   </p>
                 </div>
 
                 <div>
                   <h3 className="text-5xl font-black text-[#C23B4A]">
-                    Bulk
+                    {cmsText["home.export.supply_value"] || "Bulk"}
                   </h3>
 
                   <p className="text-slate-600 mt-1">
-                    Supply Capability
+                    {cmsText["home.export.supply_label"] || "Supply Capability"}
                   </p>
                 </div>
 
                 <div>
                   <h3 className="text-5xl font-black text-[#C23B4A]">
-                    100%
+                    {cmsText["home.export.quality_value"] || "100%"}
                   </h3>
 
                   <p className="text-slate-600 mt-1">
-                    Export Quality Focused
+                    {cmsText["home.export.quality_label"] || "Export Quality Focused"}
                   </p>
                 </div>
               </div>

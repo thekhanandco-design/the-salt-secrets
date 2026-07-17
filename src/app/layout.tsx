@@ -3,9 +3,7 @@ import Script from "next/script";
 
 import "./globals.css";
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
+import SiteChrome from "@/components/SiteChrome";
 import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 
 export const metadata: Metadata = {
@@ -85,10 +83,7 @@ export default function RootLayout({
           }}
         />
 
-        <Navbar />
-        {children}
-        <Footer />
-        <WhatsAppButton />
+        <SiteChrome>{children}</SiteChrome>
         </SiteThemeProvider>
       </body>
     </html>
