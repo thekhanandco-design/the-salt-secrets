@@ -1,53 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase-client";
 import {
-  Boxes,
-  FileText,
-  FolderTree,
-  Home,
-  Image as ImageIcon,
-  Images,
-  Languages,
-  Type,
-  Inbox,
-  LayoutDashboard,
-  Menu,
-  Moon,
-  Search,
-  Settings,
-  Sparkles,
-  Sun,
-  X,
+  Activity, Boxes, FileText, FolderTree, Home, Image as ImageIcon, Images,
+  Inbox, Languages, LayoutDashboard, LogOut, Menu, Moon, Search, Settings,
+  Sparkles, Sun, Type, UserCircle2, X,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/pages", label: "Page Builder", icon: FileText },
+  { href: "/admin/images", label: "Images Manager", icon: Images },
   { href: "/admin/text", label: "Text Manager", icon: Type },
-  { href: "/admin/images", label: "Images Control", icon: Images },
-  { href: "/admin/homepage", label: "Homepage", icon: Home },
+  { href: "/admin/pages", label: "Pages", icon: FileText },
   { href: "/admin/products", label: "Products", icon: Boxes },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
-  { href: "/admin/blogs", label: "Blogs", icon: FileText },
+  { href: "/admin/blogs", label: "Blog Posts", icon: FileText },
   { href: "/admin/media", label: "Media Library", icon: ImageIcon },
   { href: "/admin/inquiries", label: "Inquiries CRM", icon: Inbox },
   { href: "/admin/seo", label: "SEO Manager", icon: Search },
   { href: "/admin/languages", label: "Languages", icon: Languages },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/settings", label: "Site Settings", icon: Settings },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [dark, setDark] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [email, setEmail] = useState("Admin");
 
   useEffect(() => {
     const saved = localStorage.getItem("salt-cms-theme");
     setDark(saved ? saved === "dark" : true);
+    void checkSession();
   }, []);
+
+  async function checkSession() {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      router.replace("/admin/login");
+      return;
+    }
+    setEmail(data.session.user.email || "Admin");
+    setChecking(false);
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    router.replace("/admin/login");
+  }
 
   function toggleTheme() {
     const next = !dark;
@@ -55,81 +60,73 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     localStorage.setItem("salt-cms-theme", next ? "dark" : "light");
   }
 
-  const palette = dark
-    ? "bg-[#101418] text-slate-100"
-    : "bg-[#FFF8F5] text-[#081325]";
+  if (checking) {
+    return <main className="min-h-screen bg-[#07111f] text-white flex items-center justify-center">Checking admin session...</main>;
+  }
+
+  const shell = dark ? "bg-[#07111f] text-slate-100" : "bg-[#f7f8fb] text-[#0c1728]";
+  const panel = dark ? "bg-[#0b1728] border-white/10" : "bg-white border-slate-200";
 
   return (
-    <main className={`min-h-screen ${palette}`}>
-      <div className="grid min-h-screen lg:grid-cols-[290px_1fr]">
-        <aside className={`${mobileOpen ? "fixed inset-y-0 left-0 z-50 block w-[290px]" : "hidden"} lg:block border-r border-[#C23B4A]/15 ${dark ? "bg-[#161C22]" : "bg-white/95"} p-6 lg:sticky lg:top-0 lg:h-screen`}>
-          <div className="flex items-center justify-between mb-10">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-[#FFF2F4] flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-[#C23B4A]" />
-              </div>
-              <div>
-                <p className="font-black leading-tight">The Salt Origin</p>
-                <p className="text-xs text-slate-500">CMS Control Center</p>
-              </div>
+    <main className={`min-h-screen ${shell}`} data-cms-theme={dark ? "dark" : "light"}>
+      <div className="grid min-h-screen lg:grid-cols-[250px_1fr]">
+        <aside className={`${mobileOpen ? "fixed inset-y-0 left-0 z-50 block w-[250px]" : "hidden"} lg:block border-r ${dark ? "bg-[#07111f] border-white/10" : "bg-white border-slate-200"} lg:sticky lg:top-0 lg:h-screen`}>
+          <div className={`h-[76px] px-5 flex items-center justify-between border-b ${dark ? "border-white/10" : "border-slate-200"}`}>
+            <Link href="/admin" className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center"><Sparkles className="h-5 w-5 text-blue-400" /></div>
+              <div><p className="font-black leading-tight">The Salt Origin</p><p className="text-[11px] text-slate-500">CMS Admin</p></div>
             </Link>
-            <button className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close menu">
-              <X className="h-6 w-6" />
-            </button>
+            <button className="lg:hidden" onClick={() => setMobileOpen(false)}><X className="h-5 w-5"/></button>
           </div>
 
-          <nav className="space-y-2 overflow-y-auto max-h-[calc(100vh-220px)] pr-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-sm transition ${active ? "bg-[#C23B4A] text-white" : dark ? "hover:bg-white/10" : "hover:bg-[#FFF2F4] hover:text-[#C23B4A]"}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="p-4 h-[calc(100vh-76px)] overflow-y-auto">
+            <p className="px-3 mb-2 text-[10px] uppercase tracking-[3px] text-slate-500 font-black">Content</p>
+            <nav className="space-y-1">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+                return (
+                  <div key={item.href}>
+                    {index === 8 && <p className="px-3 mt-6 mb-2 text-[10px] uppercase tracking-[3px] text-slate-500 font-black">CRM & Settings</p>}
+                    <Link href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : dark ? "text-slate-300 hover:bg-white/5 hover:text-white" : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"}`}>
+                      <Icon className="h-4 w-4" />{item.label}
+                    </Link>
+                  </div>
+                );
+              })}
+            </nav>
 
-          <div className={`mt-8 rounded-3xl p-5 border ${dark ? "bg-white/5 border-white/10" : "bg-[#FFF2F4] border-[#EFE3E5]"}`}>
-            <p className="text-sm font-black">Website Control</p>
-            <p className="text-xs text-slate-500 mt-2">Edit content, products, media, SEO and leads without touching code.</p>
-            <Link href="/" className="mt-4 inline-flex rounded-xl bg-[#C23B4A] text-white px-4 py-2 text-xs font-black">
-              View Website
-            </Link>
+            <div className={`mt-8 rounded-2xl border p-4 ${dark ? "border-white/10 bg-white/[0.03]" : "border-slate-200 bg-slate-50"}`}>
+              <p className="text-xs font-black">Live Website</p>
+              <p className="text-[11px] text-slate-500 mt-1">Preview changes on the public website.</p>
+              <Link href="/" target="_blank" className="mt-3 inline-flex rounded-lg bg-blue-600 text-white px-3 py-2 text-xs font-black">View Website</Link>
+            </div>
           </div>
         </aside>
 
-        {mobileOpen && <button className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close overlay" />}
+        {mobileOpen && <button className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setMobileOpen(false)} />}
 
         <section className="min-w-0">
-          <header className={`sticky top-0 z-30 backdrop-blur border-b border-[#C23B4A]/15 px-5 lg:px-10 py-4 flex items-center justify-between ${dark ? "bg-[#161C22]/95" : "bg-white/90"}`}>
+          <header className={`h-[76px] sticky top-0 z-30 border-b backdrop-blur px-4 lg:px-7 flex items-center justify-between ${dark ? "bg-[#07111f]/95 border-white/10" : "bg-white/95 border-slate-200"}`}>
             <div className="flex items-center gap-3">
-              <button className="lg:hidden rounded-xl border p-2" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-                <Menu className="h-5 w-5" />
-              </button>
-              <div>
-                <p className="text-xs uppercase tracking-[4px] text-[#C23B4A] font-black">CMS</p>
-                <h1 className="text-xl font-black">Admin Control Panel</h1>
-              </div>
+              <button className="lg:hidden rounded-lg border border-white/10 p-2" onClick={() => setMobileOpen(true)}><Menu className="h-5 w-5"/></button>
+              <div><p className="font-black">CMS Control Center</p><p className="text-[11px] text-slate-500">Supabase connected content management</p></div>
             </div>
-            <div className="flex items-center gap-3">
-              <button onClick={toggleTheme} className={`rounded-xl border px-4 py-3 font-black text-sm ${dark ? "border-white/15" : "border-[#EFE3E5]"}`}>
-                {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-              <Link href="/admin/inquiries" className="rounded-xl bg-[#C23B4A] text-white px-5 py-3 text-sm font-black">
-                View Leads
-              </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/" target="_blank" className={`hidden md:inline-flex px-4 py-2.5 rounded-xl text-xs font-black border ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}>View Site</Link>
+              <button onClick={toggleTheme} className={`w-10 h-10 rounded-xl border inline-flex items-center justify-center ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}>{dark ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}</button>
+              <div className={`hidden sm:flex items-center gap-2 rounded-xl border px-3 py-2 ${dark ? "border-white/10" : "border-slate-200"}`}><UserCircle2 className="h-7 w-7 text-slate-400"/><div className="max-w-[150px]"><p className="text-xs font-black truncate">{email}</p><p className="text-[10px] text-slate-500">Super Admin</p></div></div>
+              <button onClick={logout} title="Logout" className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 inline-flex items-center justify-center"><LogOut className="h-4 w-4"/></button>
             </div>
           </header>
-          <div className="p-5 lg:p-10">{children}</div>
+          <div className="p-4 lg:p-7">{children}</div>
         </section>
       </div>
+
+      <style jsx global>{`
+        [data-cms-theme="dark"] input,[data-cms-theme="dark"] textarea,[data-cms-theme="dark"] select{background:#0d1b2d!important;border-color:rgba(255,255,255,.12)!important;color:#e7eef8!important}
+        [data-cms-theme="dark"] input::placeholder,[data-cms-theme="dark"] textarea::placeholder{color:#64748b!important}
+      `}</style>
     </main>
   );
 }

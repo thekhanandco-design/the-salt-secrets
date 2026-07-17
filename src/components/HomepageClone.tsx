@@ -33,15 +33,18 @@ const defaultContent: HomepageContent = {
 };
 
 export default function HomepageClone() {
-  const [content, setContent] =
-    useState<HomepageContent>(defaultContent);
+  const [content, setContent] = useState<HomepageContent>(defaultContent);
+  const [cmsText, setCmsText] = useState<Record<string, string>>({});
+  const [cmsImages, setCmsImages] = useState<Record<string, { url: string; alt: string }>>({});
 
   useEffect(() => {
     const language = localStorage.getItem("salt-language") || "en";
     loadHomepageContent(language);
     const handler = (event: Event) => loadHomepageContent((event as CustomEvent<string>).detail);
+    const refresh = () => loadHomepageContent(localStorage.getItem("salt-language") || "en");
     window.addEventListener("salt-language-change", handler);
-    return () => window.removeEventListener("salt-language-change", handler);
+    window.addEventListener("salt-cms-updated", refresh);
+    return () => { window.removeEventListener("salt-language-change", handler); window.removeEventListener("salt-cms-updated", refresh); };
   }, []);
 
   async function loadHomepageContent(language = "en") {
@@ -51,6 +54,8 @@ export default function HomepageClone() {
       loadCmsImages("home"),
     ]);
 
+    setCmsText(texts);
+    setCmsImages(images);
     setContent({
       hero_title: texts["home.hero.title"] || data?.hero_title || defaultContent.hero_title,
       hero_description: texts["home.hero.description"] || data?.hero_description || defaultContent.hero_description,
@@ -75,7 +80,7 @@ export default function HomepageClone() {
         <div
           className="absolute inset-y-0 right-0 w-full lg:w-[65%] opacity-25 bg-right bg-no-repeat bg-contain"
           style={{
-            backgroundImage: "url('/mountains-bg.png')",
+            backgroundImage: `url('${cmsImages["home.hero.mountains"]?.url || "/mountains-bg.png"}')`,
           }}
         />
 
@@ -84,7 +89,7 @@ export default function HomepageClone() {
             <div>
               <div className="flex items-center gap-4 mb-5">
                 <span className="uppercase tracking-[5px] text-[#C23B4A] font-black text-sm">
-                  PREMIUM QUALITY
+                  {cmsText["home.hero.badge"] || "PREMIUM QUALITY"}
                 </span>
 
                 <span className="w-14 h-[2px] bg-[#D9A0A8]" />
@@ -112,7 +117,7 @@ export default function HomepageClone() {
                   href="/products"
                   className="inline-flex items-center gap-3 bg-[#C23B4A] text-white px-8 py-4 rounded-md font-black"
                 >
-                  Explore Products
+                  {cmsText["home.hero.primary_button"] || "Explore Products"}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
@@ -120,7 +125,7 @@ export default function HomepageClone() {
                   href="/contact"
                   className="inline-flex items-center gap-3 border border-[#C23B4A] text-[#C23B4A] px-8 py-4 rounded-md font-black"
                 >
-                  Request Quote
+                  {cmsText["home.hero.secondary_button"] || "Request Quote"}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -198,7 +203,7 @@ export default function HomepageClone() {
                 </p>
 
                 <Image
-                  src="/custom-labels.png"
+                  src={cmsImages["home.private-label.custom_labels"]?.url || "/custom-labels.png"}
                   alt="Custom Labels"
                   width={600}
                   height={400}
@@ -220,7 +225,7 @@ export default function HomepageClone() {
                 </p>
 
                 <Image
-                  src="/custom-packaging.png"
+                  src={cmsImages["home.private-label.custom_packaging"]?.url || "/custom-packaging.png"}
                   alt="Custom Packaging"
                   width={600}
                   height={400}
@@ -244,7 +249,7 @@ export default function HomepageClone() {
                   "clamp(2.2rem,3vw,3.4rem)",
               }}
             >
-              OUR PRODUCT RANGE
+              {cmsText["home.products.title"] || "OUR PRODUCT RANGE"}
             </h2>
 
             <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
@@ -254,22 +259,22 @@ export default function HomepageClone() {
             {[
               {
                 title: "PET Bottles",
-                image: "/pet-bottles.png",
+                image: cmsImages["home.products.pet_bottles"]?.url || "/pet-bottles.png",
                 desc: "Multiple sizes for everyday use and retail.",
               },
               {
                 title: "PET Jars",
-                image: "/pet-jars.png",
+                image: cmsImages["home.products.pet_jars"]?.url || "/pet-jars.png",
                 desc: "Fine grain salt in convenient PET jars.",
               },
               {
                 title: "Grinder Collection",
-                image: "/grinder-bottles.png",
+                image: cmsImages["home.products.grinders"]?.url || "/grinder-bottles.png",
                 desc: "Plastic and ceramic grinder bottles.",
               },
               {
                 title: "Stand-Up Pouches",
-                image: "/standup-pouch.png",
+                image: cmsImages["home.products.pouches"]?.url || "/standup-pouch.png",
                 desc: "Premium zip-lock pouches for maximum freshness.",
               },
             ].map((item) => (
@@ -317,7 +322,7 @@ export default function HomepageClone() {
                 fontSize: "clamp(2.2rem,3vw,3.4rem)",
               }}
             >
-              WHY CHOOSE US
+              {cmsText["home.why_choose.title"] || "WHY CHOOSE US"}
             </h2>
 
             <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
@@ -365,7 +370,7 @@ export default function HomepageClone() {
                 fontSize: "clamp(2.2rem,3vw,3.4rem)",
               }}
             >
-              OUR QUALITY STANDARDS
+              {cmsText["home.quality.title"] || "OUR QUALITY STANDARDS"}
             </h2>
 
             <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
@@ -377,12 +382,12 @@ export default function HomepageClone() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
             {[
-              "/cert-iso.png",
-              "/cert-haccp.png",
-              "/cert-gmp.png",
-              "/cert-halal.png",
-              "/cert-fda.png",
-              "/cert-food.png",
+              cmsImages["home.quality.iso"]?.url || "/cert-iso.png",
+              cmsImages["home.quality.haccp"]?.url || "/cert-haccp.png",
+              cmsImages["home.quality.gmp"]?.url || "/cert-gmp.png",
+              cmsImages["home.quality.halal"]?.url || "/cert-halal.png",
+              cmsImages["home.quality.fda"]?.url || "/cert-fda.png",
+              cmsImages["home.quality.food"]?.url || "/cert-food.png",
             ].map((cert, index) => (
               <div
                 key={index}
@@ -412,8 +417,7 @@ export default function HomepageClone() {
                 fontSize: "clamp(2.3rem,3vw,3.6rem)",
               }}
             >
-              TRUSTED BY BUYERS IN{" "}
-              {content.export_countries} COUNTRIES
+              {cmsText["home.export.title"] || `TRUSTED BY BUYERS IN ${cmsText["home.export.countries"] || content.export_countries} COUNTRIES`}
             </h2>
 
             <div className="w-16 h-[3px] bg-[#C23B4A] mx-auto mt-3" />
@@ -422,7 +426,7 @@ export default function HomepageClone() {
           <div className="grid lg:grid-cols-[1fr_300px] gap-6">
             <div className="border border-[#EFE3E5] rounded-[28px] p-6">
               <Image
-                src="/world-map.png"
+                src={cmsImages["home.export.map"]?.url || "/world-map.png"}
                 alt="World Map"
                 width={1400}
                 height={700}
@@ -434,7 +438,7 @@ export default function HomepageClone() {
               <div className="space-y-8">
                 <div>
                   <h3 className="text-5xl font-black text-[#C23B4A]">
-                    {content.export_countries}
+                    {cmsText["home.export.countries"] || content.export_countries}
                   </h3>
 
                   <p className="text-slate-600 mt-1">
@@ -444,7 +448,7 @@ export default function HomepageClone() {
 
                 <div>
                   <h3 className="text-5xl font-black text-[#C23B4A]">
-                    {content.buyers_count}
+                    {cmsText["home.export.buyers"] || content.buyers_count}
                   </h3>
 
                   <p className="text-slate-600 mt-1">
