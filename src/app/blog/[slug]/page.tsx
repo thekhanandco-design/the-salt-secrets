@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type BlogPost = { title: string; excerpt: string; content: string; featured_image: string; published_at: string; created_at: string; seo_title?: string; seo_description?: string };
 
 async function getPost(slug: string) {

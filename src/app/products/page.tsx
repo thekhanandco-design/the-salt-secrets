@@ -158,10 +158,10 @@ export default function ProductsPage() {
                   </div>
 
                   <Link
-                    href="/contact"
+                    href={`/products/${product.slug}`}
                     className="mt-5 flex items-center justify-center gap-3 bg-[#C23B4A] text-white rounded-lg py-3 font-black hover:opacity-90 transition"
                   >
-                    Request Quote
+                    View Details
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>

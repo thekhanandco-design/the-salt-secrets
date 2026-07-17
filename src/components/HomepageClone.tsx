@@ -8,6 +8,7 @@ import {
   Package,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
+import { loadCmsImages, loadCmsText } from "@/lib/cms";
 
 type HomepageContent = {
   hero_title: string | null;
@@ -36,41 +37,29 @@ export default function HomepageClone() {
     useState<HomepageContent>(defaultContent);
 
   useEffect(() => {
-    loadHomepageContent();
+    const language = localStorage.getItem("salt-language") || "en";
+    loadHomepageContent(language);
+    const handler = (event: Event) => loadHomepageContent((event as CustomEvent<string>).detail);
+    window.addEventListener("salt-language-change", handler);
+    return () => window.removeEventListener("salt-language-change", handler);
   }, []);
 
-  async function loadHomepageContent() {
-    const { data } = await supabase
-      .from("homepage")
-      .select("*")
-      .limit(1)
-      .single();
+  async function loadHomepageContent(language = "en") {
+    const [{ data }, texts, images] = await Promise.all([
+      supabase.from("homepage").select("*").limit(1).maybeSingle(),
+      loadCmsText("home", language),
+      loadCmsImages("home"),
+    ]);
 
-    if (data) {
-      setContent({
-        hero_title:
-          data.hero_title ||
-          defaultContent.hero_title,
-        hero_description:
-          data.hero_description ||
-          defaultContent.hero_description,
-        hero_image:
-          data.hero_image ||
-          defaultContent.hero_image,
-        private_label_title:
-          data.private_label_title ||
-          defaultContent.private_label_title,
-        private_label_description:
-          data.private_label_description ||
-          defaultContent.private_label_description,
-        export_countries:
-          data.export_countries ||
-          defaultContent.export_countries,
-        buyers_count:
-          data.buyers_count ||
-          defaultContent.buyers_count,
-      });
-    }
+    setContent({
+      hero_title: texts["home.hero.title"] || data?.hero_title || defaultContent.hero_title,
+      hero_description: texts["home.hero.description"] || data?.hero_description || defaultContent.hero_description,
+      hero_image: images["home.hero.products"]?.url || data?.hero_image || defaultContent.hero_image,
+      private_label_title: texts["home.private_label.title"] || data?.private_label_title || defaultContent.private_label_title,
+      private_label_description: texts["home.private_label.description"] || data?.private_label_description || defaultContent.private_label_description,
+      export_countries: data?.export_countries || defaultContent.export_countries,
+      buyers_count: data?.buyers_count || defaultContent.buyers_count,
+    });
   }
 
   const heroTitleParts =

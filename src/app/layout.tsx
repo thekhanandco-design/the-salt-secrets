@@ -6,6 +6,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.thesaltorigin.com"),
@@ -66,6 +67,7 @@ export default function RootLayout({
       </head>
 
       <body className="bg-[#F8F8F8] text-slate-900">
+        <SiteThemeProvider>
         <Script
           id="schema-org"
           type="application/ld+json"
@@ -87,6 +89,7 @@ export default function RootLayout({
         {children}
         <Footer />
         <WhatsAppButton />
+        </SiteThemeProvider>
       </body>
     </html>
   );

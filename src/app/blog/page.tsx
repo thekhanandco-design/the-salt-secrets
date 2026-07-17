@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Himalayan Pink Salt Blog | The Salt Origin",
   description: "Latest insights on Himalayan Pink Salt, private label packaging, sourcing, retail and bulk export.",

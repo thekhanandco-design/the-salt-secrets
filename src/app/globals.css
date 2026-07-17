@@ -26,3 +26,14 @@ body {
 html {
   scroll-behavior: smooth;
 }
+/* Public website dark theme */
+html.site-dark body { background:#07111f !important; color:#e8eef7 !important; }
+html.site-dark header, html.site-dark aside { background:#0b1626 !important; border-color:#24334a !important; }
+html.site-dark main, html.site-dark section { border-color:#24334a; }
+html.site-dark .bg-white { background-color:#0f1b2d !important; }
+html.site-dark .bg-\[\#FFF8F5\], html.site-dark .bg-\[\#FFF9FA\], html.site-dark .bg-\[\#FFF4F5\], html.site-dark .bg-\[\#FFF2F4\], html.site-dark .bg-\[\#FAFAFA\], html.site-dark .bg-\[\#F8F8F8\] { background-color:#07111f !important; }
+html.site-dark .text-\[\#081325\], html.site-dark .text-\[\#07142B\], html.site-dark .text-slate-900, html.site-dark .text-slate-700 { color:#f3f6fb !important; }
+html.site-dark .text-slate-600, html.site-dark .text-slate-500 { color:#aebbd0 !important; }
+html.site-dark .border-\[\#EFE3E5\], html.site-dark .border-\[\#F1E2E5\], html.site-dark .border-\[\#F2E5E7\] { border-color:#24334a !important; }
+html.site-dark .site-theme-button, html.site-dark select { background:#101d30 !important; color:#f3f6fb !important; border-color:#2a3b55 !important; }
+html.site-dark footer { background:#050b14 !important; }

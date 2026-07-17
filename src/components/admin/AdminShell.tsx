@@ -9,6 +9,9 @@ import {
   FolderTree,
   Home,
   Image as ImageIcon,
+  Images,
+  Languages,
+  Type,
   Inbox,
   LayoutDashboard,
   Menu,
@@ -22,7 +25,9 @@ import {
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/pages", label: "Pages", icon: FileText },
+  { href: "/admin/pages", label: "Page Builder", icon: FileText },
+  { href: "/admin/text", label: "Text Manager", icon: Type },
+  { href: "/admin/images", label: "Images Control", icon: Images },
   { href: "/admin/homepage", label: "Homepage", icon: Home },
   { href: "/admin/products", label: "Products", icon: Boxes },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
@@ -30,17 +35,18 @@ const navItems = [
   { href: "/admin/media", label: "Media Library", icon: ImageIcon },
   { href: "/admin/inquiries", label: "Inquiries CRM", icon: Inbox },
   { href: "/admin/seo", label: "SEO Manager", icon: Search },
+  { href: "/admin/languages", label: "Languages", icon: Languages },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("salt-cms-theme");
-    setDark(saved === "dark");
+    setDark(saved ? saved === "dark" : true);
   }, []);
 
   function toggleTheme() {

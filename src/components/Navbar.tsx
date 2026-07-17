@@ -1,190 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Menu, X, ChevronDown, Moon, Sun } from "lucide-react";
+import { loadCmsImages, loadCmsText, type CmsLanguage } from "@/lib/cms";
+import { supabase } from "@/lib/supabase-client";
+import { useSiteTheme } from "@/components/SiteThemeProvider";
+
+const defaults = { home:"Home", about:"About Us", products:"Products", private_label:"Private Label", certifications:"Certifications", blog:"Blog", contact:"Contact", quote:"Get Quote" };
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { dark, toggle } = useSiteTheme();
+  const [isOpen,setIsOpen]=useState(false);
+  const [language,setLanguage]=useState("en");
+  const [languages,setLanguages]=useState<CmsLanguage[]>([]);
+  const [labels,setLabels]=useState(defaults);
+  const [logo,setLogo]=useState("/logo.png");
 
-  return (
-    <>
-      <header className="sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 h-[84px] flex items-center justify-between">
-          {/* LOGO */}
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="The Salt Origin"
-              width={110}
-              height={110}
-              priority
-              className="h-[55px] lg:h-[62px] w-auto object-contain"
-            />
-          </Link>
+  useEffect(()=>{
+    const saved=localStorage.getItem("salt-language")||"en"; setLanguage(saved); load(saved);
+  },[]);
 
-          {/* DESKTOP MENU */}
-          <nav className="hidden lg:flex items-center gap-12 text-[16px] font-semibold text-[#111827]">
-            <Link href="/" className="hover:text-[#C54B5B] transition">
-              Home
-            </Link>
+  async function load(lang:string){
+    const [{data:langs},texts,images]=await Promise.all([
+      supabase.from("cms_languages").select("*").eq("enabled",true).order("display_order"),
+      loadCmsText("global",lang),
+      loadCmsImages("global")
+    ]);
+    setLanguages((langs as CmsLanguage[])||[]);
+    setLabels({
+      home:texts["global.navbar.home"]||defaults.home,
+      about:texts["global.navbar.about"]||defaults.about,
+      products:texts["global.navbar.products"]||defaults.products,
+      private_label:texts["global.navbar.private_label"]||defaults.private_label,
+      certifications:texts["global.navbar.certifications"]||defaults.certifications,
+      blog:texts["global.navbar.blog"]||defaults.blog,
+      contact:texts["global.navbar.contact"]||defaults.contact,
+      quote:texts["global.navbar.quote"]||defaults.quote,
+    });
+    setLogo(images["global.branding.logo"]?.url||"/logo.png");
+  }
 
-            <Link
-              href="/about"
-              className="hover:text-[#C54B5B] transition"
-            >
-              About Us
-            </Link>
+  function changeLanguage(code:string){
+    setLanguage(code); localStorage.setItem("salt-language",code); load(code);
+    window.dispatchEvent(new CustomEvent("salt-language-change",{detail:code}));
+    const selected=languages.find(l=>l.code===code); document.documentElement.dir=selected?.direction||"ltr"; document.documentElement.lang=code;
+  }
 
-            <Link
-              href="/products"
-              className="hover:text-[#C54B5B] transition"
-            >
-              Products
-            </Link>
+  const links=[
+    ["/",labels.home],["/about",labels.about],["/products",labels.products],["/private-label",labels.private_label],["/certifications",labels.certifications],["/blog",labels.blog],["/contact",labels.contact]
+  ];
 
-            <Link
-              href="/private-label"
-              className="hover:text-[#C54B5B] transition"
-            >
-              Private Label
-            </Link>
-
-            <Link
-               href="/certifications"
-              className="hover:text-[#C54B5B] transition"
-            >
-              Certifications
-            </Link>
-
-            <Link href="/blog" className="hover:text-[#C54B5B] transition">
-              Blog
-            </Link>
-
-            <Link
-              href="/contact"
-              className="hover:text-[#C54B5B] transition"
-            >
-              Contact
-            </Link>
-          </nav>
-
-          {/* CTA */}
-          <div className="flex items-center gap-4">
-            <Link
-              href="/contact"
-              className="hidden md:flex items-center justify-center bg-[#C54B5B] text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition"
-            >
-              Get Quote
-            </Link>
-
-            <button
-              onClick={() => setIsOpen(true)}
-              className="lg:hidden flex flex-col gap-1.5 p-1"
-              aria-label="Open menu"
-            >
-              <span className="w-7 h-[2.5px] bg-[#111827] rounded-full"></span>
-              <span className="w-7 h-[2.5px] bg-[#111827] rounded-full"></span>
-              <span className="w-7 h-[2.5px] bg-[#111827] rounded-full"></span>
-            </button>
-          </div>
+  return <>
+    <header className="sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
+      <div className="max-w-[1700px] mx-auto px-6 lg:px-16 h-[84px] flex items-center justify-between">
+        <Link href="/" className="flex items-center"><img src={logo} alt="The Salt Origin" className="h-[55px] lg:h-[62px] w-auto object-contain"/></Link>
+        <nav className="hidden lg:flex items-center gap-8 text-[15px] font-semibold text-[#111827]">{links.map(([href,label])=><Link key={href} href={href} className="hover:text-[#C54B5B] transition">{label}</Link>)}</nav>
+        <div className="flex items-center gap-3">
+          <button onClick={toggle} aria-label="Toggle website theme" className="hidden md:inline-flex items-center justify-center w-11 h-11 rounded-xl border border-[#EFE3E5] bg-white text-[#081325] site-theme-button">{dark ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button>
+          <div className="hidden md:flex relative items-center"><select aria-label="Website language" value={language} onChange={e=>changeLanguage(e.target.value)} className="appearance-none border border-[#EFE3E5] rounded-xl pl-4 pr-9 py-3 text-sm font-bold bg-white text-[#081325]">{languages.length?languages.map(l=><option key={l.code} value={l.code}>{l.native_name}</option>):<option value="en">English</option>}</select><ChevronDown className="absolute right-3 w-4 h-4 pointer-events-none text-slate-500"/></div>
+          <Link href="/contact" className="hidden md:flex items-center justify-center bg-[#C54B5B] text-white px-7 py-3 rounded-xl font-bold hover:opacity-90 transition">{labels.quote}</Link>
+          <button onClick={()=>setIsOpen(true)} className="lg:hidden p-2" aria-label="Open menu"><Menu className="w-7 h-7"/></button>
         </div>
-      </header>
-
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-[90]"
-            onClick={() => setIsOpen(false)}
-          />
-
-          <div className="fixed top-0 right-0 h-screen w-[80%] max-w-[360px] bg-white z-[100] shadow-2xl">
-            <div className="p-6 border-b border-[#F0DDE1] flex items-center justify-between">
-              <Image
-                src="/logo.png"
-                alt="The Salt Origin"
-                width={80}
-                height={80}
-                className="h-[55px] w-auto object-contain"
-              />
-
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-3xl leading-none text-[#111827]"
-                aria-label="Close menu"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-8 flex flex-col gap-2 text-lg font-semibold text-[#111827]">
-              <Link
-                href="/"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Home
-              </Link>
-
-              <Link
-                href="/about"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                About Us
-              </Link>
-
-              <Link
-                href="/products"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Products
-              </Link>
-
-              <Link
-                href="/private-label"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Private Label
-              </Link>
-
-              <Link
-                href="/certifications"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Certifications
-              </Link>
-
-              <Link
-                href="/blog"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Blog
-              </Link>
-
-              <Link
-                href="/contact"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] hover:text-[#C54B5B] transition"
-              >
-                Contact
-              </Link>
-
-              <Link
-                href="/contact"
-                onClick={() => setIsOpen(false)}
-                className="mt-5 bg-[#C54B5B] text-white text-center py-4 rounded-xl font-bold w-full hover:opacity-90 transition"
-              >
-                Get Quote
-              </Link>
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
+      </div>
+    </header>
+    {isOpen&&<><button className="fixed inset-0 bg-black/50 z-[990]" onClick={()=>setIsOpen(false)} aria-label="Close menu overlay"/><aside className="fixed top-0 right-0 h-screen w-[84%] max-w-[380px] bg-white z-[1000] shadow-2xl p-6"><div className="flex justify-between items-center"><img src={logo} alt="The Salt Origin" className="h-14 w-auto"/><button onClick={()=>setIsOpen(false)}><X className="w-7 h-7"/></button></div><div className="mt-8"><select value={language} onChange={e=>changeLanguage(e.target.value)} className="w-full border rounded-xl p-4 bg-white">{languages.map(l=><option key={l.code} value={l.code}>{l.native_name}</option>)}</select></div><nav className="mt-5 flex flex-col gap-2">{links.map(([href,label])=><Link key={href} href={href} onClick={()=>setIsOpen(false)} className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] font-bold">{label}</Link>)}<Link href="/contact" onClick={()=>setIsOpen(false)} className="mt-3 bg-[#C54B5B] text-white text-center py-4 rounded-xl font-bold">{labels.quote}</Link></nav></aside></>}
+  </>;
 }

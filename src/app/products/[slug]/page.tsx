@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import React from "react";
 import { ArrowRight, CheckCircle2, Globe2, Package, ShieldCheck, Tag } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 import ProductInquiryForm from "@/components/ProductInquiryForm";
 import { supabase } from "@/lib/supabase";
 
@@ -20,6 +22,17 @@ type Product = {
   moq: string | null;
   packaging: string | null;
   status: string | null;
+  subtitle?: string | null;
+  short_description?: string | null;
+  grain_type?: string | null;
+  sizes?: string | null;
+  packaging_type?: string | null;
+  best_for?: string | null;
+  features?: string[] | null;
+  applications?: string[] | null;
+  specifications?: Record<string, string> | null;
+  gallery?: string[] | null;
+  brochure_url?: string | null;
 };
 
 async function getProduct(slug: string): Promise<Product | null> {
@@ -85,6 +98,11 @@ export default async function ProductDetailPage({
     product.description ||
     "Premium Himalayan Pink Salt product available for private label, retail packaging, bulk supply and global export markets.";
 
+
+  const gallery = [productImage, ...((product.gallery || []).filter(Boolean))].filter((value, index, array) => array.indexOf(value) === index);
+  const specifications = product.specifications || {};
+  const features = product.features || [];
+  const applications = product.applications || [];
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -159,17 +177,18 @@ export default async function ProductDetailPage({
                 {product.title}
               </h1>
 
+              {product.subtitle && <p className="text-[#C23B4A] font-black mt-3">{product.subtitle}</p>}
               <p className="text-lg text-slate-600 mt-6 leading-relaxed">
                 {productDescription}
               </p>
 
               <div className="grid grid-cols-2 gap-4 mt-8">
                 <InfoCard label="Origin" value="Pakistan" />
-                <InfoCard label="Quality" value="Food Grade" />
+                <InfoCard label="Grain Type" value={product.grain_type || "Food Grade"} />
                 <InfoCard label="MOQ" value={product.moq || "Available"} />
                 <InfoCard
                   label="Packaging"
-                  value={product.packaging || "Custom / Retail"}
+                  value={product.packaging_type || product.packaging || "Custom / Retail"}
                 />
               </div>
 
@@ -193,6 +212,40 @@ export default async function ProductDetailPage({
               </div>
             </div>
          </section>
+
+          {gallery.length > 1 && (
+            <section className="mt-12">
+              <h2 className="text-3xl font-black text-[#07142B] mb-6">Product Gallery</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {gallery.map((image, index) => (
+                  <div key={`${image}-${index}`} className="bg-white border border-[#EFE3E5] rounded-2xl p-4 h-52 flex items-center justify-center">
+                    <img src={image} alt={`${product.title} ${index + 1}`} className="max-h-full max-w-full object-contain" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(product.sizes || product.best_for || Object.keys(specifications).length > 0) && (
+            <section className="grid lg:grid-cols-2 gap-8 mt-14">
+              <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
+                <h2 className="text-3xl font-black text-[#07142B] mb-6">Product Specifications</h2>
+                <div className="grid sm:grid-cols-2 gap-4 text-slate-600">
+                  {product.sizes && <SpecItem label="Sizes" value={product.sizes} />}
+                  {product.best_for && <SpecItem label="Best For" value={product.best_for} />}
+                  {Object.entries(specifications).map(([label, value]) => <SpecItem key={label} label={label} value={value} />)}
+                </div>
+              </div>
+              <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
+                <h2 className="text-3xl font-black text-[#07142B] mb-6">Features & Applications</h2>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div><h3 className="font-black mb-3">Features</h3><ul className="space-y-2 text-slate-600">{features.length ? features.map((item) => <li key={item}>✓ {item}</li>) : <li>✓ Premium export quality</li>}</ul></div>
+                  <div><h3 className="font-black mb-3">Applications</h3><ul className="space-y-2 text-slate-600">{applications.length ? applications.map((item) => <li key={item}>✓ {item}</li>) : <li>✓ Retail and wholesale supply</li>}</ul></div>
+                </div>
+                {product.brochure_url && <Link href={product.brochure_url} target="_blank" className="inline-flex mt-6 bg-[#081325] text-white px-5 py-3 rounded-xl font-black">Download Product Brochure</Link>}
+              </div>
+            </section>
+          )}
 
 {/* TRUST */}
 <section className="grid md:grid-cols-3 gap-6 mt-12">

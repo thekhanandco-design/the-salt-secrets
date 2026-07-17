@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/blog/daily-draft",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
