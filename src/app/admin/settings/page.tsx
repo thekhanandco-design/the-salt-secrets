@@ -3,59 +3,21 @@
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { ImageUp, Save } from "lucide-react";
 
-type Setting = { id: number; site_name?: string; contact_email?: string; whatsapp_number?: string; address?: string; footer_text?: string };
+type Setting = { id: number; site_name?: string; contact_email?: string; whatsapp_number?: string; address?: string; footer_text?: string; favicon_url?: string; app_icon_url?: string; notification_email?: string; pwa_enabled?: boolean };
 
 export default function SettingsPage() {
-  const [settingsId, setSettingsId] = useState<number | null>(null);
-  const [siteName, setSiteName] = useState("The Salt Origin");
-  const [contactEmail, setContactEmail] = useState("thekhanandco@gmail.com");
-  const [whatsappNumber, setWhatsappNumber] = useState("92331281289");
-  const [address, setAddress] = useState("Pakistan");
-  const [footerText, setFooterText] = useState("Premium Himalayan Pink Salt supplier offering retail packaging, bulk supply and private label solutions.");
-
-  useEffect(() => { loadSettings(); }, []);
-
-  async function loadSettings() {
-    const { data } = await supabase.from("site_settings").select("*").limit(1).single();
-    const row = data as Setting | null;
-    if (row) {
-      setSettingsId(row.id);
-      setSiteName(row.site_name || siteName);
-      setContactEmail(row.contact_email || contactEmail);
-      setWhatsappNumber(row.whatsapp_number || whatsappNumber);
-      setAddress(row.address || address);
-      setFooterText(row.footer_text || footerText);
-    }
+  const [row, setRow] = useState<Setting>({ id: 0, site_name:"The Salt Origin", contact_email:"thekhanandco@gmail.com", whatsapp_number:"92331281289", address:"Pakistan", footer_text:"Premium Himalayan Pink Salt supplier offering retail packaging, bulk supply and private label solutions.", favicon_url:"/favicon.ico", app_icon_url:"/web-app-manifest-192x192.png", notification_email:"thekhanandco@gmail.com", pwa_enabled:true });
+  const [uploading,setUploading]=useState<string|null>(null);
+  useEffect(()=>{void load()},[]);
+  async function load(){const{data}=await supabase.from("site_settings").select("*").limit(1).maybeSingle();if(data)setRow(data as Setting)}
+  function set<K extends keyof Setting>(key:K,value:Setting[K]){setRow(current=>({...current,[key]:value}))}
+  async function upload(file:File|undefined,field:"favicon_url"|"app_icon_url"){
+    if(!file)return;setUploading(field);const ext=file.name.split(".").pop()||"png";const path=`branding/${field}-${Date.now()}.${ext}`;const{error}=await supabase.storage.from("site-media").upload(path,file,{upsert:true});if(error){setUploading(null);return alert(error.message)}const{data}=supabase.storage.from("site-media").getPublicUrl(path);set(field,data.publicUrl);setUploading(null)
   }
-
-  async function saveSettings() {
-    const payload = { site_name: siteName, contact_email: contactEmail, whatsapp_number: whatsappNumber, address, footer_text: footerText };
-    const { data, error } = settingsId
-      ? await supabase.from("site_settings").update(payload).eq("id", settingsId).select().single()
-      : await supabase.from("site_settings").insert([payload]).select().single();
-    if (error) return alert("Run supabase/cms-schema.sql first. " + error.message);
-    if (data) setSettingsId((data as Setting).id);
-    alert("Settings saved");
-  }
-
-  return (
-    <AdminShell>
-      <div className="space-y-8">
-        <div>
-          <p className="uppercase tracking-[5px] text-[#C23B4A] font-black text-xs">Settings</p>
-          <h1 className="text-4xl lg:text-5xl font-black mt-2">Website Settings</h1>
-          <p className="text-slate-600 mt-3">Central contact details for future website-wide use.</p>
-        </div>
-        <div className="rounded-[28px] bg-white border border-[#EFE3E5] p-6 space-y-5">
-          <div><label className="font-black block mb-2">Site Name</label><input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-          <div><label className="font-black block mb-2">Lead Email</label><input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-          <div><label className="font-black block mb-2">WhatsApp Number</label><input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-          <div><label className="font-black block mb-2">Address</label><input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-          <div><label className="font-black block mb-2">Footer Text</label><textarea value={footerText} onChange={(e) => setFooterText(e.target.value)} className="w-full border rounded-xl p-4 h-36" /></div>
-          <button onClick={saveSettings} className="bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-black">Save Settings</button>
-        </div>
-      </div>
-    </AdminShell>
-  );
+  async function save(){const payload={site_name:row.site_name,contact_email:row.contact_email,whatsapp_number:row.whatsapp_number,address:row.address,footer_text:row.footer_text,favicon_url:row.favicon_url,app_icon_url:row.app_icon_url,notification_email:row.notification_email,pwa_enabled:row.pwa_enabled};const{data,error}=row.id?await supabase.from("site_settings").update(payload).eq("id",row.id).select().single():await supabase.from("site_settings").insert(payload).select().single();if(error)return alert(error.message);setRow(data as Setting);window.dispatchEvent(new Event("salt-cms-updated"));alert("Settings saved. Refresh the public website to see favicon changes.")}
+  return <AdminShell><div className="space-y-6"><div><p className="uppercase tracking-[4px] text-blue-400 font-black text-xs">Global Configuration</p><h1 className="text-4xl font-black mt-2">Website Settings</h1><p className="text-slate-400 mt-2">Branding, contact details, PWA and notification settings.</p></div><div className="grid xl:grid-cols-2 gap-5"><section className="cms-panel rounded-2xl border border-white/10 bg-[#0b1728] p-5 space-y-4"><h2 className="text-xl font-black">Business details</h2><Field label="Site Name" value={row.site_name||""} onChange={v=>set("site_name",v)}/><Field label="Lead Email" value={row.contact_email||""} onChange={v=>set("contact_email",v)}/><Field label="Notification Email" value={row.notification_email||""} onChange={v=>set("notification_email",v)}/><Field label="WhatsApp Number" value={row.whatsapp_number||""} onChange={v=>set("whatsapp_number",v)}/><Field label="Address" value={row.address||""} onChange={v=>set("address",v)}/><label className="block"><span className="font-black text-sm">Footer Text</span><textarea value={row.footer_text||""} onChange={e=>set("footer_text",e.target.value)} className="mt-2 w-full border rounded-xl p-4 h-32"/></label></section><section className="cms-panel rounded-2xl border border-white/10 bg-[#0b1728] p-5 space-y-5"><h2 className="text-xl font-black">Brand icons & mobile app</h2><UploadCard title="Favicon" help="Recommended: square PNG/ICO, 96×96 or 512×512" url={row.favicon_url||""} busy={uploading==="favicon_url"} onFile={f=>upload(f,"favicon_url")} onUrl={v=>set("favicon_url",v)}/><UploadCard title="Mobile / PWA App Icon" help="Recommended: 512×512 PNG" url={row.app_icon_url||""} busy={uploading==="app_icon_url"} onFile={f=>upload(f,"app_icon_url")} onUrl={v=>set("app_icon_url",v)}/><label className="flex items-center justify-between rounded-xl bg-white/5 p-4"><div><p className="font-black">Progressive Web App</p><p className="text-xs text-slate-500">Allow users to install the website on mobile.</p></div><input type="checkbox" checked={row.pwa_enabled!==false} onChange={e=>set("pwa_enabled",e.target.checked)}/></label></section></div><button onClick={save} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-white font-black"><Save className="h-4 w-4"/>Save Website Settings</button></div></AdminShell>
 }
+function Field({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}){return <label className="block"><span className="font-black text-sm">{label}</span><input value={value} onChange={e=>onChange(e.target.value)} className="mt-2 w-full border rounded-xl p-4"/></label>}
+function UploadCard({title,help,url,busy,onFile,onUrl}:{title:string;help:string;url:string;busy:boolean;onFile:(f?:File)=>void;onUrl:(v:string)=>void}){return <div className="rounded-2xl border border-white/10 p-4"><div className="flex items-center gap-4"><div className="h-20 w-20 rounded-xl bg-white p-2 flex items-center justify-center overflow-hidden">{url?<img src={url} alt="" className="max-h-full max-w-full object-contain"/>:<ImageUp className="text-slate-500"/>}</div><div><p className="font-black">{title}</p><p className="text-xs text-slate-500">{help}</p></div></div><input value={url} onChange={e=>onUrl(e.target.value)} placeholder="Image URL" className="mt-3 w-full border rounded-xl p-3"/><label className="mt-3 inline-flex cursor-pointer rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white"><input type="file" accept="image/*,.ico" className="hidden" onChange={e=>onFile(e.target.files?.[0])}/>{busy?"Uploading...":"Upload New"}</label></div>}

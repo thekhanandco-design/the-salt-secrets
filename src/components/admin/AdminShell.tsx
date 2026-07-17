@@ -5,8 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 import {
-  Activity, Boxes, FileText, FolderTree, Home, Image as ImageIcon, Images,
-  Inbox, Languages, LayoutDashboard, LogOut, Menu, Moon, Search, Settings,
+  Activity, Bell, Boxes, FileText, FolderTree, History, Image as ImageIcon, Images,
+  Inbox, Languages, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, Share2, ShieldCheck,
   Sparkles, Sun, Type, UserCircle2, X,
 } from "lucide-react";
 
@@ -22,6 +22,9 @@ const navItems = [
   { href: "/admin/inquiries", label: "Inquiries CRM", icon: Inbox },
   { href: "/admin/seo", label: "SEO Manager", icon: Search },
   { href: "/admin/languages", label: "Languages", icon: Languages },
+  { href: "/admin/social", label: "Social Media", icon: Share2 },
+  { href: "/admin/workflow", label: "Workflow & Roles", icon: ShieldCheck },
+  { href: "/admin/backups", label: "Backups & History", icon: History },
   { href: "/admin/settings", label: "Site Settings", icon: Settings },
 ];
 
@@ -32,11 +35,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("Admin");
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     const saved = localStorage.getItem("salt-cms-theme");
     setDark(saved ? saved === "dark" : true);
     void checkSession();
+    const timer = window.setInterval(() => void refreshNotifications(), 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   async function checkSession() {
@@ -46,7 +52,24 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       return;
     }
     setEmail(data.session.user.email || "Admin");
+    const { count } = await supabase.from("cms_notifications").select("id", { count: "exact", head: true }).eq("is_read", false);
+    setUnread(count || 0);
     setChecking(false);
+  }
+
+  async function refreshNotifications() {
+    const { count } = await supabase.from("cms_notifications").select("id", { count: "exact", head: true }).eq("is_read", false);
+    const next = count || 0;
+    if (next > unread && unread >= 0 && typeof Notification !== "undefined" && Notification.permission === "granted") {
+      new Notification("The Salt Origin", { body: "A new CMS notification is available.", icon: "/web-app-manifest-192x192.png" });
+    }
+    setUnread(next);
+  }
+
+  async function enableNotifications() {
+    if (typeof Notification === "undefined") return alert("Browser notifications are not supported.");
+    const result = await Notification.requestPermission();
+    alert(result === "granted" ? "Browser notifications enabled." : "Notification permission was not granted.");
   }
 
   async function logout() {
@@ -113,6 +136,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               <div><p className="font-black">CMS Control Center</p><p className="text-[11px] text-slate-500">Supabase connected content management</p></div>
             </div>
             <div className="flex items-center gap-2">
+              <button onClick={enableNotifications} title="Enable browser notifications" className={`hidden sm:inline-flex w-10 h-10 rounded-xl border items-center justify-center ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}><Sparkles className="h-4 w-4"/></button>
+              <Link href="/admin/inquiries" title="Notifications" className={`relative w-10 h-10 rounded-xl border inline-flex items-center justify-center ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}><Bell className="h-4 w-4"/>{unread>0&&<span className="absolute -right-1 -top-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-black">{unread>99?"99+":unread}</span>}</Link>
               <Link href="/" target="_blank" className={`hidden md:inline-flex px-4 py-2.5 rounded-xl text-xs font-black border ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}>View Site</Link>
               <button onClick={toggleTheme} className={`w-10 h-10 rounded-xl border inline-flex items-center justify-center ${dark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"}`}>{dark ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}</button>
               <div className={`hidden sm:flex items-center gap-2 rounded-xl border px-3 py-2 ${dark ? "border-white/10" : "border-slate-200"}`}><UserCircle2 className="h-7 w-7 text-slate-400"/><div className="max-w-[150px]"><p className="text-xs font-black truncate">{email}</p><p className="text-[10px] text-slate-500">Super Admin</p></div></div>

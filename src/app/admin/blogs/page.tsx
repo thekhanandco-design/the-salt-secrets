@@ -38,8 +38,15 @@ export default function BlogsAdminPage() {
   const [generating, setGenerating] = useState(false);
   const [topic, setTopic] = useState("");
   const [search, setSearch] = useState("");
+  const [automation, setAutomation] = useState({ enabled:false, frequency:"daily", approval_required:true, default_language:"en", topic_focus:"Himalayan pink salt sourcing, private label packaging, retail trends, food industry applications and export guidance" });
+  const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
 
-  useEffect(() => { loadPosts(); }, []);
+  useEffect(() => { void loadPosts(); void loadAutomation(); }, []);
+
+  async function loadAutomation(){ const { data } = await supabase.from("blog_automation_settings").select("*").limit(1).maybeSingle(); if(data) setAutomation(data); }
+  async function saveAutomation(){ const { data: existing } = await supabase.from("blog_automation_settings").select("id").limit(1).maybeSingle(); const payload={...automation,updated_at:new Date().toISOString()}; const { error } = existing ? await supabase.from("blog_automation_settings").update(payload).eq("id",existing.id) : await supabase.from("blog_automation_settings").insert(payload); if(error) return alert(error.message); alert("Blog automation settings saved."); }
+  async function researchTopics(){ setLoadingTopics(true); const response=await fetch("/api/blog/topics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({focus:automation.topic_focus})}); const result=await response.json(); setLoadingTopics(false); if(!response.ok)return alert(result.error||"Topic research failed"); setSuggestedTopics(result.topics||[]); }
 
   async function loadPosts() {
     const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
@@ -127,6 +134,17 @@ export default function BlogsAdminPage() {
           <h1 className="text-4xl lg:text-5xl font-black mt-2">Blogs Manager</h1>
           <p className="text-slate-500 mt-3">Create, edit, schedule and publish SEO-ready articles.</p>
         </div>
+
+        <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] p-6 lg:p-8">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+            <div><h2 className="text-2xl font-black">AI Blog Automation</h2><p className="text-sm text-slate-500 mt-1">Research topics daily, save drafts for review, and publish only after approval.</p></div>
+            <label className="flex items-center gap-3 font-black"><input type="checkbox" checked={automation.enabled} onChange={e=>setAutomation({...automation,enabled:e.target.checked})}/> Automation Enabled</label>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4 mt-5"><select value={automation.frequency} onChange={e=>setAutomation({...automation,frequency:e.target.value})} className="border rounded-xl p-4 bg-white"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select><select value={automation.default_language} onChange={e=>setAutomation({...automation,default_language:e.target.value})} className="border rounded-xl p-4 bg-white"><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option><option value="es">Spanish</option><option value="de">German</option><option value="pt">Portuguese</option><option value="tr">Turkish</option><option value="ur">Urdu</option></select><label className="flex items-center gap-3 border rounded-xl p-4"><input type="checkbox" checked={automation.approval_required} onChange={e=>setAutomation({...automation,approval_required:e.target.checked})}/> Approval required</label></div>
+          <textarea value={automation.topic_focus} onChange={e=>setAutomation({...automation,topic_focus:e.target.value})} className="mt-4 w-full border rounded-xl p-4 h-28" placeholder="Topic focus"/>
+          <div className="mt-4 flex flex-wrap gap-3"><button onClick={saveAutomation} className="rounded-xl bg-blue-600 text-white px-5 py-3 font-black">Save Automation</button><button onClick={researchTopics} disabled={loadingTopics} className="rounded-xl bg-violet-600 text-white px-5 py-3 font-black">{loadingTopics?"Researching...":"Research Trending Topics"}</button></div>
+          {suggestedTopics.length>0&&<div className="mt-5 grid md:grid-cols-2 gap-3">{suggestedTopics.map(item=><button key={item} onClick={()=>setTopic(item)} className="text-left border rounded-xl p-4 hover:bg-[#FFF4F5]"><b>{item}</b><span className="block text-xs text-slate-500 mt-1">Click to use this topic</span></button>)}</div>}
+        </section>
 
         <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] p-6 lg:p-8">
           <h2 className="text-2xl font-black">AI Blog Draft</h2>

@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
 import { cmsPageLabels, cmsTextRegistry, type CmsTextSeed } from "@/lib/cms-registry";
-import { Languages, RefreshCw, Save, Search, Sparkles } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, CaseLower, CaseUpper, Italic, Languages, RefreshCw, Save, Search, Sparkles, Underline } from "lucide-react";
+import { defaultCmsTextStyle, type CmsTextStyle } from "@/lib/text-style";
 
 type Language = { code: string; name: string; native_name: string; direction: "ltr" | "rtl"; enabled: boolean };
 type Translation = { language_code: string; value: string | null };
-type Entry = CmsTextSeed & { id?: string; cms_text_translations?: Translation[] };
+type Entry = CmsTextSeed & { id?: string; cms_text_translations?: Translation[]; style_json?: CmsTextStyle };
 
 const fallbackLanguages: Language[] = [
   { code: "en", name: "English", native_name: "English", direction: "ltr", enabled: true },
@@ -31,6 +32,7 @@ export default function TextManagerPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [translatingPage, setTranslatingPage] = useState(false);
+  const [styles, setStyles] = useState<Record<string, CmsTextStyle>>({});
 
   useEffect(() => { void load(); }, []);
 
@@ -48,6 +50,9 @@ export default function TextManagerPage() {
     const extras = db.filter((row) => !merged.some((item) => item.page_slug === row.page_slug && item.section_slug === row.section_slug && item.field_key === row.field_key));
     const all: Entry[] = [...merged, ...extras];
     setEntries(all);
+    const nextStyles: Record<string, CmsTextStyle> = {};
+    all.forEach((row) => { nextStyles[`${row.page_slug}:${row.section_slug}:${row.field_key}`] = { ...defaultCmsTextStyle, ...(row.style_json || {}) }; });
+    setStyles(nextStyles);
     const next: Record<string, string> = {};
     all.forEach((row) => {
       (row.cms_text_translations || []).forEach((translation) => {
@@ -76,6 +81,9 @@ export default function TextManagerPage() {
   const grouped = useMemo(() => visible.reduce<Record<string, Entry[]>>((groups, entry) => { (groups[entry.section_slug] ||= []).push(entry); return groups; }, {}), [visible]);
 
   function localKey(entry: Entry, lang = language) { return `${entry.page_slug}:${entry.section_slug}:${entry.field_key}:${lang}`; }
+  function styleKey(entry: Entry) { return `${entry.page_slug}:${entry.section_slug}:${entry.field_key}`; }
+  function getStyle(entry: Entry) { return styles[styleKey(entry)] || { ...defaultCmsTextStyle }; }
+  function updateStyle(entry: Entry, patch: Partial<CmsTextStyle>) { setStyles((current) => ({ ...current, [styleKey(entry)]: { ...getStyle(entry), ...patch } })); }
   function getValue(entry: Entry, lang = language) {
     const direct = values[localKey(entry, lang)];
     if (direct !== undefined && direct !== "") return direct;
@@ -114,6 +122,9 @@ export default function TextManagerPage() {
     try {
       const value = getValue(entry);
       await upsertTranslation(entry, language, value);
+      const entryId = await ensureEntry(entry);
+      const { error: styleError } = await supabase.from("cms_text_entries").update({ style_json: getStyle(entry) }).eq("id", entryId);
+      if (styleError) throw styleError;
       setValues((current) => ({ ...current, [key]: value }));
 
       if (translateAll && language === "en") {
@@ -182,7 +193,23 @@ export default function TextManagerPage() {
 
             {Object.entries(grouped).map(([section, rows]) => <section key={section} className="rounded-2xl border border-white/10 bg-[#101e31] p-5"><div className="mb-5"><p className="text-[10px] uppercase tracking-[4px] text-blue-400 font-black">{cmsPageLabels[page] || page}</p><h2 className="text-xl font-black mt-1 capitalize">{section.replaceAll("_", " ")} Section</h2></div><div className="space-y-5">{rows.map((entry) => {
               const key = localKey(entry);
-              return <div key={`${entry.page_slug}-${entry.section_slug}-${entry.field_key}`} className="border-b border-white/10 pb-5 last:border-0 last:pb-0"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2"><div><label className="font-black text-sm">{entry.field_label}</label><p className="text-[11px] text-slate-500">{entry.field_key}</p></div><div className="flex gap-2"><button onClick={() => save(entry)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Save className="w-4 h-4"/>{saving === key ? "Saving..." : "Save"}</button>{language === "en" && <button onClick={() => save(entry, true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Sparkles className="w-4 h-4"/>Save + Translate All</button>}</div></div>{entry.field_type === "textarea" ? <textarea dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} className="w-full min-h-28 border rounded-xl p-4"/> : <input dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} className="w-full border rounded-xl p-4"/>}</div>;
+              return <div key={`${entry.page_slug}-${entry.section_slug}-${entry.field_key}`} className="border-b border-white/10 pb-5 last:border-0 last:pb-0"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2"><div><label className="font-black text-sm">{entry.field_label}</label><p className="text-[11px] text-slate-500">{entry.field_key}</p></div><div className="flex gap-2"><button onClick={() => save(entry)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Save className="w-4 h-4"/>{saving === key ? "Saving..." : "Save"}</button>{language === "en" && <button onClick={() => save(entry, true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Sparkles className="w-4 h-4"/>Save + Translate All</button>}</div></div><div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-[#0b1728] p-2">
+                <select value={getStyle(entry).fontFamily || "inherit"} onChange={(e)=>updateStyle(entry,{fontFamily:e.target.value})} className="rounded-lg border px-3 py-2 text-xs">
+                  <option value="inherit">Theme Font</option><option value="Georgia, serif">Georgia</option><option value="Arial, sans-serif">Arial</option><option value="Inter, sans-serif">Inter</option><option value="'Times New Roman', serif">Times New Roman</option><option value="Verdana, sans-serif">Verdana</option>
+                </select>
+                <select value={getStyle(entry).fontSize || ""} onChange={(e)=>updateStyle(entry,{fontSize:e.target.value})} className="rounded-lg border px-3 py-2 text-xs">
+                  <option value="">Theme Size</option><option value="12px">12px</option><option value="14px">14px</option><option value="16px">16px</option><option value="18px">18px</option><option value="20px">20px</option><option value="24px">24px</option><option value="30px">30px</option><option value="36px">36px</option><option value="48px">48px</option><option value="64px">64px</option>
+                </select>
+                <button type="button" title="Bold" onClick={()=>updateStyle(entry,{fontWeight:getStyle(entry).fontWeight==="700"?"":"700"})} className={`p-2 rounded-lg ${getStyle(entry).fontWeight==="700"?"bg-blue-600":"bg-white/5"}`}><Bold className="w-4 h-4"/></button>
+                <button type="button" title="Italic" onClick={()=>updateStyle(entry,{fontStyle:getStyle(entry).fontStyle==="italic"?"normal":"italic"})} className={`p-2 rounded-lg ${getStyle(entry).fontStyle==="italic"?"bg-blue-600":"bg-white/5"}`}><Italic className="w-4 h-4"/></button>
+                <button type="button" title="Underline" onClick={()=>updateStyle(entry,{textDecoration:getStyle(entry).textDecoration==="underline"?"none":"underline"})} className={`p-2 rounded-lg ${getStyle(entry).textDecoration==="underline"?"bg-blue-600":"bg-white/5"}`}><Underline className="w-4 h-4"/></button>
+                <button type="button" title="Uppercase" onClick={()=>updateStyle(entry,{textTransform:"uppercase"})} className={`p-2 rounded-lg ${getStyle(entry).textTransform==="uppercase"?"bg-blue-600":"bg-white/5"}`}><CaseUpper className="w-4 h-4"/></button>
+                <button type="button" title="Lowercase" onClick={()=>updateStyle(entry,{textTransform:"lowercase"})} className={`p-2 rounded-lg ${getStyle(entry).textTransform==="lowercase"?"bg-blue-600":"bg-white/5"}`}><CaseLower className="w-4 h-4"/></button>
+                <button type="button" onClick={()=>updateStyle(entry,{textAlign:"left"})} className={`p-2 rounded-lg ${getStyle(entry).textAlign==="left"?"bg-blue-600":"bg-white/5"}`}><AlignLeft className="w-4 h-4"/></button>
+                <button type="button" onClick={()=>updateStyle(entry,{textAlign:"center"})} className={`p-2 rounded-lg ${getStyle(entry).textAlign==="center"?"bg-blue-600":"bg-white/5"}`}><AlignCenter className="w-4 h-4"/></button>
+                <button type="button" onClick={()=>updateStyle(entry,{textAlign:"right"})} className={`p-2 rounded-lg ${getStyle(entry).textAlign==="right"?"bg-blue-600":"bg-white/5"}`}><AlignRight className="w-4 h-4"/></button>
+              </div>
+              {entry.field_type === "textarea" ? <textarea dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={getStyle(entry) as React.CSSProperties} className="w-full min-h-28 border rounded-xl p-4"/> : <input dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={getStyle(entry) as React.CSSProperties} className="w-full border rounded-xl p-4"/>}</div>;
             })}</div></section>)}
           </section>
         </div>

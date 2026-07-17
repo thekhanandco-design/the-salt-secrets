@@ -8,7 +8,8 @@ import {
   Package,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
-import { loadCmsImages, loadCmsText } from "@/lib/cms";
+import { loadCmsImages, loadCmsTextWithStyles, type CmsTextPayload } from "@/lib/cms";
+import { styleToReact } from "@/lib/text-style";
 
 type HomepageContent = {
   hero_title: string | null;
@@ -35,6 +36,7 @@ const defaultContent: HomepageContent = {
 export default function HomepageClone() {
   const [content, setContent] = useState<HomepageContent>(defaultContent);
   const [cmsText, setCmsText] = useState<Record<string, string>>({});
+  const [cmsRichText, setCmsRichText] = useState<Record<string, CmsTextPayload>>({});
   const [cmsImages, setCmsImages] = useState<Record<string, { url: string; alt: string }>>({});
 
   useEffect(() => {
@@ -50,18 +52,19 @@ export default function HomepageClone() {
   async function loadHomepageContent(language = "en") {
     const [{ data }, texts, images] = await Promise.all([
       supabase.from("homepage").select("*").limit(1).maybeSingle(),
-      loadCmsText("home", language),
+      loadCmsTextWithStyles("home", language),
       loadCmsImages("home"),
     ]);
 
-    setCmsText(texts);
+    setCmsRichText(texts);
+    setCmsText(Object.fromEntries(Object.entries(texts).map(([key,payload])=>[key,payload.value])));
     setCmsImages(images);
     setContent({
-      hero_title: texts["home.hero.title"] || data?.hero_title || defaultContent.hero_title,
-      hero_description: texts["home.hero.description"] || data?.hero_description || defaultContent.hero_description,
+      hero_title: texts["home.hero.title"]?.value || data?.hero_title || defaultContent.hero_title,
+      hero_description: texts["home.hero.description"]?.value || data?.hero_description || defaultContent.hero_description,
       hero_image: images["home.hero.products"]?.url || data?.hero_image || defaultContent.hero_image,
-      private_label_title: texts["home.private_label.title"] || data?.private_label_title || defaultContent.private_label_title,
-      private_label_description: texts["home.private_label.description"] || data?.private_label_description || defaultContent.private_label_description,
+      private_label_title: texts["home.private_label.title"]?.value || data?.private_label_title || defaultContent.private_label_title,
+      private_label_description: texts["home.private_label.description"]?.value || data?.private_label_description || defaultContent.private_label_description,
       export_countries: data?.export_countries || defaultContent.export_countries,
       buyers_count: data?.buyers_count || defaultContent.buyers_count,
     });
@@ -88,7 +91,7 @@ export default function HomepageClone() {
           <div className="grid lg:grid-cols-2 items-center min-h-[640px] gap-10">
             <div>
               <div className="flex items-center gap-4 mb-5">
-                <span className="uppercase tracking-[5px] text-[#C23B4A] font-black text-sm">
+                <span className="uppercase tracking-[5px] text-[#C23B4A] font-black text-sm" style={styleToReact(cmsRichText["home.hero.badge"]?.style)}>
                   {cmsText["home.hero.badge"] || "PREMIUM QUALITY"}
                 </span>
 
@@ -97,18 +100,14 @@ export default function HomepageClone() {
 
               <h1
                 className="text-[#081325] font-black leading-[0.95]"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize:
-                    "clamp(3rem,5vw,5.2rem)",
-                }}
+                style={{ fontFamily: "Georgia, serif", fontSize: "clamp(3rem,5vw,5.2rem)", ...styleToReact(cmsRichText["home.hero.title"]?.style) }}
               >
                 {heroTitleParts.length > 0
                   ? content.hero_title
                   : defaultContent.hero_title}
               </h1>
 
-              <p className="mt-7 text-slate-700 text-lg leading-relaxed max-w-[620px]">
+              <p className="mt-7 text-slate-700 text-lg leading-relaxed max-w-[620px]" style={styleToReact(cmsRichText["home.hero.description"]?.style)}>
                 {content.hero_description}
               </p>
 
@@ -160,18 +159,14 @@ export default function HomepageClone() {
             <div>
               <h2
                 className="text-[#081325] font-black leading-tight"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize:
-                    "clamp(2.2rem,3vw,3.2rem)",
-                }}
+                style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.2rem,3vw,3.2rem)", ...styleToReact(cmsRichText["home.private_label.title"]?.style) }}
               >
                 {content.private_label_title}
               </h2>
 
               <div className="w-16 h-[3px] bg-[#C23B4A] mt-5" />
 
-              <p className="text-slate-600 mt-6 leading-relaxed">
+              <p className="text-slate-600 mt-6 leading-relaxed" style={styleToReact(cmsRichText["home.private_label.description"]?.style)}>
                 {content.private_label_description}
               </p>
 
@@ -241,11 +236,7 @@ export default function HomepageClone() {
           <div className="text-center mb-10">
             <h2
               className="font-black text-[#081325]"
-              style={{
-                fontFamily: "Georgia, serif",
-                fontSize:
-                  "clamp(2.2rem,3vw,3.4rem)",
-              }}
+              style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.2rem,3vw,3.4rem)", ...styleToReact(cmsRichText["home.products.title"]?.style) }}
             >
               {cmsText["home.products.title"] || "OUR PRODUCT RANGE"}
             </h2>
