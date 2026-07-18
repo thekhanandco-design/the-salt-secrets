@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase-client";
 import {
   Activity, Bell, Boxes, FileText, FolderTree, History, Image as ImageIcon, Images, FileSpreadsheet,
   Inbox, Languages, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, Share2, ShieldCheck,
-  Sparkles, Sun, Type, UserCircle2, X,
+  Sparkles, Sun, Type, UserCircle2, X, MessageCircle,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +24,7 @@ const navItems = [
   { href: "/admin/seo", label: "SEO Manager", icon: Search },
   { href: "/admin/languages", label: "Languages", icon: Languages },
   { href: "/admin/social", label: "Social Media", icon: Share2 },
+  { href: "/admin/whatsapp", label: "WhatsApp Center", icon: MessageCircle },
   { href: "/admin/workflow", label: "Workflow & Roles", icon: ShieldCheck },
   { href: "/admin/backups", label: "Backups & History", icon: History },
   { href: "/admin/settings", label: "Site Settings", icon: Settings },

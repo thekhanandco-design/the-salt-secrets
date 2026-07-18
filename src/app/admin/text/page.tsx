@@ -197,9 +197,29 @@ export default function TextManagerPage() {
                 <select value={getStyle(entry).fontFamily || "inherit"} onChange={(e)=>updateStyle(entry,{fontFamily:e.target.value})} className="rounded-lg border px-3 py-2 text-xs">
                   <option value="inherit">Theme Font</option><option value="Georgia, serif">Georgia</option><option value="Arial, sans-serif">Arial</option><option value="Inter, sans-serif">Inter</option><option value="'Times New Roman', serif">Times New Roman</option><option value="Verdana, sans-serif">Verdana</option>
                 </select>
-                <select value={getStyle(entry).fontSize || ""} onChange={(e)=>updateStyle(entry,{fontSize:e.target.value})} className="rounded-lg border px-3 py-2 text-xs">
-                  <option value="">Theme Size</option><option value="12px">12px</option><option value="14px">14px</option><option value="16px">16px</option><option value="18px">18px</option><option value="20px">20px</option><option value="24px">24px</option><option value="30px">30px</option><option value="36px">36px</option><option value="48px">48px</option><option value="64px">64px</option>
-                </select>
+                <div className="inline-flex items-center overflow-hidden rounded-lg border">
+                  <button type="button" className="px-3 py-2 text-sm font-black hover:bg-blue-500/10" onClick={() => {
+                    const current = Number.parseInt(getStyle(entry).fontSize || "16", 10) || 16;
+                    updateStyle(entry, { fontSize: `${Math.max(8, current - 1)}px` });
+                  }}>−</button>
+                  <input
+                    type="number"
+                    min={8}
+                    max={200}
+                    value={Number.parseInt(getStyle(entry).fontSize || "16", 10) || 16}
+                    onChange={(e) => {
+                      const size = Math.min(200, Math.max(8, Number(e.target.value) || 16));
+                      updateStyle(entry, { fontSize: `${size}px` });
+                    }}
+                    className="w-20 border-x bg-transparent px-2 py-2 text-center text-xs outline-none"
+                    aria-label="Custom font size in pixels"
+                  />
+                  <span className="px-2 text-[10px] font-black text-slate-500">PX</span>
+                  <button type="button" className="px-3 py-2 text-sm font-black hover:bg-blue-500/10" onClick={() => {
+                    const current = Number.parseInt(getStyle(entry).fontSize || "16", 10) || 16;
+                    updateStyle(entry, { fontSize: `${Math.min(200, current + 1)}px` });
+                  }}>+</button>
+                </div>
                 <button type="button" title="Bold" onClick={()=>updateStyle(entry,{fontWeight:getStyle(entry).fontWeight==="700"?"":"700"})} className={`p-2 rounded-lg ${getStyle(entry).fontWeight==="700"?"bg-blue-600":"bg-white/5"}`}><Bold className="w-4 h-4"/></button>
                 <button type="button" title="Italic" onClick={()=>updateStyle(entry,{fontStyle:getStyle(entry).fontStyle==="italic"?"normal":"italic"})} className={`p-2 rounded-lg ${getStyle(entry).fontStyle==="italic"?"bg-blue-600":"bg-white/5"}`}><Italic className="w-4 h-4"/></button>
                 <button type="button" title="Underline" onClick={()=>updateStyle(entry,{textDecoration:getStyle(entry).textDecoration==="underline"?"none":"underline"})} className={`p-2 rounded-lg ${getStyle(entry).textDecoration==="underline"?"bg-blue-600":"bg-white/5"}`}><Underline className="w-4 h-4"/></button>

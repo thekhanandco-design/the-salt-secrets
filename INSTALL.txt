@@ -1,0 +1,70 @@
+CMS PREMIUM PATCH V6 - INSTALL GUIDE
+====================================
+
+BACKUP FIRST
+------------
+Apne current project ka backup zaroor bana lein.
+
+PART 1
+------
+CMS-PREMIUM-PATCH-PART-1-UI.zip extract karein.
+ZIP ke andar "src" folder milega.
+Is "src" folder ko project root mein paste karein.
+Windows prompt aaye to:
+- Replace the files in the destination
+select karein.
+
+PART 2
+------
+CMS-PREMIUM-PATCH-PART-2-API-DB.zip extract karein.
+"src", "supabase" aur ".env.patch.example" ko project root mein paste karein.
+Existing matching files ko replace karein.
+
+SUPABASE
+--------
+Supabase Dashboard > SQL Editor kholein.
+Run karein:
+supabase/CMS-PREMIUM-PATCH-V6.sql
+
+VERCEL / .ENV.LOCAL
+-------------------
+.env.patch.example se required variables copy karein:
+
+OPENAI_API_KEY
+OPENAI_BLOG_MODEL
+OPENAI_TRANSLATION_MODEL
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+WHATSAPP_ACCESS_TOKEN
+WHATSAPP_PHONE_NUMBER_ID
+WHATSAPP_ADMIN_NUMBER
+NEXT_PUBLIC_WHATSAPP_ADMIN_NUMBER
+
+WhatsApp number country code ke sath digits mein likhein:
+923212430365
+
+COMMANDS
+--------
+npm install
+npx tsc --noEmit
+npm run build
+
+IMPORTANT
+---------
+OpenAI API key agar screenshot mein visible ho chuki hai to purani key revoke karke new key use karein.
+
+PATCH INCLUDES
+--------------
+- Text Manager custom font size input
+- Plus / minus font controls
+- Light-theme language button fixes
+- Blog research/generation API files
+- Translation API
+- Business Documents page
+- Inquiry CRM status UI
+- Workflow and role management
+- WhatsApp Center
+- WhatsApp Cloud API test route
+- Mobile PWA guidance
+- Supabase business-document migration
