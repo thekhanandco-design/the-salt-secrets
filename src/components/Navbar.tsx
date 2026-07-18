@@ -21,7 +21,7 @@ export default function Navbar() {
     const saved=localStorage.getItem("salt-language")||"en";
     setLanguage(saved);
     document.documentElement.lang=saved;
-    document.documentElement.dir="ltr";
+    document.documentElement.dir=["ar","ur"].includes(saved)?"rtl":"ltr";
     document.documentElement.dataset.siteLanguage=saved;
     load(saved);
   },[]);
@@ -46,12 +46,18 @@ export default function Navbar() {
     setLogo(images["global.branding.logo"]?.url||"/logo.png");
   }
 
-  function changeLanguage(code:string){
-    setLanguage(code); localStorage.setItem("salt-language",code); load(code);
-    window.dispatchEvent(new CustomEvent("salt-language-change",{detail:code}));
-    document.documentElement.dir="ltr";
+  async function changeLanguage(code:string){
+    setLanguage(code);
+    localStorage.setItem("salt-language",code);
+    const selected=languages.find((item)=>item.code===code);
+    document.documentElement.dir=selected?.direction||(["ar","ur"].includes(code)?"rtl":"ltr");
     document.documentElement.lang=code;
     document.documentElement.dataset.siteLanguage=code;
+    if(code!=="en"){
+      try{ await fetch("/api/translate/site",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:code})}); }catch{}
+    }
+    await load(code);
+    window.dispatchEvent(new CustomEvent("salt-language-change",{detail:code}));
   }
 
   const links=[

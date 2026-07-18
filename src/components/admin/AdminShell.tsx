@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 import {
-  Activity, Bell, Boxes, FileText, FolderTree, History, Image as ImageIcon, Images,
+  Activity, Bell, Boxes, FileText, FolderTree, History, Image as ImageIcon, Images, FileSpreadsheet,
   Inbox, Languages, LayoutDashboard, LogOut, Menu, Moon, Search, Settings, Share2, ShieldCheck,
   Sparkles, Sun, Type, UserCircle2, X,
 } from "lucide-react";
@@ -19,6 +19,7 @@ const navItems = [
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/blogs", label: "Blog Posts", icon: FileText },
   { href: "/admin/media", label: "Media Library", icon: ImageIcon },
+  { href: "/admin/documents", label: "Business Documents", icon: FileSpreadsheet },
   { href: "/admin/inquiries", label: "Inquiries CRM", icon: Inbox },
   { href: "/admin/seo", label: "SEO Manager", icon: Search },
   { href: "/admin/languages", label: "Languages", icon: Languages },
@@ -110,7 +111,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
                 return (
                   <div key={item.href}>
-                    {index === 8 && <p className="px-3 mt-6 mb-2 text-[10px] uppercase tracking-[3px] text-slate-500 font-black">CRM & Settings</p>}
+                    {index === 9 && <p className="px-3 mt-6 mb-2 text-[10px] uppercase tracking-[3px] text-slate-500 font-black">CRM & Settings</p>}
                     <Link href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : dark ? "text-slate-300 hover:bg-white/5 hover:text-white" : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"}`}>
                       <Icon className="h-4 w-4" />{item.label}
                     </Link>
@@ -149,19 +150,23 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </div>
 
       <style jsx global>{`
-        [data-cms-theme="dark"] { color-scheme: dark; }
-        [data-cms-theme="light"] { color-scheme: light; }
-        [data-cms-theme="dark"] input,[data-cms-theme="dark"] textarea,[data-cms-theme="dark"] select{background:#0d1b2d!important;border-color:rgba(255,255,255,.13)!important;color:#f4f7fb!important}
-        [data-cms-theme="dark"] input::placeholder,[data-cms-theme="dark"] textarea::placeholder{color:#718096!important}
-        [data-cms-theme="dark"] .bg-white{background-color:#0d1b2d!important}
-        [data-cms-theme="dark"] .bg-\[\#FFF4F5\],[data-cms-theme="dark"] .bg-\[\#FFF8F5\],[data-cms-theme="dark"] .bg-slate-50,[data-cms-theme="dark"] .bg-slate-100{background-color:#101f33!important}
-        [data-cms-theme="dark"] .text-\[\#081325\],[data-cms-theme="dark"] .text-slate-900,[data-cms-theme="dark"] .text-slate-800,[data-cms-theme="dark"] .text-slate-700{color:#f3f6fb!important}
-        [data-cms-theme="dark"] .text-slate-600,[data-cms-theme="dark"] .text-slate-500{color:#a8b6ca!important}
-        [data-cms-theme="dark"] .border-\[\#EFE3E5\],[data-cms-theme="dark"] .border-slate-200,[data-cms-theme="dark"] .border-slate-100{border-color:#26364e!important}
-        [data-cms-theme="light"] input,[data-cms-theme="light"] textarea,[data-cms-theme="light"] select{background:#fff!important;color:#0c1728!important;border-color:#dbe2ea!important}
-        [data-cms-theme="light"] .cms-panel{background:#fff!important;border-color:#dbe2ea!important;color:#0c1728!important}
+        [data-cms-theme="dark"] { color-scheme: dark; --cms-panel:#0d1b2d; --cms-muted:#101f33; --cms-border:rgba(255,255,255,.12); --cms-text:#f4f7fb; --cms-sub:#9fb0c7; }
+        [data-cms-theme="light"] { color-scheme: light; --cms-panel:#ffffff; --cms-muted:#f7f9fc; --cms-border:#dbe3ee; --cms-text:#0c1728; --cms-sub:#64748b; }
+        [data-cms-theme] .cms-panel { background:var(--cms-panel)!important; color:var(--cms-text)!important; border-color:var(--cms-border)!important; }
+        [data-cms-theme] .cms-muted { background:var(--cms-muted)!important; color:var(--cms-text)!important; border-color:var(--cms-border)!important; }
+        [data-cms-theme] .cms-table-head { background:var(--cms-muted)!important; color:var(--cms-text)!important; }
+        [data-cms-theme] .cms-row { border-color:var(--cms-border)!important; }
+        [data-cms-theme] input,[data-cms-theme] textarea,[data-cms-theme] select{background:var(--cms-panel)!important;border-color:var(--cms-border)!important;color:var(--cms-text)!important}
+        [data-cms-theme] input::placeholder,[data-cms-theme] textarea::placeholder{color:var(--cms-sub)!important}
+        [data-cms-theme="dark"] .bg-white{background-color:var(--cms-panel)!important;color:var(--cms-text)!important}
+        [data-cms-theme="dark"] .bg-\[\#0b1728\],[data-cms-theme="dark"] .bg-\[\#101e31\],[data-cms-theme="dark"] .bg-\[\#081321\]{background-color:var(--cms-panel)!important}
+        [data-cms-theme="light"] .bg-\[\#0b1728\],[data-cms-theme="light"] .bg-\[\#101e31\],[data-cms-theme="light"] .bg-\[\#081321\]{background-color:#fff!important;color:#0c1728!important}
+        [data-cms-theme="light"] .text-white,[data-cms-theme="light"] .text-slate-100,[data-cms-theme="light"] .text-slate-200,[data-cms-theme="light"] .text-slate-300{color:#0c1728!important}
+        [data-cms-theme="light"] .text-slate-400,[data-cms-theme="light"] .text-slate-500{color:#64748b!important}
+        [data-cms-theme="light"] .border-white\/10{border-color:#dbe3ee!important}
+        [data-cms-theme="light"] .bg-white\/5,[data-cms-theme="light"] .bg-white\/\[0\.03\]{background:#f7f9fc!important}
         .cms-scrollbar{scrollbar-width:thin;scrollbar-color:#64748b transparent}
-        .cms-scrollbar::-webkit-scrollbar{width:9px;height:9px}.cms-scrollbar::-webkit-scrollbar-thumb{background:#64748b;border-radius:99px}
+        @media print{body *{visibility:hidden!important}.document-preview,.document-preview *{visibility:visible!important}.document-preview{position:absolute!important;inset:0!important;width:100%!important;box-shadow:none!important;border-radius:0!important}.document-admin>div:first-child,.document-admin aside,.document-admin section.cms-panel{display:none!important}@page{size:A4;margin:10mm}}
       `}</style>
     </main>
   );
