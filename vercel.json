@@ -3,6 +3,10 @@
     {
       "path": "/api/blog/daily-draft",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/social/publish-due",
+      "schedule": "0 * * * *"
     }
   ]
 }

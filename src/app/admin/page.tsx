@@ -2,131 +2,42 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Boxes, Image as ImageIcon, Inbox, LayoutDashboard, Search, Settings } from "lucide-react";
 import AdminShell from "@/components/admin/AdminShell";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { supabase } from "@/lib/supabase-client";
+import { Activity, ArrowUpRight, Bot, CalendarClock, CheckCircle2, FileText, Gauge, Inbox, MessageCircle, RefreshCw, Sparkles, Users } from "lucide-react";
 
-type Inquiry = { id: number; name?: string; email?: string; country?: string; product?: string; created_at?: string; status?: string };
-type Product = { id: number; title?: string; category?: string; image?: string; status?: string; created_at?: string };
+type Inquiry={id:number;name?:string;email?:string;product?:string;status?:string;created_at?:string};
+type Post={id:number;title:string;status:string;created_at:string};
+type Health={openai:boolean;supabase:boolean;whatsapp:boolean;resend:boolean};
+type Analytics={connected:boolean;activeUsers?:number;engagementRate?:number;averageSessionDuration?:number;reason?:string};
 
-export default function AdminDashboard() {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminDashboard(){
+ const[inquiries,setInquiries]=useState<Inquiry[]>([]),[posts,setPosts]=useState<Post[]>([]),[health,setHealth]=useState<Health>({openai:false,supabase:false,whatsapp:false,resend:false}),[analytics,setAnalytics]=useState<Analytics>({connected:false}),[loading,setLoading]=useState(true);
+ useEffect(()=>{void load()},[]);
+ async function load(){setLoading(true);const[q1,q2,h,a]=await Promise.all([supabase.from("inquiries").select("id,name,email,product,status,created_at").order("created_at",{ascending:false}).limit(20),supabase.from("blog_posts").select("id,title,status,created_at").order("created_at",{ascending:false}).limit(20),fetch("/api/admin/system-health").then(r=>r.json()).catch(()=>({})),fetch("/api/admin/analytics").then(r=>r.json()).catch(()=>({connected:false}))]);setInquiries((q1.data as Inquiry[])||[]);setPosts((q2.data as Post[])||[]);setHealth(h.health||health);setAnalytics(a);setLoading(false)}
+ const pipeline=useMemo(()=>({new:inquiries.filter(i=>!i.status||i.status==="new").length,contacted:inquiries.filter(i=>i.status==="contacted").length,quoted:inquiries.filter(i=>i.status==="quotation_sent").length,won:inquiries.filter(i=>i.status==="won").length}),[inquiries]);
+ const drafts=posts.filter(p=>p.status!=="published").length,published=posts.filter(p=>p.status==="published").length;
+ return <AdminShell><div className="command-dashboard">
+  <header className="command-head"><div><span>Executive workspace</span><h1>Business command center</h1><p>Live buyer activity, content operations, connected services and the next actions that need attention.</p></div><div className="command-actions"><button onClick={()=>void load()}><RefreshCw/>Refresh</button><Link href="/admin/blogs"><Sparkles/>Open AI Studio</Link></div></header>
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  <section className="attention-grid">
+   <article className="attention-card accent"><Inbox/><div><small>Needs response</small><strong>{pipeline.new} new inquiries</strong><p>Open buyer messages and move qualified leads into quotation.</p></div><Link href="/admin/inquiries"><ArrowUpRight/></Link></article>
+   <article className="attention-card"><FileText/><div><small>Editorial review</small><strong>{drafts} drafts waiting</strong><p>AI creates drafts; you review and approve before they go live.</p></div><Link href="/admin/blogs"><ArrowUpRight/></Link></article>
+   <article className="attention-card"><MessageCircle/><div><small>WhatsApp</small><strong>{health.whatsapp?"Connected":"Setup required"}</strong><p>{health.whatsapp?"Inquiry alerts are ready.":"Add Cloud API credentials, then run a connection test."}</p></div><Link href="/admin/whatsapp"><ArrowUpRight/></Link></article>
+  </section>
 
-  async function loadDashboard() {
-    const [{ data: inquiryData }, { data: productData }] = await Promise.all([
-      supabase.from("inquiries").select("*").order("created_at", { ascending: false }).limit(8),
-      supabase.from("products").select("*").order("created_at", { ascending: false }).limit(8),
-    ]);
+  <div className="command-grid">
+   <section className="command-card analytics"><div className="card-title"><div><span>Live performance</span><h2>Google Analytics overview</h2></div><Activity/></div>{analytics.connected?<div className="analytics-values"><div><small>Active users · 30 days</small><strong>{analytics.activeUsers?.toLocaleString()||0}</strong></div><div><small>Engagement rate</small><strong>{Math.round((analytics.engagementRate||0)*100)}%</strong></div><div><small>Avg. session</small><strong>{Math.round(analytics.averageSessionDuration||0)}s</strong></div></div>:<div className="connect-state"><Gauge/><div><strong>Connect GA4 for real data</strong><p>{analytics.reason||"No analytics connection configured."}</p><Link href="/admin/settings">Open integration settings <ArrowUpRight/></Link></div></div>}</section>
+   <section className="command-card"><div className="card-title"><div><span>Infrastructure</span><h2>System health</h2></div><Gauge/></div><div className="health-list">{[["Supabase",health.supabase,"Database, auth and storage"],["OpenAI",health.openai,"Research, writing and translation"],["WhatsApp",health.whatsapp,"Inquiry alerts and quick reply"],["Email",health.resend,"Transactional notifications"]].map(([label,ok,detail]:any)=><div key={label}><i className={ok?"ok":"bad"}/><span><strong>{label}</strong><small>{detail}</small></span><b>{ok?"Operational":"Setup"}</b></div>)}</div></section>
+  </div>
 
-    setInquiries((inquiryData as Inquiry[]) || []);
-    setProducts((productData as Product[]) || []);
-    setLoading(false);
-  }
+  <div className="command-grid lower">
+   <section className="command-card"><div className="card-title"><div><span>Buyer operations</span><h2>Inquiry pipeline</h2></div><Link href="/admin/inquiries">Open CRM <ArrowUpRight/></Link></div><div className="pipeline-v9">{Object.entries(pipeline).map(([key,value])=><div key={key}><span>{key}</span><strong>{value}</strong><i><em style={{width:`${Math.max(8,Math.min(100,value*18))}%`}}/></i></div>)}</div></section>
+   <section className="command-card"><div className="card-title"><div><span>Content operations</span><h2>AI publishing workflow</h2></div><Bot/></div><div className="workflow-numbers"><div><strong>{drafts}</strong><span>Review queue</span></div><div><strong>{published}</strong><span>Published</span></div><div><strong>Daily</strong><span>Automation</span></div></div><div className="workflow-note"><CalendarClock/><p>Daily AI draft generation is ready through Vercel Cron. Approval remains manual by default.</p></div><Link className="primary-link" href="/admin/blogs">Manage AI workflow <ArrowUpRight/></Link></section>
+  </div>
 
-  const newLeads = useMemo(() => inquiries.filter((item) => !item.status || item.status === "new").length, [inquiries]);
-  const activeProducts = useMemo(() => products.filter((item) => !item.status || item.status === "active").length, [products]);
-
-  return (
-    <AdminShell>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div>
-            <p className="uppercase tracking-[5px] text-[#C23B4A] font-black text-xs">Dashboard</p>
-            <h1 className="text-4xl lg:text-5xl font-black mt-2">Website CMS Overview</h1>
-            <p className="text-slate-600 mt-3">Manage products, leads, media, SEO and site settings from one place.</p>
-          </div>
-          <Link href="/admin/products" className="rounded-xl bg-[#C23B4A] text-white px-6 py-4 font-black w-fit">Add Product</Link>
-        </div>
-
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
-          <AdminCard title="Recent Inquiries" value={inquiries.length} subtitle="Latest leads loaded from Supabase" />
-          <AdminCard title="New Leads" value={newLeads} subtitle="Not yet contacted" />
-          <AdminCard title="Recent Products" value={products.length} subtitle="Latest products loaded" />
-          <AdminCard title="Active Products" value={activeProducts} subtitle="Visible on website" />
-        </div>
-
-        <div className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
-          <div className="rounded-[28px] bg-white border border-[#EFE3E5] overflow-hidden">
-            <div className="p-6 flex items-center justify-between border-b border-[#EFE3E5]">
-              <h2 className="text-2xl font-black">Recent Inquiries</h2>
-              <Link href="/admin/inquiries" className="text-[#C23B4A] font-black text-sm">View All</Link>
-            </div>
-            {loading ? (
-              <div className="p-8">Loading...</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-[#FFF4F5]">
-                    <tr>
-                      <th className="p-4 text-left">Name</th>
-                      <th className="p-4 text-left">Email</th>
-                      <th className="p-4 text-left">Product</th>
-                      <th className="p-4 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inquiries.map((item) => (
-                      <tr key={item.id} className="border-t border-[#EFE3E5]">
-                        <td className="p-4 font-bold">{item.name || "-"}</td>
-                        <td className="p-4">{item.email || "-"}</td>
-                        <td className="p-4">{item.product || "General"}</td>
-                        <td className="p-4"><span className="rounded-full bg-[#FFF2F4] px-3 py-1 text-xs font-black text-[#C23B4A]">{item.status || "new"}</span></td>
-                      </tr>
-                    ))}
-                    {inquiries.length === 0 && <tr><td className="p-8 text-center text-slate-500" colSpan={4}>No inquiries yet.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[28px] bg-white border border-[#EFE3E5] p-6">
-            <h2 className="text-2xl font-black mb-5">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { href: "/admin/products", label: "Products", icon: Boxes },
-                { href: "/admin/media", label: "Media", icon: ImageIcon },
-                { href: "/admin/inquiries", label: "Leads", icon: Inbox },
-                { href: "/admin/seo", label: "SEO", icon: Search },
-                { href: "/admin/settings", label: "Settings", icon: Settings },
-                { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link key={item.href} href={item.href} className="rounded-2xl border border-[#EFE3E5] p-4 hover:bg-[#FFF2F4] transition">
-                    <Icon className="h-6 w-6 text-[#C23B4A]" />
-                    <p className="mt-3 font-black text-sm">{item.label}</p>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-[28px] bg-white border border-[#EFE3E5] overflow-hidden">
-          <div className="p-6 flex items-center justify-between border-b border-[#EFE3E5]">
-            <h2 className="text-2xl font-black">Recent Products</h2>
-            <Link href="/admin/products" className="text-[#C23B4A] font-black text-sm">Manage</Link>
-          </div>
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 p-6">
-            {products.map((item) => (
-              <div key={item.id} className="rounded-2xl bg-[#FFF8F5] border border-[#EFE3E5] p-4">
-                {item.image && <img src={item.image} alt="" className="h-28 w-full rounded-xl object-contain bg-white" />}
-                <p className="font-black mt-3">{item.title || "Untitled"}</p>
-                <p className="text-sm text-slate-500">{item.category || "Uncategorized"}</p>
-              </div>
-            ))}
-            {products.length === 0 && <p className="text-slate-500">No products found.</p>}
-          </div>
-        </div>
-      </div>
-    </AdminShell>
-  );
+  <section className="command-card recent"><div className="card-title"><div><span>Latest buyer activity</span><h2>Recent inquiries</h2></div><Link href="/admin/inquiries">View all <ArrowUpRight/></Link></div><div className="command-table"><table><thead><tr><th>Buyer</th><th>Product</th><th>Status</th><th>Received</th></tr></thead><tbody>{inquiries.slice(0,7).map(i=><tr key={i.id}><td><strong>{i.name||"Unknown buyer"}</strong><small>{i.email||"No email"}</small></td><td>{i.product||"General inquiry"}</td><td><span className="status-chip">{(i.status||"new").replaceAll("_"," ")}</span></td><td>{i.created_at?new Date(i.created_at).toLocaleDateString():"—"}</td></tr>)}{!loading&&!inquiries.length&&<tr><td colSpan={4}>No inquiries yet.</td></tr>}</tbody></table></div></section>
+ </div><style jsx>{`
+ .command-dashboard{display:flex;flex-direction:column;gap:18px}.command-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}.command-head span,.card-title span{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.28em;color:var(--accent)}.command-head h1{font-size:clamp(38px,4.5vw,64px);line-height:.98;letter-spacing:-.055em;margin:10px 0}.command-head p{max-width:700px;color:var(--muted);font-size:13px}.command-actions{display:flex;gap:9px}.command-actions button,.command-actions a{height:42px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:0 15px;display:flex;align-items:center;gap:8px;font-size:10px;font-weight:900}.command-actions a{background:var(--text);color:var(--surface)}.command-actions svg{width:15px}.attention-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.attention-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;grid-template-columns:42px 1fr 24px;gap:13px;align-items:start}.attention-card.accent{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 12%,var(--surface)),var(--surface))}.attention-card>svg{width:20px;color:var(--accent);margin-top:3px}.attention-card small{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.15em}.attention-card strong{display:block;font-size:18px;margin:4px 0}.attention-card p{font-size:10px;color:var(--muted);line-height:1.5}.attention-card a svg{width:16px}.command-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.65fr);gap:13px}.command-grid.lower{grid-template-columns:1fr 1fr}.command-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px}.card-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.card-title h2{font-size:20px;margin-top:5px}.card-title>a{display:flex;gap:5px;align-items:center;color:var(--accent);font-size:10px;font-weight:900}.card-title svg{width:18px}.analytics-values{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.analytics-values>div{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:18px}.analytics-values small{font-size:9px;color:var(--muted)}.analytics-values strong{display:block;font-size:30px;margin-top:8px}.connect-state{min-height:155px;border:1px dashed var(--line);border-radius:18px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;gap:15px;padding:24px}.connect-state>svg{width:34px;color:var(--accent)}.connect-state strong{font-size:14px}.connect-state p{font-size:10px;color:var(--muted);margin:5px 0 10px}.connect-state a{font-size:10px;font-weight:900;color:var(--accent);display:flex;align-items:center;gap:5px}.health-list{display:flex;flex-direction:column;gap:12px}.health-list>div{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.health-list i{width:8px;height:8px;border-radius:50%}.health-list i.ok{background:#18b76a;box-shadow:0 0 0 5px rgba(24,183,106,.1)}.health-list i.bad{background:#e8a21a}.health-list span{display:flex;flex-direction:column}.health-list strong{font-size:11px}.health-list small{font-size:8px;color:var(--muted);margin-top:3px}.health-list b{font-size:8px;color:var(--muted)}.pipeline-v9{display:grid;gap:13px}.pipeline-v9>div{display:grid;grid-template-columns:80px 30px 1fr;gap:10px;align-items:center}.pipeline-v9 span{font-size:10px;text-transform:capitalize;color:var(--muted)}.pipeline-v9 strong{font-size:11px}.pipeline-v9 i{height:6px;background:var(--surface-3);border-radius:999px;overflow:hidden}.pipeline-v9 em{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#ef8aa2);border-radius:inherit}.workflow-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.workflow-numbers>div{background:var(--surface-2);border:1px solid var(--line);border-radius:15px;padding:15px}.workflow-numbers strong{font-size:23px}.workflow-numbers span{display:block;font-size:8px;color:var(--muted);margin-top:5px}.workflow-note{display:flex;gap:9px;align-items:center;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:13px}.workflow-note svg{width:17px;color:var(--accent)}.workflow-note p{font-size:9px;color:var(--muted)}.primary-link{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--text);color:var(--surface);height:42px;border-radius:12px;font-size:10px;font-weight:900}.command-table{overflow:auto}.command-table table{width:100%;border-collapse:collapse}.command-table th,.command-table td{text-align:left;padding:12px;border-top:1px solid var(--line);font-size:10px}.command-table th{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.12em}.command-table td strong,.command-table td small{display:block}.command-table td small{color:var(--muted);margin-top:3px}.status-chip{display:inline-flex;padding:5px 8px;border-radius:8px;background:rgba(194,59,90,.08);color:var(--accent);font-size:8px;font-weight:900;text-transform:capitalize}@media(max-width:1100px){.attention-grid,.command-grid,.command-grid.lower{grid-template-columns:1fr}}@media(max-width:720px){.command-head{align-items:flex-start;flex-direction:column}.command-actions{width:100%}.command-actions>*{flex:1}.attention-grid{grid-template-columns:1fr}.analytics-values,.workflow-numbers{grid-template-columns:1fr}.command-table{margin:0 -10px}}
+ `}</style></AdminShell>
 }

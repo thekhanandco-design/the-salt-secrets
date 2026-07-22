@@ -1,0 +1,72 @@
+THE SALT ORIGIN — ENTERPRISE CMS V8
+====================================
+
+IMPORTANT
+---------
+This is a complete source ZIP, not a patch. Keep a backup of the current live project.
+Do not copy node_modules or .next from an older project.
+
+LOCAL INSTALL
+-------------
+1. Extract the ZIP into a new folder.
+2. Copy .env.example to .env.local.
+3. Add your real Supabase, OpenAI, Resend and WhatsApp Cloud API credentials.
+4. Run:
+
+   npm install
+   npm run dev
+
+5. Open:
+   http://localhost:3000
+   http://localhost:3000/admin
+   http://localhost:3000/admin/blogs
+
+CLEAN REBUILD (WINDOWS CMD)
+---------------------------
+   rmdir /s /q .next
+   npm install
+   npm run dev
+
+CLEAN REBUILD (POWERSHELL)
+--------------------------
+   Remove-Item -Recurse -Force .next
+   npm install
+   npm run dev
+
+SUPABASE
+--------
+Run the newest CMS SQL migration from the supabase folder in Supabase SQL Editor.
+The existing CMS tables and architecture are preserved.
+
+VERCEL
+------
+Push the extracted project to the connected Git repository. Add all environment variables in:
+Vercel > Project > Settings > Environment Variables
+Then deploy the main branch.
+
+V8 UI / UX
+----------
+- Unified light and dark enterprise design system across all admin pages
+- Original Salt Origin identity; WSF is used as a quality benchmark only
+- Same sidebar modules and navigation order preserved
+- Collapsible desktop sidebar and mobile navigation
+- Ctrl/Cmd + K command palette
+- Enterprise dashboard with inquiry, content, translation and health panels
+- System connection status for Supabase, OpenAI, WhatsApp and Resend
+- WSF-style Blog AI Studio workflow adapted for the salt/export business
+- AI Research, Competitor Research and Keyword Research modes
+- AI draft generation, featured-image prompt, SEO score and readability
+- Internal-link suggestions and editorial publish queue
+- Existing Text Manager custom font size controls preserved
+- Existing Business Documents, letterhead, workflow, translation and CRM modules preserved
+- Consistent cards, fields, tables, buttons, animation and typography across pages
+
+VALIDATION
+----------
+- TypeScript: passed (npx tsc --noEmit)
+- Next.js compilation: passed
+- Production build reached page-data collection. Page-data collection requires valid environment/database access.
+
+SECURITY
+--------
+Never commit .env.local. If an API key was previously visible in a screenshot or chat, revoke it and create a new key.

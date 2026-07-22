@@ -1,0 +1,63 @@
+THE SALT ORIGIN — ENTERPRISE CMS V9
+===================================
+
+IMPORTANT
+1. Keep a backup of the current project and database.
+2. Extract this ZIP into a NEW folder. Do not mix node_modules or .next from the old build.
+3. Copy your own .env.local into the new folder and verify every secret.
+
+INSTALL
+npm install
+npx tsc --noEmit
+npm run dev
+
+LOCAL URLS
+http://localhost:3000
+http://localhost:3000/admin
+http://localhost:3000/admin/blogs
+http://localhost:3000/admin/social
+http://localhost:3000/admin/settings
+http://localhost:3000/admin/whatsapp
+
+DATABASE
+Run this file in Supabase SQL Editor:
+supabase/ENTERPRISE-CMS-V9.sql
+
+VERCEL ENVIRONMENT VARIABLES
+Existing Supabase, OpenAI, Resend and WhatsApp variables remain required.
+New optional integrations:
+GA4_PROPERTY_ID
+GA4_ACCESS_TOKEN
+SOCIAL_FACEBOOK_TOKEN
+SOCIAL_INSTAGRAM_TOKEN
+SOCIAL_LINKEDIN_TOKEN
+SOCIAL_TIKTOK_TOKEN
+SOCIAL_YOUTUBE_TOKEN
+CRON_SECRET
+
+BLOG AUTOMATION
+- Blog AI Studio now includes Auto-draft enabled and Approval required controls.
+- Vercel Cron calls /api/blog/daily-draft every day at 06:00 UTC.
+- AI drafts remain in Draft status for human review.
+- Approve by changing status to Published and saving.
+
+GOOGLE ANALYTICS
+- Dashboard no longer displays invented analytics.
+- Without GA4 credentials it clearly shows “Connect GA4 for real data”.
+- With valid credentials it fetches real 30-day users, engagement rate and average session duration.
+
+SOCIAL PUBLISHING
+- Social Media now includes image upload, AI captions, hashtags, keywords, platform selection and scheduling.
+- Scheduled records are stored in Supabase.
+- Vercel Cron processes due campaigns hourly.
+- Live auto-posting requires official API approval/tokens and a platform adapter for each network.
+- The CMS never falsely reports a post as published when an official connection is missing.
+
+SECURITY
+- OpenAI errors are sanitized. API keys are never returned in browser alerts.
+- Any API key previously exposed in a screenshot should be revoked and replaced.
+
+VALIDATION
+- TypeScript: passed with npx tsc --noEmit.
+- Next.js production compilation and TypeScript stage: passed.
+- Page-data collection requires working environment/database access and can take longer than the local validation timeout.

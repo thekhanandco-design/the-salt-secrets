@@ -3,199 +3,70 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import {
+  ArrowRight, BarChart3, Bot, CalendarClock, Check, ChevronRight, FilePenLine, Globe2,
+  Image as ImageIcon, Link2, ListChecks, Search, Sparkles, Target, WandSparkles,
+} from "lucide-react";
 
-type BlogPost = {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  featured_image: string;
-  status: string;
-  published_at: string | null;
-  created_at: string;
-  seo_title?: string;
-  seo_description?: string;
-};
+type BlogPost={id:number;title:string;slug:string;excerpt:string;content:string;featured_image:string;status:string;published_at:string|null;created_at:string;seo_title?:string;seo_description?:string};
+const emptyForm={title:"",slug:"",excerpt:"",content:"",featured_image:"",status:"draft",seo_title:"",seo_description:""};
+const tabs=["AI Research","Editor","SEO & Links","Publish Queue"] as const;
 
-const emptyForm = {
-  title: "",
-  slug: "",
-  excerpt: "",
-  content: "",
-  featured_image: "",
-  status: "draft",
-  seo_title: "",
-  seo_description: "",
-};
+export default function BlogsAdminPage(){
+ const[posts,setPosts]=useState<BlogPost[]>([]),[form,setForm]=useState(emptyForm),[editingId,setEditingId]=useState<number|null>(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[generating,setGenerating]=useState(false),[topic,setTopic]=useState(""),[search,setSearch]=useState(""),[active,setActive]=useState<(typeof tabs)[number]>("AI Research"),[researchType,setResearchType]=useState("market"),[suggestedTopics,setSuggestedTopics]=useState<string[]>([]),[loadingTopics,setLoadingTopics]=useState(false),[runningDaily,setRunningDaily]=useState(false),[imagePrompt,setImagePrompt]=useState(""),[automation,setAutomation]=useState({enabled:false,frequency:"daily",approval_required:true,default_language:"en",topic_focus:"Himalayan pink salt sourcing, private label packaging, retail trends, food industry applications and export guidance"});
+ useEffect(()=>{void loadPosts();void loadAutomation()},[]);
+ async function loadAutomation(){const{data}=await supabase.from("blog_automation_settings").select("*").limit(1).maybeSingle();if(data)setAutomation(data)}
+ async function saveAutomation(){const{data:e}=await supabase.from("blog_automation_settings").select("id").limit(1).maybeSingle();const payload={...automation,updated_at:new Date().toISOString()};const{error}=e?await supabase.from("blog_automation_settings").update(payload).eq("id",e.id):await supabase.from("blog_automation_settings").insert(payload);if(error)return alert(error.message);alert("Automation settings saved.")}
+ async function generateTodayDraft(){setRunningDaily(true);const r=await fetch("/api/blog/daily-draft",{method:"POST",headers:{"Content-Type":"application/json"}});const x=await r.json();setRunningDaily(false);if(!r.ok)return alert(x.error||"Daily draft generation failed.");if(x.skipped)return alert(x.reason||"Today's draft already exists.");await loadPosts();setActive("Publish Queue");alert("Today's AI draft is ready for review.")}
+ async function approveAndPublish(post:BlogPost){if(!confirm(`Publish "${post.title}" on the live website?`))return;const{error}=await supabase.from("blog_posts").update({status:"published",published_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",post.id);if(error)return alert(error.message);await loadPosts();}
 
-export default function BlogsAdminPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [topic, setTopic] = useState("");
-  const [search, setSearch] = useState("");
-  const [automation, setAutomation] = useState({ enabled:false, frequency:"daily", approval_required:true, default_language:"en", topic_focus:"Himalayan pink salt sourcing, private label packaging, retail trends, food industry applications and export guidance" });
-  const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
-  const [loadingTopics, setLoadingTopics] = useState(false);
+ async function researchTopics(){setLoadingTopics(true);const focus=researchType==="competitor"?`Competitor content gaps and ranking opportunities for: ${automation.topic_focus}`:researchType==="keyword"?`High-intent B2B keywords and article ideas for: ${automation.topic_focus}`:automation.topic_focus;const r=await fetch("/api/blog/topics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({focus})});const x=await r.json();setLoadingTopics(false);if(!r.ok)return alert(x.error||"Research failed");setSuggestedTopics(x.topics||[])}
+ async function loadPosts(){const{data}=await supabase.from("blog_posts").select("*").order("created_at",{ascending:false});setPosts((data as BlogPost[])||[]);setLoading(false)}
+ function autoSlug(v:string){return v.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+ function setField(k:keyof typeof form,v:string){setForm(p=>({...p,[k]:v}))}
+ async function generateDraft(){if(!topic.trim())return alert("Enter or choose a topic first.");setGenerating(true);const r=await fetch("/api/blog/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({topic,language:automation.default_language})});const x=await r.json();setGenerating(false);if(!r.ok)return alert(x.error||"AI draft generation failed.");setForm({...emptyForm,title:x.title||topic,slug:autoSlug(x.title||topic),excerpt:x.excerpt||"",content:x.content||"",seo_title:x.seo_title||x.title||topic,seo_description:x.seo_description||x.excerpt||""});setImagePrompt(x.image_prompt||`Premium editorial product photography for ${x.title||topic}, Himalayan pink salt, luxury B2B export aesthetic`);setActive("Editor")}
+ async function savePost(){if(!form.title||!form.slug)return alert("Title and slug are required.");setSaving(true);const payload={...form,published_at:form.status==="published"?new Date().toISOString():null,updated_at:new Date().toISOString()};const q=editingId?supabase.from("blog_posts").update(payload).eq("id",editingId):supabase.from("blog_posts").insert([payload]);const{error}=await q;setSaving(false);if(error)return alert(error.message);setForm(emptyForm);setEditingId(null);await loadPosts();setActive("Publish Queue")}
+ function editPost(p:BlogPost){setEditingId(p.id);setForm({title:p.title||"",slug:p.slug||"",excerpt:p.excerpt||"",content:p.content||"",featured_image:p.featured_image||"",status:p.status||"draft",seo_title:p.seo_title||"",seo_description:p.seo_description||""});setActive("Editor");window.scrollTo({top:0,behavior:"smooth"})}
+ async function deletePost(id:number){if(!confirm("Delete this blog post?"))return;await supabase.from("blog_posts").delete().eq("id",id);setPosts(p=>p.filter(x=>x.id!==id))}
+ const filtered=useMemo(()=>posts.filter(p=>p.title.toLowerCase().includes(search.toLowerCase())),[posts,search]);
+ const seoScore=useMemo(()=>{let s=0;if(form.title.length>=35&&form.title.length<=65)s+=20;if(form.seo_description.length>=120&&form.seo_description.length<=165)s+=20;if(form.content.length>1200)s+=25;if(form.excerpt.length>80)s+=15;if(form.featured_image)s+=10;if(form.slug.length>5)s+=10;return s},[form]);
+ const readability=useMemo(()=>{const words=form.content.trim().split(/\s+/).filter(Boolean).length;const sentences=Math.max(1,(form.content.match(/[.!?]+/g)||[]).length);const avg=words/sentences;return avg<18?"Excellent":avg<24?"Good":"Needs simplification"},[form.content]);
+ const internalLinks=posts.filter(p=>p.id!==editingId).slice(0,5);
+ return <AdminShell><div className="studio">
+  <header className="studio-head"><div><span>Content intelligence</span><h1>Blog AI Studio</h1><p>Research, write, optimize, review and publish from one editorial workspace.</p></div><div className="studio-status"><i/><span><strong>AI workflow ready</strong><small>Human approval remains required</small></span></div></header>
+  <nav className="studio-tabs">{tabs.map((tab,i)=><button key={tab} onClick={()=>setActive(tab)} className={active===tab?"active":""}><b>0{i+1}</b>{tab}</button>)}</nav>
 
-  useEffect(() => { void loadPosts(); void loadAutomation(); }, []);
+  {active==="AI Research"&&<div className="research-layout">
+   <section className="studio-card research-main"><div className="section-title"><div><span>Discovery engine</span><h2>Build a high-value article brief</h2></div><Sparkles/></div>
+    <label>Research focus<textarea value={automation.topic_focus} onChange={e=>setAutomation({...automation,topic_focus:e.target.value})}/></label>
+    <div className="research-types">{[["market","AI Research",Target],["competitor","Competitor Research",Search],["keyword","Keyword Research",BarChart3]].map(([value,label,Icon]:any)=><button key={value} onClick={()=>setResearchType(value)} className={researchType===value?"active":""}><Icon/><span><strong>{label}</strong><small>{value==="market"?"Fresh market topics":value==="competitor"?"Find content gaps":"High-intent phrases"}</small></span></button>)}</div>
+    <div className="automation-row"><select value={automation.default_language} onChange={e=>setAutomation({...automation,default_language:e.target.value})}><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option><option value="es">Spanish</option><option value="de">German</option><option value="pt">Portuguese</option><option value="tr">Turkish</option><option value="ur">Urdu</option></select><select value={automation.frequency} onChange={e=>setAutomation({...automation,frequency:e.target.value})}><option value="daily">Daily draft</option><option value="weekly">Weekly draft</option><option value="monthly">Monthly draft</option></select><label className="switch"><input type="checkbox" checked={automation.enabled} onChange={e=>setAutomation({...automation,enabled:e.target.checked})}/><span/>Auto-draft enabled</label><label className="switch"><input type="checkbox" checked={automation.approval_required} onChange={e=>setAutomation({...automation,approval_required:e.target.checked})}/><span/>Approval required</label></div>
+    <div className="button-row"><button onClick={researchTopics} disabled={loadingTopics} className="primary"><WandSparkles/>{loadingTopics?"Researching web…":"Run AI Research"}</button><button onClick={saveAutomation}>Save workflow</button><button className="daily-draft-button" onClick={generateTodayDraft} disabled={runningDaily}><Bot/>{runningDaily?"Creating draft…":"Generate today’s draft"}</button></div>
+   </section>
+   <aside className="studio-card brief-side"><div className="section-title"><div><span>Research output</span><h2>Topic opportunities</h2></div><ListChecks/></div>{suggestedTopics.length? <div className="topic-list">{suggestedTopics.map((item,i)=><button key={item} onClick={()=>{setTopic(item);setActive("Editor")}}><b>{String(i+1).padStart(2,"0")}</b><span>{item}<small>Use as article brief</small></span><ChevronRight/></button>)}</div>:<div className="empty-research"><Bot/><strong>No research run yet</strong><p>Choose a research mode and let the studio discover current B2B opportunities.</p></div>}</aside>
+  </div>}
 
-  async function loadAutomation(){ const { data } = await supabase.from("blog_automation_settings").select("*").limit(1).maybeSingle(); if(data) setAutomation(data); }
-  async function saveAutomation(){ const { data: existing } = await supabase.from("blog_automation_settings").select("id").limit(1).maybeSingle(); const payload={...automation,updated_at:new Date().toISOString()}; const { error } = existing ? await supabase.from("blog_automation_settings").update(payload).eq("id",existing.id) : await supabase.from("blog_automation_settings").insert(payload); if(error) return alert(error.message); alert("Blog automation settings saved."); }
-  async function researchTopics(){ setLoadingTopics(true); const response=await fetch("/api/blog/topics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({focus:automation.topic_focus})}); const result=await response.json(); setLoadingTopics(false); if(!response.ok)return alert(result.error||"Topic research failed"); setSuggestedTopics(result.topics||[]); }
+  {active==="Editor"&&<div className="editor-layout">
+   <section className="studio-card editor-main"><div className="section-title"><div><span>AI-assisted editor</span><h2>{editingId?"Edit article":"Create article"}</h2></div><FilePenLine/></div>
+    <div className="generate-bar"><input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Enter primary keyword or choose a research topic"/><button onClick={generateDraft} disabled={generating}><Sparkles/>{generating?"Generating…":"Generate reviewed draft"}</button></div>
+    <div className="field-grid"><label>Article title<input value={form.title} onChange={e=>{setField("title",e.target.value);if(!editingId)setField("slug",autoSlug(e.target.value))}}/></label><label>URL slug<input value={form.slug} onChange={e=>setField("slug",e.target.value)}/></label></div>
+    <label>Excerpt<textarea className="excerpt" value={form.excerpt} onChange={e=>setField("excerpt",e.target.value)}/></label>
+    <div className="editor-toolbar"><button onClick={()=>setField("content",form.content+"\n\n## New section")}>H2</button><button onClick={()=>setField("content",form.content+" **bold text**")}>B</button><button onClick={()=>setField("content",form.content+" *italic text*")}>I</button><button onClick={()=>setField("content",form.content+"\n- List item")}>List</button><span>{form.content.trim().split(/\s+/).filter(Boolean).length} words</span></div>
+    <textarea className="article-editor" value={form.content} onChange={e=>setField("content",e.target.value)} placeholder="Your AI-generated or manually written article appears here…"/>
+    <div className="field-grid"><label>Featured image URL<input value={form.featured_image} onChange={e=>setField("featured_image",e.target.value)} placeholder="https://…"/></label><label>Publishing state<select value={form.status} onChange={e=>setField("status",e.target.value)}><option value="draft">Draft</option><option value="review">Needs review</option><option value="scheduled">Scheduled</option><option value="published">Published</option></select></label></div>
+    <div className="button-row"><button className="primary" onClick={savePost} disabled={saving}><Check/>{saving?"Saving…":editingId?"Update article":"Save to workflow"}</button>{editingId&&<button onClick={()=>{setEditingId(null);setForm(emptyForm)}}>Cancel edit</button>}</div>
+   </section>
+   <aside className="editor-side">
+    <section className="studio-card score-card"><div className="score-ring" style={{"--score":`${seoScore*3.6}deg`} as any}><strong>{seoScore}</strong><span>SEO score</span></div><div><strong>{seoScore>=80?"Ready to compete":seoScore>=50?"Good foundation":"Optimization needed"}</strong><p>Complete title, description, content length, slug and image.</p></div></section>
+    <section className="studio-card"><div className="section-title"><div><span>Featured visual</span><h2>AI image prompt</h2></div><ImageIcon/></div><textarea value={imagePrompt} onChange={e=>setImagePrompt(e.target.value)} placeholder="Generated image prompt will appear here…"/><button className="copy-btn" onClick={()=>navigator.clipboard.writeText(imagePrompt)}>Copy image prompt</button></section>
+    <section className="studio-card"><div className="mini-stat"><span>Readability</span><strong>{readability}</strong></div><div className="mini-stat"><span>Editorial stage</span><strong>{form.status.replaceAll("_"," ")}</strong></div></section>
+   </aside>
+  </div>}
 
-  async function loadPosts() {
-    const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
-    setPosts((data as BlogPost[]) || []);
-    setLoading(false);
-  }
+  {active==="SEO & Links"&&<div className="seo-layout"><section className="studio-card"><div className="section-title"><div><span>Search optimization</span><h2>Metadata and content quality</h2></div><BarChart3/></div><label>SEO title<input value={form.seo_title} onChange={e=>setField("seo_title",e.target.value)}/><small>{form.seo_title.length}/60 characters</small></label><label>SEO description<textarea value={form.seo_description} onChange={e=>setField("seo_description",e.target.value)}/><small>{form.seo_description.length}/160 characters</small></label><div className="seo-checks">{[[form.title.length>=35,"Title has search-friendly length"],[form.seo_description.length>=120,"Description is detailed"],[form.content.length>1200,"Article has useful depth"],[Boolean(form.featured_image),"Featured image assigned"]].map(([ok,label]:any)=><div className={ok?"done":""} key={label}><Check/>{label}</div>)}</div></section><section className="studio-card"><div className="section-title"><div><span>Site authority</span><h2>Internal linking</h2></div><Link2/></div><p className="section-copy">Add relevant links to existing articles to improve crawlability and buyer journeys.</p><div className="link-list">{internalLinks.map(p=><button key={p.id} onClick={()=>setField("content",form.content+`\n\nRead more: /blog/${p.slug}`)}><span><strong>{p.title}</strong><small>/blog/{p.slug}</small></span><Link2/></button>)}</div></section></div>}
 
-  function setField(key: keyof typeof form, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function autoSlug(value: string) {
-    return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  }
-
-  async function savePost() {
-    if (!form.title || !form.slug) return alert("Title and slug are required.");
-    setSaving(true);
-    const payload = {
-      ...form,
-      published_at: form.status === "published" ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString(),
-    };
-    const query = editingId
-      ? supabase.from("blog_posts").update(payload).eq("id", editingId)
-      : supabase.from("blog_posts").insert([payload]);
-    const { error } = await query;
-    setSaving(false);
-    if (error) return alert(error.message);
-    setForm(emptyForm);
-    setEditingId(null);
-    await loadPosts();
-  }
-
-  function editPost(post: BlogPost) {
-    setEditingId(post.id);
-    setForm({
-      title: post.title || "",
-      slug: post.slug || "",
-      excerpt: post.excerpt || "",
-      content: post.content || "",
-      featured_image: post.featured_image || "",
-      status: post.status || "draft",
-      seo_title: post.seo_title || "",
-      seo_description: post.seo_description || "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function deletePost(id: number) {
-    if (!confirm("Delete this blog post?")) return;
-    await supabase.from("blog_posts").delete().eq("id", id);
-    setPosts((prev) => prev.filter((item) => item.id !== id));
-  }
-
-  async function generateDraft() {
-    if (!topic.trim()) return alert("Enter a blog topic first.");
-    setGenerating(true);
-    const response = await fetch("/api/blog/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic }),
-    });
-    const result = await response.json();
-    setGenerating(false);
-    if (!response.ok) return alert(result.error || "AI draft generation failed.");
-    setForm({
-      ...emptyForm,
-      title: result.title || topic,
-      slug: autoSlug(result.title || topic),
-      excerpt: result.excerpt || "",
-      content: result.content || "",
-      seo_title: result.seo_title || result.title || topic,
-      seo_description: result.seo_description || result.excerpt || "",
-    });
-  }
-
-  const filtered = useMemo(() => posts.filter((post) => post.title.toLowerCase().includes(search.toLowerCase())), [posts, search]);
-
-  return (
-    <AdminShell>
-      <div className="space-y-8">
-        <div>
-          <p className="uppercase tracking-[5px] text-[#C23B4A] font-black text-xs">Content</p>
-          <h1 className="text-4xl lg:text-5xl font-black mt-2">Blogs Manager</h1>
-          <p className="text-slate-500 mt-3">Create, edit, schedule and publish SEO-ready articles.</p>
-        </div>
-
-        <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] p-6 lg:p-8">
-          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
-            <div><h2 className="text-2xl font-black">AI Blog Automation</h2><p className="text-sm text-slate-500 mt-1">Research topics daily, save drafts for review, and publish only after approval.</p></div>
-            <label className="flex items-center gap-3 font-black"><input type="checkbox" checked={automation.enabled} onChange={e=>setAutomation({...automation,enabled:e.target.checked})}/> Automation Enabled</label>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4 mt-5"><select value={automation.frequency} onChange={e=>setAutomation({...automation,frequency:e.target.value})} className="border rounded-xl p-4 bg-white"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select><select value={automation.default_language} onChange={e=>setAutomation({...automation,default_language:e.target.value})} className="border rounded-xl p-4 bg-white"><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option><option value="es">Spanish</option><option value="de">German</option><option value="pt">Portuguese</option><option value="tr">Turkish</option><option value="ur">Urdu</option></select><label className="flex items-center gap-3 border rounded-xl p-4"><input type="checkbox" checked={automation.approval_required} onChange={e=>setAutomation({...automation,approval_required:e.target.checked})}/> Approval required</label></div>
-          <textarea value={automation.topic_focus} onChange={e=>setAutomation({...automation,topic_focus:e.target.value})} className="mt-4 w-full border rounded-xl p-4 h-28" placeholder="Topic focus"/>
-          <div className="mt-4 flex flex-wrap gap-3"><button onClick={saveAutomation} className="rounded-xl bg-blue-600 text-white px-5 py-3 font-black">Save Automation</button><button onClick={researchTopics} disabled={loadingTopics} className="rounded-xl bg-violet-600 text-white px-5 py-3 font-black">{loadingTopics?"Researching...":"Research Trending Topics"}</button></div>
-          {suggestedTopics.length>0&&<div className="mt-5 grid md:grid-cols-2 gap-3">{suggestedTopics.map(item=><button key={item} onClick={()=>setTopic(item)} className="text-left border rounded-xl p-4 hover:bg-[#FFF4F5]"><b>{item}</b><span className="block text-xs text-slate-500 mt-1">Click to use this topic</span></button>)}</div>}
-        </section>
-
-        <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] p-6 lg:p-8">
-          <h2 className="text-2xl font-black">AI Blog Draft</h2>
-          <div className="mt-4 flex flex-col lg:flex-row gap-3">
-            <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Example: Benefits of Himalayan Pink Salt for food brands" className="flex-1 border rounded-xl px-4 py-3" />
-            <button onClick={generateDraft} disabled={generating} className="rounded-xl bg-[#081325] text-white px-6 py-3 font-black">
-              {generating ? "Generating..." : "Generate Draft"}
-            </button>
-          </div>
-          <p className="mt-3 text-xs text-slate-500">Requires OPENAI_API_KEY in environment variables. Generated content is saved only after your review.</p>
-        </section>
-
-        <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] p-6 lg:p-8">
-          <div className="grid lg:grid-cols-2 gap-4">
-            <input value={form.title} onChange={(e) => { setField("title", e.target.value); if (!editingId) setField("slug", autoSlug(e.target.value)); }} placeholder="Blog title" className="border rounded-xl p-4" />
-            <input value={form.slug} onChange={(e) => setField("slug", e.target.value)} placeholder="slug" className="border rounded-xl p-4" />
-            <input value={form.featured_image} onChange={(e) => setField("featured_image", e.target.value)} placeholder="Featured image URL" className="border rounded-xl p-4 lg:col-span-2" />
-            <textarea value={form.excerpt} onChange={(e) => setField("excerpt", e.target.value)} placeholder="Short excerpt" className="border rounded-xl p-4 h-28 lg:col-span-2" />
-            <textarea value={form.content} onChange={(e) => setField("content", e.target.value)} placeholder="Full blog content (plain text or HTML)" className="border rounded-xl p-4 h-80 lg:col-span-2 font-mono text-sm" />
-            <input value={form.seo_title} onChange={(e) => setField("seo_title", e.target.value)} placeholder="SEO title" className="border rounded-xl p-4" />
-            <input value={form.seo_description} onChange={(e) => setField("seo_description", e.target.value)} placeholder="SEO description" className="border rounded-xl p-4" />
-            <select value={form.status} onChange={(e) => setField("status", e.target.value)} className="border rounded-xl p-4 bg-white">
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="scheduled">Scheduled</option>
-            </select>
-          </div>
-          <div className="mt-6 flex gap-3">
-            <button onClick={savePost} disabled={saving} className="rounded-xl bg-[#C23B4A] text-white px-7 py-4 font-black">{saving ? "Saving..." : editingId ? "Update Blog" : "Save Blog"}</button>
-            {editingId && <button onClick={() => { setEditingId(null); setForm(emptyForm); }} className="rounded-xl bg-slate-500 text-white px-7 py-4 font-black">Cancel</button>}
-          </div>
-        </section>
-
-        <section className="rounded-[28px] bg-white text-[#081325] border border-[#EFE3E5] overflow-hidden">
-          <div className="p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[#EFE3E5]">
-            <h2 className="text-2xl font-black">All Blogs</h2>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search blogs..." className="border rounded-xl px-4 py-3 lg:w-80" />
-          </div>
-          {loading ? <div className="p-8">Loading...</div> : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[#FFF4F5]"><tr><th className="p-4 text-left">Title</th><th className="p-4 text-left">Status</th><th className="p-4 text-left">Date</th><th className="p-4 text-left">Actions</th></tr></thead>
-                <tbody>
-                  {filtered.map((post) => <tr key={post.id} className="border-t border-[#EFE3E5]"><td className="p-4 font-bold">{post.title}</td><td className="p-4"><span className="rounded-full bg-[#FFF2F4] px-3 py-1 text-xs font-black text-[#C23B4A]">{post.status}</span></td><td className="p-4">{new Date(post.published_at || post.created_at).toLocaleDateString()}</td><td className="p-4"><div className="flex gap-2"><button onClick={() => editPost(post)} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Edit</button><button onClick={() => deletePost(post.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">Delete</button></div></td></tr>)}
-                  {filtered.length === 0 && <tr><td className="p-8 text-center text-slate-500" colSpan={4}>No blog posts yet.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </div>
-    </AdminShell>
-  );
+  {active==="Publish Queue"&&<section className="studio-card queue-card"><div className="queue-head"><div><span>Editorial workflow</span><h2>Draft, review and publishing queue</h2></div><div className="queue-search"><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search articles…"/></div></div>{loading?<div className="loading-state">Loading editorial queue…</div>:<div className="queue-list">{filtered.map(p=><article key={p.id}><div className={`queue-state ${p.status}`}>{p.status==="published"?<Globe2/>:p.status==="scheduled"?<CalendarClock/>:<FilePenLine/>}</div><div className="queue-title"><strong>{p.title}</strong><span>/blog/{p.slug}</span></div><span className={`status-pill ${p.status}`}>{p.status}</span><time>{new Date(p.published_at||p.created_at).toLocaleDateString()}</time><div className="queue-actions"><button onClick={()=>editPost(p)}>Review</button>{p.status!=="published"&&<button className="publish" onClick={()=>approveAndPublish(p)}>Approve & Publish</button>}<button className="delete" onClick={()=>deletePost(p.id)}>Delete</button></div></article>)}{!filtered.length&&<div className="loading-state">No articles in the queue.</div>}</div>}</section>}
+ </div><style jsx>{`
+ .studio{display:flex;flex-direction:column;gap:20px}.studio-head{display:flex;justify-content:space-between;align-items:flex-end}.studio-head>div:first-child>span,.section-title span,.queue-head>div>span{font-size:9px;text-transform:uppercase;letter-spacing:.26em;font-weight:900;color:var(--accent)}.studio-head h1{font-size:clamp(36px,4vw,58px);line-height:1;margin:9px 0}.studio-head p{font-size:12px;color:var(--muted)}.studio-status{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:11px 14px}.studio-status>i{width:9px;height:9px;border-radius:50%;background:#16a36a;box-shadow:0 0 0 6px rgba(22,163,106,.1)}.studio-status span{display:flex;flex-direction:column}.studio-status strong{font-size:10px}.studio-status small{font-size:8px;color:var(--muted)}.studio-tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:5px}.studio-tabs button{height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:11px;font-weight:800}.studio-tabs button b{font-size:8px}.studio-tabs button.active{background:var(--text);color:var(--surface);box-shadow:0 10px 28px rgba(0,0,0,.12)}.research-layout,.editor-layout,.seo-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr);gap:14px}.editor-side{display:flex;flex-direction:column;gap:14px}.studio-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:19px}.section-title h2,.queue-head h2{font-size:19px;margin-top:4px}.section-title>svg{width:19px;color:var(--accent)}.studio label{display:flex;flex-direction:column;gap:8px;font-size:10px;font-weight:800;color:var(--muted)}.studio input,.studio textarea,.studio select{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 13px;font-size:11px;color:var(--text)}.studio textarea{resize:vertical;min-height:94px}.research-types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}.research-types button{border:1px solid var(--line);border-radius:15px;padding:14px;text-align:left;display:flex;gap:10px}.research-types button.active{border-color:var(--accent);background:rgba(194,59,90,.06)}.research-types svg{width:19px;color:var(--accent)}.research-types span{display:flex;flex-direction:column}.research-types strong{font-size:10px}.research-types small{font-size:8px;color:var(--muted);margin-top:3px}.automation-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}.switch{flex-direction:row!important;align-items:center;border:1px solid var(--line);border-radius:12px;padding:0 12px}.switch input{width:auto}.button-row{display:flex;gap:9px;margin-top:15px}.button-row button,.generate-bar button,.copy-btn{height:42px;border:1px solid var(--line);border-radius:12px;padding:0 15px;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px}.button-row button.primary,.generate-bar button{background:linear-gradient(135deg,var(--accent),#8e2c71);color:#fff;border:0}.button-row svg,.generate-bar svg{width:15px}.topic-list{display:flex;flex-direction:column;gap:7px}.topic-list button{display:grid;grid-template-columns:25px 1fr 16px;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:11px;text-align:left}.topic-list button:hover{border-color:var(--accent);transform:translateX(2px)}.topic-list b{font-size:8px;color:var(--accent)}.topic-list span{display:flex;flex-direction:column;font-size:10px;font-weight:700}.topic-list small{font-size:8px;color:var(--muted);margin-top:3px}.topic-list svg{width:14px}.empty-research{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.empty-research svg{width:38px;color:var(--accent);opacity:.65}.empty-research strong{font-size:12px;margin-top:12px}.empty-research p{max-width:240px;font-size:9px;color:var(--muted);line-height:1.6;margin-top:6px}.generate-bar{display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:16px}.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.excerpt{min-height:90px!important}.editor-toolbar{height:39px;border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:5px;padding:0 8px;background:var(--surface-2);margin-top:12px}.editor-toolbar button{min-width:28px;height:27px;border-radius:7px;font-size:9px;font-weight:900}.editor-toolbar button:hover{background:var(--surface-3)}.editor-toolbar span{margin-left:auto;font-size:8px;color:var(--muted)}.article-editor{min-height:470px!important;border-radius:0 0 12px 12px!important;font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;line-height:1.7}.score-card{display:flex;align-items:center;gap:15px}.score-ring{--score:0deg;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--accent) var(--score),var(--surface-3) 0);display:grid;place-items:center;position:relative;flex:0 0 auto}.score-ring:after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--surface)}.score-ring strong,.score-ring span{z-index:1;position:absolute}.score-ring strong{font-size:24px;top:22px}.score-ring span{font-size:7px;color:var(--muted);bottom:21px}.score-card>div:last-child strong{font-size:11px}.score-card p,.section-copy{font-size:9px;color:var(--muted);line-height:1.6;margin-top:5px}.copy-btn{width:100%;margin-top:10px}.mini-stat{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}.mini-stat:last-child{border-bottom:0}.mini-stat span{font-size:9px;color:var(--muted)}.mini-stat strong{font-size:10px;text-transform:capitalize}.studio label small{font-size:8px;color:var(--muted);align-self:flex-end}.seo-checks{display:grid;gap:8px;margin-top:15px}.seo-checks div{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:11px;font-size:9px;color:var(--muted)}.seo-checks div.done{color:#16a36a;background:rgba(22,163,106,.06)}.seo-checks svg{width:13px}.link-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}.link-list button{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:11px;text-align:left}.link-list span{display:flex;flex-direction:column}.link-list strong{font-size:10px}.link-list small{font-size:8px;color:var(--muted);margin-top:3px}.link-list svg{width:14px;color:var(--accent)}.queue-card{padding:0;overflow:hidden}.queue-head{padding:20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.queue-search{width:260px;height:38px;border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;padding:0 10px;background:var(--surface-2)}.queue-search svg{width:14px;color:var(--muted)}.queue-search input{border:0!important;background:transparent!important;box-shadow:none!important}.queue-list article{display:grid;grid-template-columns:42px minmax(0,1fr) 95px 90px 120px;align-items:center;gap:12px;padding:13px 20px;border-top:1px solid var(--line)}.queue-list article:first-child{border-top:0}.queue-state{width:36px;height:36px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center}.queue-state svg{width:15px}.queue-state.published{color:#16a36a;background:rgba(22,163,106,.08)}.queue-state.scheduled{color:#7c3aed;background:rgba(124,58,237,.08)}.queue-title{display:flex;flex-direction:column}.queue-title strong{font-size:10px}.queue-title span{font-size:8px;color:var(--muted);margin-top:3px}.status-pill{justify-self:start;padding:5px 8px;border-radius:9px;background:var(--surface-3);font-size:8px;font-weight:900;text-transform:capitalize}.status-pill.published{background:rgba(22,163,106,.1);color:#16a36a}.status-pill.scheduled{background:rgba(124,58,237,.1);color:#7c3aed}.queue-list time{font-size:9px;color:var(--muted)}.daily-draft-button{display:inline-flex!important;align-items:center;gap:7px;border:1px solid var(--line)!important;background:var(--surface)!important;color:var(--text)!important}.daily-draft-button svg{width:14px}.queue-actions{display:flex;gap:6px}.queue-actions button{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:8px;font-weight:800}.queue-actions .publish{color:#fff;background:linear-gradient(135deg,var(--accent),#a92e4e);border-color:transparent}.queue-actions .delete{color:#ef4444}.loading-state{padding:45px;text-align:center;color:var(--muted);font-size:10px}@media(max-width:1100px){.research-layout,.editor-layout,.seo-layout{grid-template-columns:1fr}.studio-status{display:none}}@media(max-width:720px){.studio-head{align-items:flex-start}.studio-tabs{grid-template-columns:1fr 1fr}.studio-tabs button{font-size:9px}.research-types,.automation-row,.field-grid{grid-template-columns:1fr}.generate-bar{grid-template-columns:1fr}.queue-head{align-items:flex-start;flex-direction:column;gap:12px}.queue-search{width:100%}.queue-list article{grid-template-columns:36px 1fr}.queue-list article>span,.queue-list article>time{display:none}.queue-actions{grid-column:2}}
+ `}</style></AdminShell>
 }

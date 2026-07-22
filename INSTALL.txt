@@ -1,70 +1,23 @@
-CMS PREMIUM PATCH V6 - INSTALL GUIDE
-====================================
+THE SALT ORIGIN CMS V9.1 - CHANGED FILES ONLY
 
-BACKUP FIRST
-------------
-Apne current project ka backup zaroor bana lein.
+1. Take a backup of your current project.
+2. Extract this ZIP directly inside the project root.
+3. Choose Replace files in destination.
+4. Run:
+   npx tsc --noEmit
+   npm run dev
 
-PART 1
-------
-CMS-PREMIUM-PATCH-PART-1-UI.zip extract karein.
-ZIP ke andar "src" folder milega.
-Is "src" folder ko project root mein paste karein.
-Windows prompt aaye to:
-- Replace the files in the destination
-select karein.
-
-PART 2
-------
-CMS-PREMIUM-PATCH-PART-2-API-DB.zip extract karein.
-"src", "supabase" aur ".env.patch.example" ko project root mein paste karein.
-Existing matching files ko replace karein.
-
-SUPABASE
---------
-Supabase Dashboard > SQL Editor kholein.
-Run karein:
-supabase/CMS-PREMIUM-PATCH-V6.sql
-
-VERCEL / .ENV.LOCAL
--------------------
-.env.patch.example se required variables copy karein:
-
-OPENAI_API_KEY
-OPENAI_BLOG_MODEL
-OPENAI_TRANSLATION_MODEL
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-WHATSAPP_ACCESS_TOKEN
-WHATSAPP_PHONE_NUMBER_ID
-WHATSAPP_ADMIN_NUMBER
-NEXT_PUBLIC_WHATSAPP_ADMIN_NUMBER
-
-WhatsApp number country code ke sath digits mein likhein:
-923212430365
-
-COMMANDS
---------
-npm install
-npx tsc --noEmit
-npm run build
+CHANGES
+- Social Media Studio now has Profile Links and Publishing Studio tabs.
+- Official Facebook, Instagram, LinkedIn, TikTok, YouTube, X and Pinterest URLs can be edited, enabled and saved again.
+- Existing social campaign upload, AI caption, hashtags, keywords and schedule workflow remains available.
+- Blog AI Studio can manually generate today's review-ready draft.
+- Daily cron now creates one researched draft per day from the saved topic focus.
+- Duplicate same-day draft protection added.
+- Editorial queue now includes Review and Approve & Publish actions.
+- AI drafts remain Draft until manually approved.
 
 IMPORTANT
----------
-OpenAI API key agar screenshot mein visible ho chuki hai to purani key revoke karke new key use karein.
-
-PATCH INCLUDES
---------------
-- Text Manager custom font size input
-- Plus / minus font controls
-- Light-theme language button fixes
-- Blog research/generation API files
-- Translation API
-- Business Documents page
-- Inquiry CRM status UI
-- Workflow and role management
-- WhatsApp Center
-- WhatsApp Cloud API test route
-- Mobile PWA guidance
-- Supabase business-document migration
+- Auto-draft must be enabled in Blog AI Studio and Save workflow clicked.
+- Vercel cron already calls /api/blog/daily-draft daily.
+- OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL must be valid in Vercel and .env.local.

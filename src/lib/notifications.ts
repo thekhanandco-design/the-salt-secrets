@@ -112,7 +112,7 @@ export async function sendWhatsAppWebhook(payload: LeadPayload) {
 
   const token = process.env.WHATSAPP_CLOUD_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID;
-  const recipient = process.env.WHATSAPP_NOTIFICATION_TO;
+  const recipient = payload.whatsapp || process.env.WHATSAPP_NOTIFICATION_TO;
   if (!token || !phoneNumberId || !recipient) return;
 
   const response = await fetch(`https://graph.facebook.com/${process.env.WHATSAPP_GRAPH_VERSION || "v23.0"}/${phoneNumberId}/messages`, {

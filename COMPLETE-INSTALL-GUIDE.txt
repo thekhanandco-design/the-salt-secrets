@@ -1,0 +1,104 @@
+THE SALT ORIGIN - PREMIUM CMS V7 COMPLETE PROJECT
+==================================================
+
+1. BACKUP
+---------
+Backup your existing project and Supabase database first.
+
+2. REPLACE PROJECT
+------------------
+Extract this ZIP into a new folder. Do not copy old node_modules or .next.
+Copy your real .env.local into the project root, or copy .env.example to .env.local and fill every key.
+
+3. INSTALL
+----------
+npm install
+
+4. SUPABASE
+-----------
+Open Supabase Dashboard > SQL Editor.
+Run the latest complete setup/migration files from the supabase folder.
+At minimum run:
+- supabase/COMPLETE-CMS-SETUP.sql
+- supabase/CMS-OPERATIONS-PATCH.sql
+
+Create a public Storage bucket named:
+cms-media
+
+5. LOCAL DEVELOPMENT
+--------------------
+Delete old cache before starting:
+Windows PowerShell: Remove-Item -Recurse -Force .next
+Windows CMD: rmdir /s /q .next
+Mac/Linux: rm -rf .next
+
+Then run:
+npm run dev
+
+Open:
+http://localhost:3000
+http://localhost:3000/admin
+
+6. IMPORTANT ADMIN LINKS
+------------------------
+/admin/text
+/admin/pages
+/admin/images
+/admin/categories
+/admin/blogs
+/admin/documents
+/admin/inquiries
+/admin/languages
+/admin/workflow
+/admin/whatsapp
+
+7. OPENAI
+---------
+Set OPENAI_API_KEY in .env.local and Vercel.
+The CMS now retries supported models and retries without web search if a model/tool combination is unavailable.
+Restart npm run dev after changing environment variables.
+
+8. WHATSAPP
+-----------
+Set:
+WHATSAPP_CLOUD_ACCESS_TOKEN
+WHATSAPP_CLOUD_PHONE_NUMBER_ID
+WHATSAPP_NOTIFICATION_TO
+
+The destination number must use country code and digits only, e.g. 923212430365.
+Meta Cloud API also requires the recipient to be allowed during test mode, or a live approved business number.
+
+9. DEPLOY
+---------
+npx tsc --noEmit
+npm run build
+git add .
+git commit -m "Premium CMS V7 complete upgrade"
+git push origin main
+
+Add the same environment variables in Vercel Project Settings > Environment Variables, then redeploy.
+
+10. CSS / PLAIN HTML FIX
+------------------------
+The screenshot showing plain HTML normally means stale or missing Next CSS assets.
+This package was validated through successful CSS compilation and TypeScript.
+Always delete .next, reinstall dependencies, and hard refresh Ctrl+Shift+R.
+Do not upload node_modules or .next to GitHub.
+
+IMPLEMENTED
+-----------
+- Premium black/pink CMS styling with light and dark modes
+- Text Manager custom font size with plus/minus and numeric entry
+- Clear Page Builder / Content Center description
+- Light-mode form/upload/button fixes
+- OpenAI blog research and article generation with model fallback
+- Translation API with caching in Supabase translation tables
+- Business Document types navigation
+- Quotation, Proforma, Commercial Invoice, Packing List, PO, Tax Invoice, Credit Note, Delivery Note
+- Letterhead upload using cms-media storage
+- A4 print/PDF layout
+- Inquiry status badge and dropdown on one line
+- Language button fixes
+- Custom roles, permissions, user disable and remove
+- WhatsApp Center and inquiry notifications
+- Mobile responsive CMS and existing PWA support

@@ -1,0 +1,5 @@
+The Salt Origin Enterprise CMS V10
+npm install: PASSED
+npx tsc --noEmit: PASSED
+Long production build was interrupted by the execution time limit after compilation started.
+.env.local, node_modules, .next and .git are excluded.
