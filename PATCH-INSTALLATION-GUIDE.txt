@@ -1,0 +1,46 @@
+THE SALT ORIGIN - TARGETED FIX PATCH
+
+Copy every file from this ZIP into the same path in your project and allow replacement.
+
+FILES AND PATHS
+1. src/app/api/ai/image/route.ts
+   - Tries OPENAI_IMAGE_MODEL first, then gpt-image-1 and dall-e-3 fallback.
+   - Returns a clear setup message when the OpenAI project has no image-model access.
+
+2. src/app/admin/help/page.tsx
+   - Restores clean separate guide cards.
+   - Includes complete operating instructions inside each guide.
+
+3. src/app/admin/categories/page.tsx
+   - Separates all website boxes: shaker, jar, pouch, plastic grinder, ceramic grinder,
+     bulk fine grain, bulk coarse grain, and private label.
+   - Click "Sync website categories" once after replacing the file.
+
+4. src/components/Footer.tsx
+   - Adds public website newsletter subscription form.
+   - Saves subscribers into newsletter_subscribers with source website-footer.
+
+5. src/app/admin/documents/page.tsx
+   - Forces the bundled Khan & Co. letterhead when an old non-Khan record exists.
+
+6. src/app/globals.css
+   - Adds final one-page A4 print rules and correct header/footer spacing.
+
+7. public/khan-co-letterhead-clean.png
+   - Corrected high-resolution A4 Khan & Co. letterhead without stamp.
+
+OPENAI IMAGE SETUP
+- Keep OPENAI_API_KEY in .env.local.
+- Optional: OPENAI_IMAGE_MODEL=gpt-image-1
+- If that project does not have gpt-image-1 access, the route tries dall-e-3.
+- A model still needs to be enabled for the OpenAI API project; code cannot grant account access.
+
+PRINT SETTINGS
+- Paper: A4
+- Margins: None
+- Scale: 100%
+- Headers and footers: Off
+- Background graphics: On (recommended, although the letterhead is an image element)
+
+DATABASE
+The footer expects the newsletter_subscribers table already included in ENTERPRISE-CMS-V12.sql.

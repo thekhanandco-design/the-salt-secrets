@@ -1,0 +1,24 @@
+THE SALT ORIGIN — PREMIUM EXECUTIVE DASHBOARD V2
+
+REPLACE THIS FILE:
+  src/app/admin/page.tsx
+
+WITH:
+  src/app/admin/page.tsx
+
+No SQL migration is required.
+No new npm package is required.
+
+DATA SOURCES
+- Live visitors, sessions, page views, traffic channels, countries and top pages: existing /api/admin/analytics GA4 route.
+- Leads and won leads: Supabase public.inquiries.
+- Pending/sent quotations and won document value: Supabase public.business_documents.
+- Tasks and reminders: Supabase public.cms_tasks.
+
+AFTER COPYING
+1. Stop the development server.
+2. Delete the .next folder.
+3. Run npm run dev.
+4. Open http://localhost:3000/admin
+
+The dashboard automatically refreshes every 60 seconds.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import Turnstile from "@/components/security/Turnstile";
 
 export default function ProductInquiryForm({
   product,
@@ -9,6 +10,9 @@ export default function ProductInquiryForm({
 }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const onTurnstile = useCallback((token: string) => setTurnstileToken(token), []);
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -17,6 +21,7 @@ export default function ProductInquiryForm({
 
     setLoading(true);
     setSuccess(false);
+    setError("");
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -34,17 +39,23 @@ export default function ProductInquiryForm({
           company: formData.get("company"),
           quantity: formData.get("quantity"),
           message: formData.get("message"),
+          website: formData.get("website"),
+          turnstileToken,
         }),
       });
 
+      const result = await response.json().catch(() => ({}));
       if (response.ok) {
         setSuccess(true);
 
         try {
           form.reset();
+          setTurnstileToken("");
         } catch (error) {
           console.error(error);
         }
+      } else {
+        setError(result.error || "Inquiry could not be sent.");
       }
     } catch (error) {
       console.error(error);
@@ -63,6 +74,8 @@ export default function ProductInquiryForm({
         Interested in {product}? Send us your requirements.
       </p>
 
+      {error && <div className="bg-red-100 text-red-700 p-4 rounded-xl mb-6">{error}</div>}
+
       {success && (
         <div className="bg-green-100 text-green-700 p-4 rounded-xl mb-6">
           Inquiry sent successfully.
@@ -73,6 +86,7 @@ export default function ProductInquiryForm({
         onSubmit={handleSubmit}
         className="grid md:grid-cols-2 gap-6"
       >
+        <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
         <input
           name="name"
           placeholder="Your Name"
@@ -106,6 +120,8 @@ export default function ProductInquiryForm({
           rows={5}
           className="border rounded-xl p-4 md:col-span-2"
         />
+
+        <div className="md:col-span-2 flex justify-center"><Turnstile action="product_inquiry" onToken={onTurnstile} /></div>
 
         <button
           type="submit"

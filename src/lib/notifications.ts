@@ -73,7 +73,7 @@ export async function sendCustomerAutoReply(payload: LeadPayload) {
       <div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
         <div style="background:#C23B4A;padding:24px;color:white"><h1 style="margin:0">Thank you</h1></div>
         <div style="padding:28px;color:#0f172a">
-          <p>Dear ${escapeHtml(payload.name || "Customer")},</p>
+          <p>Dear ${escapeHtml(payload.name || "Buyer")},</p>
           <p>We have received your inquiry. Our sales team will review your request and contact you shortly.</p>
           <p><strong>Product:</strong> ${escapeHtml(payload.product || "General Inquiry")}</p>
           <p>Regards,<br/>The Salt Origin Team</p>

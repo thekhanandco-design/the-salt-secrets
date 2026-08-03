@@ -1,0 +1,38 @@
+THE SALT ORIGIN CMS V11.1 - SOCIAL + DOCUMENTS FIX
+===================================================
+
+PROJECT ROOT:
+F:\Pink Salt\V7 Final\build_final
+
+PASTE / REPLACE THESE FILES:
+
+1) src\app\admin\social\page.tsx
+   -> F:\Pink Salt\V7 Final\build_final\src\app\admin\social\page.tsx
+
+2) src\app\admin\documents\page.tsx
+   -> F:\Pink Salt\V7 Final\build_final\src\app\admin\documents\page.tsx
+
+3) src\app\globals.css
+   -> F:\Pink Salt\V7 Final\build_final\src\app\globals.css
+
+AFTER REPLACING:
+
+PowerShell:
+cd "F:\Pink Salt\V7 Final\build_final"
+Remove-Item .next -Recurse -Force -ErrorAction SilentlyContinue
+npm run dev
+
+LETTERHEAD IMPORTANT:
+- Upload a full A4 portrait PNG/JPG/WebP, recommended 2480 x 3508 px.
+- Do not upload PDF as the background because browsers cannot print a PDF file through an <img> element.
+- Save the letterhead and set it as Default.
+- Open New Document, then Print / PDF. A clean one-page A4 print window will open.
+
+WHAT THIS PATCH FIXES:
+- Official social icons are larger with small labels below.
+- All nine social platforms remain on one line on wide desktop screens.
+- Social queue Draft/Approve/Reject controls stay inside the row.
+- Saved Documents has a document-type dropdown filter.
+- Default letterhead automatically attaches to new documents.
+- Full-page A4 letterhead image appears behind the document.
+- Print / PDF opens a clean A4-only window instead of printing the complete CMS in three pages.

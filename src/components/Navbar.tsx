@@ -7,7 +7,7 @@ import { loadCmsImages, loadCmsText, type CmsLanguage } from "@/lib/cms";
 import { supabase } from "@/lib/supabase-client";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 
-const defaults = { home:"Home", about:"About Us", products:"Products", private_label:"Private Label", certifications:"Certifications", blog:"Blog", contact:"Contact", quote:"Get Quote" };
+const defaults = { home:"Home", about:"About Us", products:"Products", private_label:"Private Label", certifications:"Certifications", blog:"Blog", faq:"FAQ", contact:"Contact", quote:"Get Quote" };
 
 export default function Navbar() {
   const { dark, toggle } = useSiteTheme();
@@ -16,6 +16,7 @@ export default function Navbar() {
   const [languages,setLanguages]=useState<CmsLanguage[]>([]);
   const [labels,setLabels]=useState(defaults);
   const [logo,setLogo]=useState("/logo.png");
+  const [dynamicLinks,setDynamicLinks]=useState<Array<[string,string]>>([]);
 
   useEffect(()=>{
     const saved=localStorage.getItem("salt-language")||"en";
@@ -27,10 +28,11 @@ export default function Navbar() {
   },[]);
 
   async function load(lang:string){
-    const [{data:langs},texts,images]=await Promise.all([
+    const [{data:langs},texts,images,{data:pages}]=await Promise.all([
       supabase.from("cms_languages").select("*").eq("enabled",true).order("display_order"),
       loadCmsText("global",lang),
-      loadCmsImages("global")
+      loadCmsImages("global"),
+      supabase.from("page_content").select("page_slug,content").order("updated_at",{ascending:false})
     ]);
     setLanguages((langs as CmsLanguage[])||[]);
     setLabels({
@@ -40,10 +42,15 @@ export default function Navbar() {
       private_label:texts["global.navbar.private_label"]||defaults.private_label,
       certifications:texts["global.navbar.certifications"]||defaults.certifications,
       blog:texts["global.navbar.blog"]||defaults.blog,
+      faq:texts["global.navbar.faq"]||defaults.faq,
       contact:texts["global.navbar.contact"]||defaults.contact,
       quote:texts["global.navbar.quote"]||defaults.quote,
     });
     setLogo(images["global.branding.logo"]?.url||"/logo.png");
+    const reserved = new Set(["home","about","products","private-label","certifications","blog","contact","faqs","privacy-policy","terms-and-conditions","articles"]);
+    setDynamicLinks(((pages as Array<{page_slug:string;content?:Record<string,unknown>}>|null)||[])
+      .filter(item=>!reserved.has(item.page_slug)&&String(item.content?.status||"").toLowerCase()==="published")
+      .map(item=>[`/${item.page_slug}`,String(item.content?.title||item.page_slug.replaceAll("-"," "))] as [string,string]));
   }
 
   async function changeLanguage(code:string){
@@ -58,10 +65,11 @@ export default function Navbar() {
     }
     await load(code);
     window.dispatchEvent(new CustomEvent("salt-language-change",{detail:code}));
+    window.setTimeout(()=>window.location.reload(),120);
   }
 
-  const links=[
-    ["/",labels.home],["/about",labels.about],["/products",labels.products],["/private-label",labels.private_label],["/certifications",labels.certifications],["/blog",labels.blog],["/contact",labels.contact]
+  const links:Array<[string,string]>=[
+    ["/",labels.home],["/about",labels.about],["/products",labels.products],["/private-label",labels.private_label],["/certifications",labels.certifications],["/blog",labels.blog],["/faqs",labels.faq],...dynamicLinks,["/contact",labels.contact]
   ];
 
   return <>
@@ -72,11 +80,11 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <button onClick={toggle} aria-label="Toggle website theme" className="hidden md:inline-flex items-center justify-center w-11 h-11 rounded-xl border border-[#EFE3E5] bg-white text-[#081325] site-theme-button">{dark ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button>
           <div className="hidden md:flex relative items-center"><select aria-label="Website language" value={language} onChange={e=>changeLanguage(e.target.value)} className="appearance-none border border-[#EFE3E5] rounded-xl pl-4 pr-9 py-3 text-sm font-bold bg-white text-[#081325]">{languages.length?languages.map(l=><option key={l.code} value={l.code}>{l.native_name}</option>):<option value="en">English</option>}</select><ChevronDown className="absolute right-3 w-4 h-4 pointer-events-none text-slate-500"/></div>
-          <Link href="/contact" className="hidden md:flex items-center justify-center bg-[#C54B5B] text-white px-7 py-3 rounded-xl font-bold hover:opacity-90 transition">{labels.quote}</Link>
+          <Link href="/contact" className="site-gradient-button hidden md:flex items-center justify-center text-white px-7 py-3 rounded-xl font-bold transition">{labels.quote}</Link>
           <button onClick={()=>setIsOpen(true)} className="lg:hidden p-2" aria-label="Open menu"><Menu className="w-7 h-7"/></button>
         </div>
       </div>
     </header>
-    {isOpen&&<><button className="fixed inset-0 bg-black/50 z-[990]" onClick={()=>setIsOpen(false)} aria-label="Close menu overlay"/><aside className="fixed top-0 right-0 h-screen w-[84%] max-w-[380px] bg-white z-[1000] shadow-2xl p-6"><div className="flex justify-between items-center"><img src={logo} alt="The Salt Origin" className="h-14 w-auto"/><button onClick={()=>setIsOpen(false)}><X className="w-7 h-7"/></button></div><div className="mt-8"><select value={language} onChange={e=>changeLanguage(e.target.value)} className="w-full border rounded-xl p-4 bg-white">{languages.map(l=><option key={l.code} value={l.code}>{l.native_name}</option>)}</select></div><nav className="mt-5 flex flex-col gap-2">{links.map(([href,label])=><Link key={href} href={href} onClick={()=>setIsOpen(false)} className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] font-bold">{label}</Link>)}<Link href="/contact" onClick={()=>setIsOpen(false)} className="mt-3 bg-[#C54B5B] text-white text-center py-4 rounded-xl font-bold">{labels.quote}</Link></nav></aside></>}
+    {isOpen&&<><button className="fixed inset-0 bg-black/50 z-[990]" onClick={()=>setIsOpen(false)} aria-label="Close menu overlay"/><aside className="fixed top-0 right-0 h-screen w-[84%] max-w-[380px] bg-white z-[1000] shadow-2xl p-6"><div className="flex justify-between items-center"><img src={logo} alt="The Salt Origin" className="h-14 w-auto"/><button onClick={()=>setIsOpen(false)}><X className="w-7 h-7"/></button></div><div className="mt-8"><select value={language} onChange={e=>changeLanguage(e.target.value)} className="w-full border rounded-xl p-4 bg-white">{languages.map(l=><option key={l.code} value={l.code}>{l.native_name}</option>)}</select></div><nav className="mt-5 flex flex-col gap-2">{links.map(([href,label])=><Link key={href} href={href} onClick={()=>setIsOpen(false)} className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] font-bold">{label}</Link>)}<Link href="/contact" onClick={()=>setIsOpen(false)} className="site-gradient-button mt-3 text-white text-center py-4 rounded-xl font-bold">{labels.quote}</Link></nav></aside></>}
   </>;
 }

@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { notFound } from "next/navigation";
-import React from "react";
-import { ArrowRight, CheckCircle2, Globe2, Package, ShieldCheck, Tag } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Download,
+  Globe2,
+  MessageCircle,
+  Package,
+  ShieldCheck,
+  Tag,
+} from "lucide-react";
+
+import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
-
-import ProductInquiryForm from "@/components/ProductInquiryForm";
-import { supabase } from "@/lib/supabase";
 
 type Product = {
   id: number;
@@ -33,6 +41,82 @@ type Product = {
   specifications?: Record<string, string> | null;
   gallery?: string[] | null;
   brochure_url?: string | null;
+  origin?: string | null;
+  grade?: string | null;
+  granulation?: string | null;
+  mesh_size?: string | null;
+  purity?: string | null;
+  moisture?: string | null;
+  available_pack_sizes?: string | null;
+  bulk_packaging?: string | null;
+  private_label_available?: boolean | null;
+  production_capacity?: string | null;
+  lead_time?: string | null;
+  hs_code?: string | null;
+  incoterms?: string[] | null;
+  port_of_loading?: string | null;
+  coa_url?: string | null;
+  msds_url?: string | null;
+  specification_sheet_url?: string | null;
+};
+
+type WhyItem = {
+  title: string;
+  text: string;
+  icon?: "globe" | "package" | "shield" | "tag";
+};
+
+type ProductPageSettings = {
+  eyebrow?: string;
+  specificationsTitle?: string;
+  featuresTitle?: string;
+  applicationsTitle?: string;
+  whyTitle?: string;
+  requestQuoteLabel?: string;
+  whatsappLabel?: string;
+  whatsappNumber?: string;
+  showWhySection?: boolean;
+  showGallery?: boolean;
+  whyItems?: WhyItem[];
+};
+
+const defaultSettings: Required<
+  Omit<ProductPageSettings, "whyItems">
+> & {
+  whyItems: WhyItem[];
+} = {
+  eyebrow: "Product Details",
+  specificationsTitle: "Product Specifications",
+  featuresTitle: "Key Features",
+  applicationsTitle: "Applications",
+  whyTitle: "Why Buy From The Salt Origin?",
+  requestQuoteLabel: "Request Quotation",
+  whatsappLabel: "WhatsApp Inquiry",
+  whatsappNumber: "923462771693",
+  showWhySection: true,
+  showGallery: true,
+  whyItems: [
+    {
+      icon: "globe",
+      title: "Global Export Support",
+      text: "Documentation and supply support for international B2B buyers.",
+    },
+    {
+      icon: "package",
+      title: "Flexible Packaging",
+      text: "Retail, bulk and private-label packaging options for different markets.",
+    },
+    {
+      icon: "shield",
+      title: "Quality-Focused Supply",
+      text: "Product specifications, quality documents and traceability support where available.",
+    },
+    {
+      icon: "tag",
+      title: "Private Label Ready",
+      text: "Custom branding and packaging support for qualified projects.",
+    },
+  ],
 };
 
 async function getProduct(slug: string): Promise<Product | null> {
@@ -48,6 +132,22 @@ async function getProduct(slug: string): Promise<Product | null> {
   }
 
   return data as Product;
+}
+
+async function getPageSettings(
+  productId: number,
+): Promise<ProductPageSettings> {
+  const { data } = await supabase
+    .from("page_content")
+    .select("content")
+    .eq("page_slug", `product:${productId}`)
+    .maybeSingle();
+
+  const value = data?.content;
+
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as ProductPageSettings)
+    : {};
 }
 
 export async function generateMetadata({
@@ -66,16 +166,17 @@ export async function generateMetadata({
     };
   }
 
+  const description =
+    product.description ||
+    product.short_description ||
+    "Premium Himalayan Pink Salt products for private label, retail packaging, bulk supply and global export markets.";
+
   return {
     title: `${product.title} | The Salt Origin`,
-    description:
-      product.description ||
-      "Premium Himalayan Pink Salt products for private label, retail packaging, bulk supply and global export markets.",
+    description,
     openGraph: {
       title: `${product.title} | The Salt Origin`,
-      description:
-        product.description ||
-        "Premium Himalayan Pink Salt products for global buyers.",
+      description,
       images: product.image ? [product.image] : [],
     },
   };
@@ -93,16 +194,79 @@ export default async function ProductDetailPage({
     notFound();
   }
 
+  const storedSettings = await getPageSettings(product.id);
+
+  const settings = {
+    ...defaultSettings,
+    ...storedSettings,
+    whyItems: storedSettings.whyItems?.length
+      ? storedSettings.whyItems
+      : defaultSettings.whyItems,
+  };
+
   const productImage = product.image || "/product-2.png";
+
   const productDescription =
     product.description ||
+    product.short_description ||
     "Premium Himalayan Pink Salt product available for private label, retail packaging, bulk supply and global export markets.";
 
+  const gallery = [
+    productImage,
+    ...((product.gallery || []).filter(Boolean)),
+  ].filter(
+    (value, index, array) => array.indexOf(value) === index,
+  );
 
-  const gallery = [productImage, ...((product.gallery || []).filter(Boolean))].filter((value, index, array) => array.indexOf(value) === index);
-  const specifications = product.specifications || {};
-  const features = product.features || [];
-  const applications = product.applications || [];
+  const rawSpecifications: Array<[string, string]> = [
+    ["Origin", product.origin || "Pakistan"],
+    ["Grade", product.grade || ""],
+    [
+      "Grain / Granulation",
+      product.grain_type || product.granulation || "",
+    ],
+    ["Mesh Size", product.mesh_size || ""],
+    ["Purity", product.purity || ""],
+    ["Moisture", product.moisture || ""],
+    [
+      "Available Sizes",
+      product.available_pack_sizes || product.sizes || "",
+    ],
+    [
+      "Packaging",
+      product.bulk_packaging ||
+        product.packaging_type ||
+        product.packaging ||
+        "",
+    ],
+    ["MOQ", product.moq || ""],
+    ["Lead Time", product.lead_time || ""],
+    ["Production Capacity", product.production_capacity || ""],
+    ["HS Code", product.hs_code || ""],
+    ["Port of Loading", product.port_of_loading || ""],
+    ...Object.entries(product.specifications || {}).map(
+      ([label, value]): [string, string] => [
+        label,
+        String(value),
+      ],
+    ),
+  ];
+
+  const specifications = rawSpecifications.filter(
+    ([, value]) => Boolean(value.trim()),
+  );
+
+  const features = (product.features || []).filter(Boolean);
+  const applications = (product.applications || []).filter(Boolean);
+
+  const whatsappNumber = String(
+    settings.whatsappNumber || defaultSettings.whatsappNumber,
+  ).replace(/\D/g, "");
+
+  const whatsappText = encodeURIComponent(
+    `Hello, I would like to inquire about ${product.title}.`,
+  );
+
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -118,13 +282,8 @@ export default async function ProductDetailPage({
       name: "Khan & Co.",
     },
     category: product.category || "Himalayan Pink Salt",
-    countryOfOrigin: "Pakistan",
-    offers: {
-      "@type": "Offer",
-      availability: "https://schema.org/InStock",
-      priceCurrency: "USD",
-      url: `https://thesaltsecrets.com/products/${slug}`,
-    },
+    countryOfOrigin: product.origin || "Pakistan",
+    url: `https://www.thesaltorigin.com/products/${slug}`,
   };
 
   return (
@@ -137,17 +296,15 @@ export default async function ProductDetailPage({
         }}
       />
 
-      <main className="bg-[#FFF8F5]">
-        <div className="max-w-[1500px] mx-auto px-5 lg:px-12 py-14 lg:py-20">
-          {/* HERO */}
-          <section className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-            <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-6 lg:p-8 shadow-[0_18px_45px_rgba(194,59,74,0.06)]">
-              <div className="h-[360px] lg:h-[520px] flex items-center justify-center bg-[#FFF8F5] rounded-[24px] overflow-hidden">
+      <main className="product-detail-page">
+        <div className="product-detail-shell">
+          <section className="product-detail-hero">
+            <div className="product-detail-media-card">
+              <div className="product-detail-media">
                 {productImage.startsWith("http") ? (
                   <img
                     src={productImage}
                     alt={product.title}
-                    className="max-h-full w-auto object-contain"
                   />
                 ) : (
                   <Image
@@ -156,169 +313,297 @@ export default async function ProductDetailPage({
                     width={900}
                     height={900}
                     priority
-                    className="max-h-full w-auto object-contain"
                   />
                 )}
               </div>
             </div>
 
-            <div>
-              <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-xs">
-                Product Details
+            <div className="product-detail-copy">
+              <span className="product-detail-eyebrow">
+                {settings.eyebrow}
               </span>
 
-              <h1
-                className="mt-4 text-[#07142B] font-black leading-tight"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "clamp(2.5rem,4.5vw,5.4rem)",
-                }}
-              >
-                {product.title}
-              </h1>
+              <h1>{product.title}</h1>
 
-              {product.subtitle && <p className="text-[#C23B4A] font-black mt-3">{product.subtitle}</p>}
-              <p className="text-lg text-slate-600 mt-6 leading-relaxed">
+              {product.subtitle && (
+                <p className="product-detail-subtitle">
+                  {product.subtitle}
+                </p>
+              )}
+
+              <p className="product-detail-description">
                 {productDescription}
               </p>
 
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                <InfoCard label="Origin" value="Pakistan" />
-                <InfoCard label="Grain Type" value={product.grain_type || "Food Grade"} />
-                <InfoCard label="MOQ" value={product.moq || "Available"} />
+              <div className="product-detail-snapshot">
+                <InfoCard
+                  label="Origin"
+                  value={product.origin || "Pakistan"}
+                />
+
+                <InfoCard
+                  label="Grain Type"
+                  value={
+                    product.grain_type ||
+                    product.granulation ||
+                    product.grade ||
+                    "Available on request"
+                  }
+                />
+
+                <InfoCard
+                  label="MOQ"
+                  value={product.moq || "Available on request"}
+                />
+
                 <InfoCard
                   label="Packaging"
-                  value={product.packaging_type || product.packaging || "Custom / Retail"}
+                  value={
+                    product.packaging_type ||
+                    product.packaging ||
+                    "Custom / Bulk"
+                  }
                 />
               </div>
 
-              <div className="flex flex-wrap gap-4 mt-9">
+              <div className="product-detail-actions">
                 <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-3 bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-black hover:opacity-90 transition"
+                  href={`/contact?product=${encodeURIComponent(
+                    product.title,
+                  )}`}
+                  className="product-primary-button"
                 >
-                  Request Quotation
-                  <ArrowRight className="w-4 h-4" />
+                  {settings.requestQuoteLabel}
+                  <ArrowRight />
                 </Link>
 
                 <Link
-                  href="https://wa.me/923462771693"
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappText}`}
                   target="_blank"
-                  className="inline-flex items-center gap-3 bg-white border border-[#EFE3E5] text-[#07142B] px-8 py-4 rounded-xl font-black hover:bg-[#FFF4F5] transition"
+                  rel="noopener noreferrer"
+                  className="product-whatsapp-button"
                 >
-                  WhatsApp Inquiry
-                  <ArrowRight className="w-4 h-4" />
+                  <MessageCircle />
+                  {settings.whatsappLabel}
+                  <ArrowRight />
                 </Link>
               </div>
             </div>
-         </section>
+          </section>
 
-          {gallery.length > 1 && (
-            <section className="mt-12">
-              <h2 className="text-3xl font-black text-[#07142B] mb-6">Product Gallery</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {settings.showGallery && gallery.length > 1 && (
+            <section className="product-gallery-section">
+              <div className="product-section-heading">
+                <span>Product Media</span>
+                <h2>Product Gallery</h2>
+              </div>
+
+              <div className="product-gallery-grid">
                 {gallery.map((image, index) => (
-                  <div key={`${image}-${index}`} className="bg-white border border-[#EFE3E5] rounded-2xl p-4 h-52 flex items-center justify-center">
-                    <img src={image} alt={`${product.title} ${index + 1}`} className="max-h-full max-w-full object-contain" />
+                  <div
+                    key={`${image}-${index}`}
+                    className="product-gallery-item"
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.title} ${index + 1}`}
+                    />
                   </div>
                 ))}
               </div>
             </section>
           )}
 
-          {(product.sizes || product.best_for || Object.keys(specifications).length > 0) && (
-            <section className="grid lg:grid-cols-2 gap-8 mt-14">
-              <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
-                <h2 className="text-3xl font-black text-[#07142B] mb-6">Product Specifications</h2>
-                <div className="grid sm:grid-cols-2 gap-4 text-slate-600">
-                  {product.sizes && <SpecItem label="Sizes" value={product.sizes} />}
-                  {product.best_for && <SpecItem label="Best For" value={product.best_for} />}
-                  {Object.entries(specifications).map(([label, value]) => <SpecItem key={label} label={label} value={value} />)}
+          <section className="product-detail-information-grid">
+            <article className="product-detail-panel">
+              <div className="product-section-heading">
+                <span>Technical Information</span>
+                <h2>{settings.specificationsTitle}</h2>
+              </div>
+
+              {specifications.length ? (
+                <div className="product-spec-grid">
+                  {specifications.map(([label, value]) => (
+                    <SpecItem
+                      key={`${label}-${value}`}
+                      label={label}
+                      value={value}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="product-empty-copy">
+                  Detailed specifications are available on request.
+                </p>
+              )}
+
+              <div className="product-document-links">
+                {product.specification_sheet_url && (
+                  <Link
+                    href={product.specification_sheet_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download />
+                    Specification Sheet
+                  </Link>
+                )}
+
+                {product.coa_url && (
+                  <Link
+                    href={product.coa_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download />
+                    COA
+                  </Link>
+                )}
+
+                {product.msds_url && (
+                  <Link
+                    href={product.msds_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download />
+                    MSDS
+                  </Link>
+                )}
+
+                {product.brochure_url && (
+                  <Link
+                    href={product.brochure_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Download />
+                    Product Brochure
+                  </Link>
+                )}
+              </div>
+            </article>
+
+            <article className="product-detail-panel">
+              <div className="product-section-heading">
+                <span>Buyer Use Cases</span>
+                <h2>
+                  {settings.featuresTitle} &amp;{" "}
+                  {settings.applicationsTitle}
+                </h2>
+              </div>
+
+              <div className="product-feature-columns">
+                <div>
+                  <h3>{settings.featuresTitle}</h3>
+
+                  {features.length ? (
+                    <ul>
+                      {features.map((item) => (
+                        <li key={item}>
+                          <Check />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="product-empty-copy">
+                      Features are available on request.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h3>{settings.applicationsTitle}</h3>
+
+                  {applications.length ? (
+                    <ul>
+                      {applications.map((item) => (
+                        <li key={item}>
+                          <Check />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="product-empty-copy">
+                      Applications are available on request.
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
-                <h2 className="text-3xl font-black text-[#07142B] mb-6">Features & Applications</h2>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div><h3 className="font-black mb-3">Features</h3><ul className="space-y-2 text-slate-600">{features.length ? features.map((item) => <li key={item}>✓ {item}</li>) : <li>✓ Premium export quality</li>}</ul></div>
-                  <div><h3 className="font-black mb-3">Applications</h3><ul className="space-y-2 text-slate-600">{applications.length ? applications.map((item) => <li key={item}>✓ {item}</li>) : <li>✓ Retail and wholesale supply</li>}</ul></div>
+
+              {product.best_for && (
+                <div className="product-best-for">
+                  <strong>Best For</strong>
+                  <span>{product.best_for}</span>
                 </div>
-                {product.brochure_url && <Link href={product.brochure_url} target="_blank" className="inline-flex mt-6 bg-[#081325] text-white px-5 py-3 rounded-xl font-black">Download Product Brochure</Link>}
+              )}
+            </article>
+          </section>
+
+          {settings.showWhySection && (
+            <section className="product-why-section">
+              <div className="product-section-heading">
+                <span>Export Partnership</span>
+                <h2>{settings.whyTitle}</h2>
+              </div>
+
+              <div className="product-why-grid">
+                {settings.whyItems.map((item, index) => (
+                  <FeatureBox
+                    key={`${item.title}-${index}`}
+                    icon={whyIcon(item.icon)}
+                    title={item.title}
+                    text={item.text}
+                  />
+                ))}
               </div>
             </section>
           )}
 
-{/* TRUST */}
-<section className="grid md:grid-cols-3 gap-6 mt-12">
-
-  <TrustCard
-    icon={<CheckCircle2 className="w-10 h-10 text-[#C23B4A]" />}
-    title="OEM"
-    subtitle="Private Label Support"
-  />
-
-  <TrustCard
-    icon={<Package className="w-10 h-10 text-[#C23B4A]" />}
-    title="Bulk"
-    subtitle="Export Supply"
-  />
-
-  <TrustCard
-    icon={<ShieldCheck className="w-10 h-10 text-[#C23B4A]" />}
-    title="100%"
-    subtitle="Natural Salt"
-  />
-
-</section>
-
-          {/* WHY BUY FROM US */}
-          <section className="mt-14 bg-white border border-[#EFE3E5] rounded-[30px] p-8 lg:p-10">
-            <h2 className="text-3xl font-black text-[#07142B] mb-8">
-              Why Buy From The Salt Origin?
-            </h2>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-              <FeatureBox
-                icon={<Globe2 className="w-8 h-8 text-[#C23B4A]" />}
-                title="Global Export"
-                text="Serving importers, wholesalers and distributors worldwide."
-              />
-
-              <FeatureBox
-                icon={<Package className="w-8 h-8 text-[#C23B4A]" />}
-                title="Flexible Packaging"
-                text="Retail, bulk and custom packaging options available."
-              />
-
-              <FeatureBox
-                icon={<ShieldCheck className="w-8 h-8 text-[#C23B4A]" />}
-                title="Food Grade Quality"
-                text="Strict quality control and export standards."
-              />
-
-              <FeatureBox
-                icon={<Tag className="w-8 h-8 text-[#C23B4A]" />}
-                title="Private Label"
-                text="OEM and custom branding support available."
-              />
-
+          <section className="product-final-cta">
+            <div>
+              <span>Discuss your requirements</span>
+              <h2>
+                Request specifications, packaging options and a formal
+                quotation.
+              </h2>
             </div>
-          </section>
 
-          {/* PRODUCT INQUIRY */}
-          <section className="mt-16">
-            <div className="bg-white border border-[#EFE3E5] rounded-[30px] p-8">
-              <ProductInquiryForm product={product.title} />
-            </div>
+            <Link
+              href={`/contact?product=${encodeURIComponent(
+                product.title,
+              )}`}
+              className="product-primary-button"
+            >
+              Request Quotation
+              <ArrowRight />
+            </Link>
           </section>
-
         </div>
       </main>
     </>
   );
 }
 
-/* ---------------- HELPERS ---------------- */
+function whyIcon(icon?: WhyItem["icon"]) {
+  const className = "w-7 h-7";
+
+  if (icon === "package") {
+    return <Package className={className} />;
+  }
+
+  if (icon === "shield") {
+    return <ShieldCheck className={className} />;
+  }
+
+  if (icon === "tag") {
+    return <Tag className={className} />;
+  }
+
+  return <Globe2 className={className} />;
+}
 
 function InfoCard({
   label,
@@ -328,14 +613,9 @@ function InfoCard({
   value: string;
 }) {
   return (
-    <div className="bg-white border border-[#EFE3E5] rounded-2xl p-5">
-      <p className="text-sm text-slate-500">
-        {label}
-      </p>
-
-      <h3 className="font-bold text-[#07142B] mt-1">
-        {value}
-      </h3>
+    <div className="product-info-card">
+      <p>{label}</p>
+      <h3>{value}</h3>
     </div>
   );
 }
@@ -348,34 +628,9 @@ function SpecItem({
   value: string;
 }) {
   return (
-    <p>
-      <strong>{label}:</strong> {value}
-    </p>
-  );
-}
-
-function TrustCard({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="bg-white border border-[#EFE3E5] rounded-[28px] p-8 text-center">
-      <div className="flex justify-center mb-4">
-        {icon}
-      </div>
-
-      <h3 className="text-4xl font-black text-[#07142B]">
-        {title}
-      </h3>
-
-      <p className="text-slate-500 mt-2">
-        {subtitle}
-      </p>
+    <div className="product-spec-item">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -385,23 +640,15 @@ function FeatureBox({
   title,
   text,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   text: string;
 }) {
   return (
-    <div className="border border-[#EFE3E5] rounded-2xl p-6">
-      <div className="mb-4">
-        {icon}
-      </div>
-
-      <h3 className="font-black text-lg text-[#07142B]">
-        {title}
-      </h3>
-
-      <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-        {text}
-      </p>
-    </div>
+    <article className="product-why-card">
+      <span>{icon}</span>
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </article>
   );
 }

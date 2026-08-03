@@ -1,76 +1,17 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect,useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminFetch } from "@/lib/admin-client";
+import { BarChart3, CheckCircle2, Search, Sparkles, WandSparkles } from "lucide-react";
 
-type SeoItem = { id: number; page_slug: string; meta_title: string; meta_description: string; og_image?: string };
-
-const defaultPages = ["home", "about", "products", "private-label", "certifications", "contact"];
-
-export default function SeoPage() {
-  const [items, setItems] = useState<SeoItem[]>([]);
-  const [selected, setSelected] = useState(defaultPages[0]);
-  const [metaTitle, setMetaTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-  const [ogImage, setOgImage] = useState("");
-
-  useEffect(() => { loadSeo(); }, []);
-
-  async function loadSeo() {
-    const { data } = await supabase.from("seo_settings").select("*").order("page_slug", { ascending: true });
-    const rows = (data as SeoItem[]) || [];
-    setItems(rows);
-    const first = rows.find((item) => item.page_slug === selected);
-    if (first) fillForm(first);
-  }
-
-  function fillForm(item: SeoItem) {
-    setSelected(item.page_slug);
-    setMetaTitle(item.meta_title || "");
-    setMetaDescription(item.meta_description || "");
-    setOgImage(item.og_image || "");
-  }
-
-  async function saveSeo() {
-    const existing = items.find((item) => item.page_slug === selected);
-    const payload = { page_slug: selected, meta_title: metaTitle, meta_description: metaDescription, og_image: ogImage };
-    const { error } = existing
-      ? await supabase.from("seo_settings").update(payload).eq("id", existing.id)
-      : await supabase.from("seo_settings").insert([payload]);
-    if (error) return alert("Run supabase/cms-schema.sql first. " + error.message);
-    await loadSeo();
-    alert("SEO saved");
-  }
-
-  return (
-    <AdminShell>
-      <div className="space-y-8">
-        <div>
-          <p className="uppercase tracking-[5px] text-[#C23B4A] font-black text-xs">SEO</p>
-          <h1 className="text-4xl lg:text-5xl font-black mt-2">SEO Manager</h1>
-          <p className="text-slate-600 mt-3">Prepare page titles, descriptions and OG images for future SEO integration.</p>
-        </div>
-        <div className="grid lg:grid-cols-[320px_1fr] gap-6">
-          <div className="rounded-[28px] bg-white border border-[#EFE3E5] p-5">
-            <h2 className="font-black mb-4">Pages</h2>
-            <div className="space-y-2">
-              {[...new Set([...defaultPages, ...items.map((item) => item.page_slug)])].map((page) => (
-                <button key={page} onClick={() => { const item = items.find((row) => row.page_slug === page); item ? fillForm(item) : (setSelected(page), setMetaTitle(""), setMetaDescription(""), setOgImage("")); }} className={`w-full text-left rounded-xl px-4 py-3 font-bold ${selected === page ? "bg-[#C23B4A] text-white" : "bg-[#FFF8F5]"}`}>{page}</button>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-[28px] bg-white border border-[#EFE3E5] p-6">
-            <div className="space-y-5">
-              <div><label className="font-black block mb-2">Page Slug</label><input value={selected} onChange={(e) => setSelected(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-              <div><label className="font-black block mb-2">Meta Title</label><input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-              <div><label className="font-black block mb-2">Meta Description</label><textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className="w-full border rounded-xl p-4 h-36" /></div>
-              <div><label className="font-black block mb-2">OG Image URL</label><input value={ogImage} onChange={(e) => setOgImage(e.target.value)} className="w-full border rounded-xl p-4" /></div>
-              <button onClick={saveSeo} className="bg-[#C23B4A] text-white px-8 py-4 rounded-xl font-black">Save SEO</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </AdminShell>
-  );
-}
+type SeoRow={id?:number;page_slug:string;meta_title:string;meta_description:string;keywords:string;og_title?:string;og_description?:string;og_image?:string};
+type Audit={score:number;primary_keyword:string;title_suggestion:string;description_suggestion:string;keyword_suggestions:string[];quick_wins:string[];technical_checks:{label:string;status:string;detail:string}[];content_brief:string;og_title_suggestion?:string;og_description_suggestion?:string;image_prompt?:string;image_alt_text?:string};
+const initial:SeoRow={page_slug:"home",meta_title:"",meta_description:"",keywords:"",og_title:"",og_description:"",og_image:""};
+export default function SeoManager(){
+ const[rows,setRows]=useState<SeoRow[]>([]),[form,setForm]=useState<SeoRow>(initial),[audit,setAudit]=useState<Audit|null>(null),[busy,setBusy]=useState(false),[saving,setSaving]=useState(false);
+ useEffect(()=>{void load()},[]);async function load(){const{data}=await supabase.from("seo_settings").select("*").order("page_slug");const list=(data as SeoRow[])||[];setRows(list);if(list[0])setForm(list[0])}
+ async function save(){setSaving(true);const payload={...form,updated_at:new Date().toISOString()};const{error}=form.id?await supabase.from("seo_settings").update(payload).eq("id",form.id):await supabase.from("seo_settings").insert(payload);setSaving(false);if(error)return alert(error.message);await load();alert("SEO settings saved.")}
+ async function runAudit(){setBusy(true);const r=await adminFetch("/api/seo/audit",{method:"POST",body:JSON.stringify({page:form.page_slug,title:form.meta_title,description:form.meta_description,keywords:form.keywords})});const x=await r.json();setBusy(false);if(!r.ok)return alert(x.error||"SEO audit failed");setAudit(x)}
+ function apply(){if(!audit)return;setForm({...form,meta_title:audit.title_suggestion||form.meta_title,meta_description:audit.description_suggestion||form.meta_description,keywords:(audit.keyword_suggestions||[]).join(", ")||form.keywords,og_title:audit.og_title_suggestion||audit.title_suggestion||form.og_title,og_description:audit.og_description_suggestion||audit.description_suggestion||form.og_description})}
+ return <AdminShell><div className="os-page legacy-unified-page seo-studio-v102"><header><div><span>Organic Growth</span><h1>SEO Command Center</h1><p>AI-guided metadata, keyword research and practical optimization for every website page.</p></div><button className="cms-gradient-button" onClick={runAudit} disabled={busy}><Sparkles/>{busy?"Auditing…":"Run AI SEO Audit"}</button></header><div className="seo-layout-v102"><aside className="seo-pages-v102"><small>Website pages</small>{rows.map(r=><button className={form.page_slug===r.page_slug?"active":""} key={r.page_slug} onClick={()=>{setForm(r);setAudit(null)}}>{r.page_slug.replaceAll("_"," ")}</button>)}<button onClick={()=>{setForm({...initial,page_slug:`page-${rows.length+1}`});setAudit(null)}}>+ Add page</button></aside><main className="seo-main-v102"><section className="seo-card-v102"><div className="section-head"><div><span>Page metadata</span><h2>{form.page_slug.replaceAll("_"," ")}</h2></div><Search/></div><label>Page slug<input value={form.page_slug} onChange={e=>setForm({...form,page_slug:e.target.value})}/></label><label>Meta title<input value={form.meta_title||""} onChange={e=>setForm({...form,meta_title:e.target.value})}/><small>{(form.meta_title||"").length}/60</small></label><label>Meta description<textarea value={form.meta_description||""} onChange={e=>setForm({...form,meta_description:e.target.value})}/><small>{(form.meta_description||"").length}/160</small></label><label>Target keywords<input value={form.keywords||""} onChange={e=>setForm({...form,keywords:e.target.value})} placeholder="Generated from buyer-intent research"/></label><label>Open Graph title<input value={form.og_title||""} onChange={e=>setForm({...form,og_title:e.target.value})}/></label><label>Open Graph description<textarea value={form.og_description||""} onChange={e=>setForm({...form,og_description:e.target.value})}/></label><label>Social / SEO image URL<input value={form.og_image||""} onChange={e=>setForm({...form,og_image:e.target.value})} placeholder="Save an approved image from Images Manager"/></label><button className="cms-gradient-button save" onClick={save} disabled={saving}>{saving?"Saving…":"Save SEO Settings"}</button></section><section className="seo-card-v102 audit"><div className="section-head"><div><span>AI recommendations</span><h2>Optimization report</h2></div><BarChart3/></div>{audit?<><div className="score-v102"><strong>{audit.score||0}</strong><span>SEO score</span></div><div className="audit-block"><b>Primary keyword</b><p>{audit.primary_keyword}</p></div><div className="audit-block"><b>Quick wins</b>{audit.quick_wins?.map(x=><p key={x}><CheckCircle2/>{x}</p>)}</div><div className="audit-block"><b>Keyword opportunities</b><div className="chips-v102">{audit.keyword_suggestions?.map(x=><span key={x}>{x}</span>)}</div></div><div className="audit-block"><b>Content brief</b><p>{audit.content_brief}</p></div><div className="audit-block"><b>SEO image prompt</b><p>{audit.image_prompt||"No image prompt returned."}</p>{audit.image_alt_text&&<p><CheckCircle2/>{audit.image_alt_text}</p>}</div><button className="apply-v102" onClick={apply}><WandSparkles/>Apply AI suggestions</button></>:<div className="empty-v102"><Sparkles/><b>Run an AI audit</b><p>The studio will suggest stronger metadata, target keywords, quick wins and a content brief.</p></div>}</section></main></div></div><style jsx>{`.seo-studio-v102{display:flex;flex-direction:column;gap:18px}.seo-studio-v102>header{display:flex;justify-content:space-between;align-items:flex-end}.seo-studio-v102 header span,.section-head span{font-size:9px;text-transform:uppercase;letter-spacing:.28em;color:var(--accent);font-weight:900}.seo-studio-v102 h1{font-size:clamp(42px,5vw,70px);line-height:.9;letter-spacing:-.055em;margin:10px 0}.seo-studio-v102 header p{font-size:12px;color:var(--muted)}.seo-studio-v102 header button{display:flex;gap:8px;align-items:center;color:white;border-radius:13px;padding:13px 17px;font-size:11px;font-weight:900}.seo-studio-v102 svg{width:17px}.seo-layout-v102{display:grid;grid-template-columns:220px 1fr;gap:14px}.seo-pages-v102,.seo-card-v102{background:var(--surface);border:1px solid var(--line);border-radius:22px}.seo-pages-v102{padding:14px;height:fit-content;display:flex;flex-direction:column;gap:5px}.seo-pages-v102 small{padding:8px;font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:900}.seo-pages-v102 button{text-align:left;padding:12px;border-radius:11px;font-size:11px;font-weight:800;text-transform:capitalize;color:var(--muted)}.seo-pages-v102 button.active{background:linear-gradient(135deg,#ef6f8d,#a52c50);color:white}.seo-main-v102{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.seo-card-v102{padding:22px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.section-head h2{font-size:21px;text-transform:capitalize;margin-top:4px}.seo-card-v102 label{display:flex;flex-direction:column;gap:7px;font-size:10px;font-weight:850;color:var(--muted);margin-top:13px}.seo-card-v102 input,.seo-card-v102 textarea{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px;color:var(--text)}.seo-card-v102 textarea{min-height:105px}.seo-card-v102 label small{text-align:right}.save{margin-top:16px;color:white;border-radius:12px;padding:12px 16px;font-size:11px;font-weight:900}.score-v102{width:110px;height:110px;border-radius:50%;border:10px solid color-mix(in srgb,var(--accent) 18%,var(--line));display:flex;flex-direction:column;align-items:center;justify-content:center;margin:5px auto 20px}.score-v102 strong{font-size:30px}.score-v102 span{font-size:8px;color:var(--muted)}.audit-block{border-top:1px solid var(--line);padding:14px 0}.audit-block>b{font-size:10px;text-transform:uppercase;letter-spacing:.1em}.audit-block p{font-size:10px;color:var(--muted);line-height:1.55;margin-top:7px;display:flex;gap:7px}.audit-block p svg{width:13px;color:#16a36a;flex:0 0 auto}.chips-v102{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.chips-v102 span{font-size:9px;padding:7px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}.apply-v102{display:flex;gap:7px;align-items:center;color:var(--accent);font-size:10px;font-weight:900}.empty-v102{min-height:330px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.empty-v102 svg{width:30px;color:var(--accent)}.empty-v102 b{color:var(--text);margin-top:12px}.empty-v102 p{font-size:10px;max-width:280px;margin-top:7px}@media(max-width:1000px){.seo-main-v102{grid-template-columns:1fr}}@media(max-width:720px){.seo-layout-v102{grid-template-columns:1fr}.seo-studio-v102>header{align-items:flex-start;flex-direction:column;gap:15px}}`}</style></AdminShell>}

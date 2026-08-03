@@ -1,0 +1,24 @@
+THE SALT ORIGIN - PREMIUM ANALYTICS V3 PATCH
+
+Replace these files in your current project:
+
+1) src/app/admin/analytics/page.tsx
+2) src/app/api/admin/analytics/route.ts
+
+Then clear the Next.js cache and restart:
+
+PowerShell:
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm run dev
+
+Open:
+http://localhost:3000/admin/analytics
+
+IMPORTANT DATA LABELS
+- LIVE NOW = GA4 realtime active users (Google realtime window, normally last 30 minutes).
+- ACTIVE USERS = unique active users for the selected 7, 30 or 90 day period.
+- SESSIONS = all sessions for the selected period; this is not a live visitor count.
+- Map markers are created only from country rows returned by GA4. No sample visitor locations are inserted.
+
+No SQL migration is required.
+No additional npm package is required.

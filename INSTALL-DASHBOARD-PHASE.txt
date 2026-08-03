@@ -1,0 +1,37 @@
+THE SALT ORIGIN — FINAL DASHBOARD PHASE
+
+REPLACE THIS FILE:
+src/app/admin/page.tsx
+
+WITH THE FILE FROM THIS ZIP AT THE SAME PATH.
+
+No SQL migration is required.
+No new npm package is required.
+The existing GA4 analytics API, Supabase inquiries, cms_tasks and business_documents data sources are preserved.
+
+After replacement, run in PowerShell:
+
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm run dev
+
+Then open:
+http://localhost:3000/admin
+
+VALIDATION:
+TypeScript: PASS (tsc --noEmit)
+Next production build could not be completed in the isolated build environment because the Next.js Linux SWC package download service returned HTTP 503. The source itself passes TypeScript validation.
+
+CHANGES INCLUDED:
+- Live Visitors title corrected.
+- KPI headings made prominent and consistent.
+- KPI sparklines moved beside values and use actual available data.
+- Static map image removed.
+- Responsive SVG vector world map added.
+- GA4 countries drive live map markers and hover labels.
+- Traffic donut enlarged and legends moved below.
+- Empty white space removed from Traffic Overview and Website Performance.
+- Website Performance chart now has per-point hover tooltips.
+- Sales Funnel rebuilt with Inquiries, Qualified, Quotation, Negotiation and Won stages.
+- Top Countries now show country flags.
+- Real-data empty states shown instead of fabricated chart data.
+- Responsive desktop, tablet and mobile layouts included.

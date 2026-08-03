@@ -1,0 +1,9 @@
+ONE-TIME DATABASE UPDATE
+
+Open Supabase Dashboard > SQL Editor.
+Paste and run:
+supabase/ENTERPRISE-B2B-LIVE-DATA.sql
+
+This creates or extends the live B2B tables used by Dashboard, Won leads, Companies, Contacts, Approvals, Follow-Ups, Certifications, Forms, Samples, Shipments, Activity Logs, FAQ Intelligence, GEO, Reports and AI Agents.
+
+The SQL file does not insert fake leads, clients, quotations or shipments.

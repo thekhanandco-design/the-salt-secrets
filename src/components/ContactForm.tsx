@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import Turnstile from "@/components/security/Turnstile";
 import {
   Building2,
   Lock,
@@ -15,12 +16,16 @@ import {
 export default function ContactForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const onTurnstile = useCallback((token: string) => setTurnstileToken(token), []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setLoading(true);
     setSuccess(false);
+    setError("");
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -39,14 +44,20 @@ export default function ContactForm() {
         product: formData.get("product"),
         quantity: formData.get("quantity"),
         message: formData.get("message"),
+        website: formData.get("website"),
+        turnstileToken,
       }),
     });
 
     setLoading(false);
 
+    const result = await response.json().catch(() => ({}));
     if (response.ok) {
       setSuccess(true);
+      setTurnstileToken("");
       form.reset();
+    } else {
+      setError(result.error || "Inquiry could not be sent.");
     }
   }
 
@@ -61,7 +72,9 @@ export default function ContactForm() {
         </div>
       )}
 
+      {error && <div className="mb-6 rounded-md bg-red-50 p-4 text-center font-semibold text-red-700">{error}</div>}
       <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto">
+        <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
         <div className="grid md:grid-cols-2 gap-5">
           <div className="relative">
             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -176,6 +189,8 @@ export default function ContactForm() {
             className="w-full rounded-md border border-[#F1C8CF] bg-white p-5 pl-12 text-[#081325] outline-none transition placeholder:text-slate-500 focus:border-[#C23B4A]"
           />
         </div>
+
+        <div className="mt-5 flex justify-center"><Turnstile action="contact_form" onToken={onTurnstile} /></div>
 
         <button
           type="submit"

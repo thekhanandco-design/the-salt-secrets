@@ -1,0 +1,38 @@
+THE SALT ORIGIN - PREMIUM EXECUTIVE DASHBOARD V4
+=================================================
+
+REPLACE FILE
+------------
+src/app/admin/page.tsx
+
+RUN
+---
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm run dev
+
+OPEN
+----
+http://localhost:3000/admin
+
+LIVE MAP
+--------
+The map is now an inline vector SVG, not an image. Markers are generated only from
+real GA4 country rows returned by /api/admin/analytics. No map API key or package
+is required for this dashboard version.
+
+FONT NOTE
+---------
+The page references the requested font family names "Allomira" for the main heading
+and "Northura" for interface text, with safe fallbacks. Font files are intentionally
+not included. If you own licensed webfont files, load them globally through your
+existing font system and these family names will apply automatically.
+
+DATA
+----
+The dashboard keeps existing connections:
+- GA4: /api/admin/analytics
+- CRM: Supabase inquiries
+- Tasks: Supabase cms_tasks
+- Documents: Supabase business_documents
+
+No database migration and no new npm package are required.

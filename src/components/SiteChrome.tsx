@@ -12,11 +12,11 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   if (isAdmin) return <>{children}</>;
 
   return (
-    <>
+    <div className="site-shell">
       <Navbar />
       {children}
       <Footer />
       <WhatsAppButton />
-    </>
+    </div>
   );
 }

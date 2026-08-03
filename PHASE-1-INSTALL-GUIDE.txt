@@ -1,0 +1,26 @@
+THE SALT ORIGIN CMS — PHASE 1
+
+Scope:
+- Unified CMS typography and design tokens
+- Consistent pink/red premium gradient
+- Rounded buttons and form controls
+- Dashboard KPI typography and spacing
+- Live Visitors label correction
+- Total Users GA4 KPI
+- Vector GA4 geography map (no static map image)
+- Country flags
+- Compact traffic overview and performance spacing
+
+PASTE / REPLACE THESE FILES:
+1) src/app/globals.css
+2) src/app/admin/page.tsx
+3) src/components/admin/AdminShell.tsx
+
+Then run in PowerShell:
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm run dev
+
+Open:
+http://localhost:3000/admin
+
+No database migration. No .env changes. Existing Supabase and GA4 configuration is preserved.

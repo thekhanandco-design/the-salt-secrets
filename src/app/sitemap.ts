@@ -1,36 +1,23 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const base = "https://www.thesaltorigin.com";
+  const now = new Date();
   return [
-    {
-      url: "https://thesaltsecrets.com",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: "https://thesaltsecrets.com/about",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: "https://thesaltsecrets.com/products",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: "https://thesaltsecrets.com/private-label",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: "https://thesaltsecrets.com/contact",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-  ];
+    ["", "weekly", 1],
+    ["/about", "monthly", 0.8],
+    ["/products", "weekly", 0.9],
+    ["/private-label", "monthly", 0.8],
+    ["/certifications", "monthly", 0.8],
+    ["/blog", "weekly", 0.8],
+    ["/faqs", "weekly", 0.75],
+    ["/contact", "monthly", 0.7],
+    ["/privacy-policy", "yearly", 0.3],
+    ["/terms-and-conditions", "yearly", 0.3],
+  ].map(([path, changeFrequency, priority]) => ({
+    url: `${base}${path}`,
+    lastModified: now,
+    changeFrequency: changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"],
+    priority: Number(priority),
+  }));
 }

@@ -1,0 +1,10 @@
+The Salt Origin Enterprise CMS V10.2
+
+Validation performed:
+- Syntax transpilation passed for all modified TypeScript/TSX files.
+- Full npm install/build could not be completed in the packaging environment because the internal npm package gateway returned HTTP 503 errors.
+- Run locally: npm install && npx tsc --noEmit && npm run dev
+
+Security:
+- .env.local is not included.
+- Add private API keys only in your local .env.local and Vercel Environment Variables.

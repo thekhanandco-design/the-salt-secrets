@@ -31,6 +31,9 @@ export const cmsPageLabels: Record<string, string> = {
   certifications: "Certifications",
   contact: "Contact Page",
   blog: "Blog Page",
+  faqs: "FAQ Page",
+  "privacy-policy": "Privacy Policy",
+  "terms-and-conditions": "Terms & Conditions",
 };
 
 export const cmsImageRegistry: CmsImageSlotSeed[] = [
@@ -80,6 +83,7 @@ export const cmsTextRegistry: CmsTextSeed[] = [
   ["global","navbar","private_label","Private Label Menu Label","text","Private Label"],
   ["global","navbar","certifications","Certifications Menu Label","text","Certifications"],
   ["global","navbar","blog","Blog Menu Label","text","Blog"],
+  ["global","navbar","faq","FAQ Menu Label","text","FAQ"],
   ["global","navbar","contact","Contact Menu Label","text","Contact"],
   ["global","navbar","quote","Quote Button Label","text","Get Quote"],
   ["home","hero","badge","Hero Badge","text","PREMIUM QUALITY"],
@@ -148,6 +152,16 @@ export const cmsTextRegistry: CmsTextSeed[] = [
   ["certifications","hero","title","Certifications Main Heading","textarea","Certified Quality You Can Trust"],
   ["contact","hero","eyebrow","Contact Eyebrow","text","CONTACT"],
   ["contact","hero","title","Contact Main Heading","textarea","Let’s Discuss Your Requirements"],
+
+  ["faqs","hero","eyebrow","FAQ Eyebrow","text","BUYER SUPPORT"],
+  ["faqs","hero","title","FAQ Page Heading","textarea","Frequently Asked Questions"],
+  ["faqs","hero","description","FAQ Page Description","textarea","Clear answers for importers, distributors, wholesalers and private-label buyers."],
+  ["privacy-policy","content","title","Privacy Policy Heading","text","Privacy Policy"],
+  ["privacy-policy","content","introduction","Privacy Policy Introduction","textarea",""],
+  ["privacy-policy","content","body","Privacy Policy Content","textarea",""],
+  ["terms-and-conditions","content","title","Terms & Conditions Heading","text","Terms & Conditions"],
+  ["terms-and-conditions","content","introduction","Terms & Conditions Introduction","textarea",""],
+  ["terms-and-conditions","content","body","Terms & Conditions Content","textarea",""],
   ["global","footer","description","Footer Description","textarea","Premium Himalayan Pink Salt supplier offering retail packaging, bulk supply and private label solutions for distributors, wholesalers and international buyers worldwide."],
 ].map((row, index) => {
   const [page_slug, section_slug, field_key, field_label, field_type, default_value] = row as [string,string,string,string,"text"|"textarea",string];
