@@ -11,32 +11,32 @@ const features = [
   {
     icon: ShieldCheck,
     title: "Reliable Supply",
-    desc: "On-time delivery with stable production capacity.",
+    desc: "Planned production and dependable export supply for wholesalers, distributors and private-label programs.",
   },
   {
     icon: Boxes,
     title: "Flexible MOQ",
-    desc: "Low minimum order quantity to support your business.",
+    desc: "Order quantities suited to trial launches, growing brands and established importers.",
   },
   {
     icon: Package,
     title: "Custom Packaging",
-    desc: "Wide range of packaging options tailored to your market.",
+    desc: "PET bottles, grinders, jars and stand-up pouches customized for your brand and target market.",
   },
   {
     icon: Globe2,
     title: "Export Support",
-    desc: "Complete documentation and export assistance provided.",
+    desc: "Support for product specifications, commercial documents and international shipment coordination.",
   },
   {
     icon: Award,
     title: "Quality Focused",
-    desc: "Strict quality control ensuring 100% pure Himalayan salt.",
+    desc: "Specification-based packing and defined quality checks for food-grade Himalayan Pink Salt.",
   },
   {
     icon: Users,
     title: "Global Reach",
-    desc: "Serving clients in 50+ countries across the world.",
+    desc: "Responsive B2B support for retail, foodservice and distribution buyers across international markets.",
   },
 ];
 

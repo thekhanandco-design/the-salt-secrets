@@ -33,6 +33,33 @@ const defaultContent: HomepageContent = {
   buyers_count: "500+",
 };
 
+const whyChooseFallback = [
+  {
+    title: "Reliable Supply",
+    text: "Planned production and dependable export supply for wholesalers, distributors and private-label programs.",
+  },
+  {
+    title: "Flexible MOQ",
+    text: "Order quantities suited to trial launches, growing brands and established importers.",
+  },
+  {
+    title: "Custom Packaging",
+    text: "PET bottles, grinders, jars and stand-up pouches customized for your brand and target market.",
+  },
+  {
+    title: "Export Support",
+    text: "Support for product specifications, commercial documents and international shipment coordination.",
+  },
+  {
+    title: "Quality Focused",
+    text: "Specification-based packing and defined quality checks for food-grade Himalayan Pink Salt.",
+  },
+  {
+    title: "Global Reach",
+    text: "Responsive B2B support for retail, foodservice and distribution buyers across international markets.",
+  },
+];
+
 export default function HomepageClone() {
   const [content, setContent] = useState<HomepageContent>(defaultContent);
   const [cmsText, setCmsText] = useState<Record<string, string>>({});
@@ -318,9 +345,13 @@ export default function HomepageClone() {
           </div>
 
           <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {Array.from({ length: 6 }, (_, index) => ({
-              title: cmsText[`home.why_choose.item_${index + 1}_title`] || ["Reliable Supply", "Flexible MOQ", "Custom Packaging", "Export Support", "Quality Focused", "Global Reach"][index],
-              text: cmsText[`home.why_choose.item_${index + 1}_text`] || "Premium Himalayan Pink Salt solutions for international buyers.",
+            {whyChooseFallback.map((fallback, index) => ({
+              title:
+                cmsText[`home.why_choose.item_${index + 1}_title`] ||
+                fallback.title,
+              text:
+                cmsText[`home.why_choose.item_${index + 1}_text`] ||
+                fallback.text,
             })).map((item) => (
               <div
                 key={item.title}
