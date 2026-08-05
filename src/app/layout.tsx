@@ -7,6 +7,8 @@ import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 import { supabase } from "@/lib/supabase";
 import PwaRegister from "@/components/PwaRegister";
 
+const GA4_MEASUREMENT_ID = "G-D9ZSFZBT1E";
+
 export async function generateMetadata(): Promise<Metadata> {
   let favicon = "/favicon.ico";
   let appIcon = "/web-app-manifest-192x192.png";
@@ -86,6 +88,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
+  const clarityProjectId =
+    process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim();
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -100,26 +106,90 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-D9ZSFZBT1E"
-          strategy="afterInteractive"
-        />
+        {gtmId ? (
+          <Script id="google-tag-manager" strategy="afterInteractive">
+            {`
+              (function(w,d,s,l,i){
+                w[l]=w[l]||[];
+                w[l].push({
+                  "gtm.start": new Date().getTime(),
+                  event: "gtm.js"
+                });
 
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
+                var f=d.getElementsByTagName(s)[0];
+                var j=d.createElement(s);
+                var dl=l!="dataLayer" ? "&l="+l : "";
 
-            function gtag() {
-              window.dataLayer.push(arguments);
-            }
+                j.async=true;
+                j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;
+                f.parentNode.insertBefore(j,f);
+              })(window,document,"script","dataLayer","${gtmId}");
+            `}
+          </Script>
+        ) : (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
 
-            gtag("js", new Date());
-            gtag("config", "G-D9ZSFZBT1E");
-          `}
-        </Script>
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+
+                function gtag() {
+                  window.dataLayer.push(arguments);
+                }
+
+                gtag("js", new Date());
+                gtag("config", "${GA4_MEASUREMENT_ID}");
+              `}
+            </Script>
+          </>
+        )}
+
+        {clarityProjectId && (
+          <Script
+            id="microsoft-clarity"
+            strategy="afterInteractive"
+          >
+            {`
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){
+                  (c[a].q=c[a].q||[]).push(arguments);
+                };
+
+                t=l.createElement(r);
+                t.async=1;
+                t.src="https://www.clarity.ms/tag/"+i;
+
+                y=l.getElementsByTagName(r)[0];
+                y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${clarityProjectId}");
+            `}
+          </Script>
+        )}
       </head>
 
       <body className="bg-[#F8F8F8] text-slate-900">
+        {gtmId && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{
+                display: "none",
+                visibility: "hidden",
+              }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        )}
+
         <SiteThemeProvider>
           <PwaRegister />
 
