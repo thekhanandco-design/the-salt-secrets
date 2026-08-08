@@ -4,8 +4,26 @@ import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
 import { cmsPageLabels, cmsTextRegistry, type CmsTextSeed } from "@/lib/cms-registry";
-import { AlignCenter, AlignLeft, AlignRight, Bold, CaseLower, CaseUpper, Italic, Languages, RefreshCw, Save, Search, Sparkles, Underline } from "lucide-react";
-import { defaultCmsTextStyle, type CmsTextStyle } from "@/lib/text-style";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  CaseLower,
+  CaseUpper,
+  Highlighter,
+  Italic,
+  Languages,
+  Palette,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Search,
+  Sparkles,
+  Type,
+  Underline,
+} from "lucide-react";
+import { defaultCmsTextStyle, SITE_BODY_FONT, SITE_HEADING_FONT, styleToReact, type CmsTextStyle } from "@/lib/text-style";
 
 type Language = { code: string; name: string; native_name: string; direction: "ltr" | "rtl"; enabled: boolean };
 type Translation = { language_code: string; value: string | null };
@@ -21,12 +39,44 @@ const fallbackLanguages: Language[] = [
   { code: "tr", name: "Turkish", native_name: "Türkçe", direction: "ltr", enabled: true },
   { code: "ur", name: "Urdu", native_name: "اردو", direction: "rtl", enabled: true },
 ];
+const fontOptions = [
+  { label: "Automatic — match live website", value: "inherit" },
+  { label: "Website Heading — Georgia", value: SITE_HEADING_FONT },
+  { label: "Website Body — Inter", value: SITE_BODY_FONT },
+  { label: "Georgia", value: "Georgia, Times New Roman, serif" },
+  { label: "Times New Roman", value: "Times New Roman, Times, serif" },
+  { label: "Garamond", value: "Garamond, Baskerville, Georgia, serif" },
+  { label: "Baskerville", value: "Baskerville, Georgia, serif" },
+  { label: "Palatino", value: "Palatino Linotype, Book Antiqua, Palatino, serif" },
+  { label: "Didot", value: "Didot, Bodoni MT, Georgia, serif" },
+  { label: "Bodoni", value: "Bodoni 72, Bodoni MT, Didot, serif" },
+  { label: "Cambria", value: "Cambria, Georgia, serif" },
+  { label: "Bookman", value: "Bookman Old Style, Bookman, Georgia, serif" },
+  { label: "Inter / System", value: "Inter, ui-sans-serif, system-ui, sans-serif" },
+  { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+  { label: "Helvetica", value: "Helvetica Neue, Helvetica, Arial, sans-serif" },
+  { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+  { label: "Trebuchet", value: "Trebuchet MS, Arial, sans-serif" },
+  { label: "Tahoma", value: "Tahoma, Geneva, sans-serif" },
+  { label: "Segoe UI", value: "Segoe UI, Arial, sans-serif" },
+  { label: "Calibri", value: "Calibri, Candara, Segoe UI, sans-serif" },
+  { label: "Gill Sans", value: "Gill Sans, Gill Sans MT, Calibri, sans-serif" },
+  { label: "Century Gothic", value: "Century Gothic, Futura, sans-serif" },
+  { label: "Futura", value: "Futura, Century Gothic, Arial, sans-serif" },
+  { label: "Franklin Gothic", value: "Franklin Gothic Medium, Arial Narrow, Arial, sans-serif" },
+  { label: "Arial Narrow", value: "Arial Narrow, Arial, sans-serif" },
+  { label: "Courier New", value: "Courier New, Courier, monospace" },
+  { label: "Consolas", value: "Consolas, Monaco, monospace" },
+  { label: "Copperplate", value: "Copperplate, Copperplate Gothic Light, serif" },
+  { label: "Brush Script", value: "Brush Script MT, Segoe Script, cursive" },
+  { label: "Lucida Handwriting", value: "Lucida Handwriting, Segoe Script, cursive" },
+] as const;
 
 export default function TextManagerPage() {
   const [languages, setLanguages] = useState<Language[]>(fallbackLanguages);
   const [entries, setEntries] = useState<Entry[]>(cmsTextRegistry);
   const [language, setLanguage] = useState("en");
-  const [page, setPage] = useState("home");
+  const [page, setPage] = useState("global");
   const [query, setQuery] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -66,9 +116,15 @@ export default function TextManagerPage() {
     setSyncing(true);
     const { error } = await supabase.from("cms_text_entries").upsert(cmsTextRegistry, { onConflict: "page_slug,section_slug,field_key" });
     if (error) { setSyncing(false); return alert(`${error.message}\n\nRun THE-SALT-ORIGIN-LIVE-CMS.sql and confirm you are logged in.`); }
-    const { data: synced } = await supabase.from("cms_text_entries").select("id,page_slug,section_slug,field_key,default_value");
-    const english = (synced || []).map((row) => ({ entry_id: row.id, language_code: "en", value: row.default_value }));
-    const { error: transError } = await supabase.from("cms_text_translations").upsert(english, { onConflict: "entry_id,language_code" });
+    const { data: synced } = await supabase
+      .from("cms_text_entries")
+      .select("id,page_slug,section_slug,field_key,default_value,cms_text_translations(language_code,value)");
+    const missingEnglish = (synced || [])
+      .filter((row) => !(row.cms_text_translations || []).some((translation: Translation) => translation.language_code === "en"))
+      .map((row) => ({ entry_id: row.id, language_code: "en", value: row.default_value }));
+    const { error: transError } = missingEnglish.length
+      ? await supabase.from("cms_text_translations").insert(missingEnglish)
+      : { error: null };
     setSyncing(false);
     if (transError) return alert(transError.message);
     await load();
@@ -89,6 +145,21 @@ export default function TextManagerPage() {
     if (direct !== undefined && direct !== "") return direct;
     const english = values[localKey(entry, "en")];
     return english !== undefined && english !== "" ? english : entry.default_value;
+  }
+
+  function inferredWebsiteFont(entry: Entry) {
+    const signature = `${entry.section_slug}.${entry.field_key}.${entry.field_label}`.toLowerCase();
+    return /(title|heading|eyebrow|brand|copyright|credit)/.test(signature)
+      ? SITE_HEADING_FONT
+      : SITE_BODY_FONT;
+  }
+
+  function previewStyle(entry: Entry): React.CSSProperties {
+    const current = getStyle(entry);
+    const explicitFont = current.fontFamily && current.fontFamily !== "inherit"
+      ? current.fontFamily
+      : inferredWebsiteFont(entry);
+    return { ...styleToReact(current), fontFamily: explicitFont };
   }
 
   async function ensureEntry(entry: Entry) {
@@ -193,9 +264,54 @@ export default function TextManagerPage() {
             {Object.entries(grouped).map(([section, rows]) => <section key={section} className="text-section-panel rounded-2xl border p-5"><div className="mb-5"><p className="text-[10px] uppercase tracking-[4px] text-blue-400 font-black">{cmsPageLabels[page] || page}</p><h2 className="text-xl font-black mt-1 capitalize">{section.replaceAll("_", " ")} Section</h2></div><div className="space-y-5">{rows.map((entry) => {
               const key = localKey(entry);
               return <div key={`${entry.page_slug}-${entry.section_slug}-${entry.field_key}`} className="border-b border-white/10 pb-5 last:border-0 last:pb-0"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2"><div><label className="font-black text-sm">{entry.field_label}</label><p className="text-[11px] text-slate-500">{entry.field_key}</p></div><div className="flex gap-2"><button onClick={() => save(entry)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Save className="w-4 h-4"/>{saving === key ? "Saving..." : "Save"}</button>{language === "en" && <button onClick={() => save(entry, true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Sparkles className="w-4 h-4"/>Save + Translate All</button>}</div></div><div className="text-toolbar mb-3 flex flex-wrap items-center gap-2 rounded-xl border p-2">
-                <select value={getStyle(entry).fontFamily || "inherit"} onChange={(e)=>updateStyle(entry,{fontFamily:e.target.value})} className="rounded-lg border px-3 py-2 text-xs">
-                  <option value="inherit">Theme Font</option><option value="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif">System UI</option><option value="Inter, Arial, sans-serif">Inter</option><option value="Arial, sans-serif">Arial</option><option value="Helvetica, Arial, sans-serif">Helvetica</option><option value="Verdana, sans-serif">Verdana</option><option value="Tahoma, sans-serif">Tahoma</option><option value="Trebuchet MS, sans-serif">Trebuchet MS</option><option value="Gill Sans, sans-serif">Gill Sans</option><option value="Franklin Gothic Medium, Arial, sans-serif">Franklin Gothic</option><option value="Century Gothic, sans-serif">Century Gothic</option><option value="Georgia, serif">Georgia</option><option value="Garamond, Georgia, serif">Garamond</option><option value="Baskerville, Georgia, serif">Baskerville</option><option value="Palatino Linotype, Palatino, serif">Palatino</option><option value="Times New Roman, serif">Times New Roman</option><option value="Courier New, monospace">Courier New</option><option value="Lucida Console, monospace">Lucida Console</option>
+                <span className="inline-flex items-center gap-2 px-2 text-[10px] font-black text-slate-500"><Type className="w-4 h-4"/>Website fonts</span>
+                <select
+                  value={getStyle(entry).fontFamily || "inherit"}
+                  onChange={(event) => updateStyle(entry, { fontFamily: event.target.value })}
+                  className="min-w-[230px] rounded-lg border px-3 py-2 text-xs"
+                  aria-label="Font family"
+                >
+                  {fontOptions.map((font) => (
+                    <option key={font.label} value={font.value} style={{ fontFamily: font.value }}>
+                      {font.label}
+                    </option>
+                  ))}
                 </select>
+                <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[10px] font-black" title="Text color">
+                  <Palette className="w-4 h-4" />
+                  <input
+                    type="color"
+                    value={getStyle(entry).color || "#081325"}
+                    onChange={(event) => updateStyle(entry, { color: event.target.value })}
+                    className="h-7 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+                    aria-label="Text color"
+                  />
+                  <input
+                    value={getStyle(entry).color || ""}
+                    onChange={(event) => updateStyle(entry, { color: event.target.value.trim() })}
+                    placeholder="Text color"
+                    className="w-24 rounded border px-2 py-1 text-[10px]"
+                    aria-label="Text color value"
+                  />
+                </label>
+                <label className="inline-flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[10px] font-black" title="Highlight color">
+                  <Highlighter className="w-4 h-4" />
+                  <input
+                    type="color"
+                    value={getStyle(entry).backgroundColor || "#fff0f2"}
+                    onChange={(event) => updateStyle(entry, { backgroundColor: event.target.value })}
+                    className="h-7 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+                    aria-label="Highlight color"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateStyle(entry, { backgroundColor: "" })}
+                    className="rounded border px-2 py-1 text-[10px]"
+                  >
+                    Clear
+                  </button>
+                </label>
+                <button type="button" title="Reset to the live website font and default styling" onClick={()=>setStyles((current)=>({...current,[styleKey(entry)]:{...defaultCmsTextStyle}}))} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black"><RotateCcw className="w-4 h-4"/>Website Default</button>
                 <div className="inline-flex items-center overflow-hidden rounded-lg border bg-white/5">
                   <button type="button" className="px-3 py-2 font-black" onClick={()=>{const n=parseInt(getStyle(entry).fontSize||"16")||16;updateStyle(entry,{fontSize:`${Math.max(8,n-1)}px`})}}>−</button>
                   <input type="number" min={8} max={300} value={parseInt(getStyle(entry).fontSize||"16")||16} onChange={e=>updateStyle(entry,{fontSize:`${Math.min(300,Math.max(8,Number(e.target.value)||16))}px`})} className="w-20 border-x bg-transparent px-2 py-2 text-center text-xs" aria-label="Font size"/>
@@ -211,7 +327,7 @@ export default function TextManagerPage() {
                 <button type="button" onClick={()=>updateStyle(entry,{textAlign:"center"})} className={`p-2 rounded-lg ${getStyle(entry).textAlign==="center"?"bg-blue-600":"bg-white/5"}`}><AlignCenter className="w-4 h-4"/></button>
                 <button type="button" onClick={()=>updateStyle(entry,{textAlign:"right"})} className={`p-2 rounded-lg ${getStyle(entry).textAlign==="right"?"bg-blue-600":"bg-white/5"}`}><AlignRight className="w-4 h-4"/></button>
               </div>
-              {entry.field_type === "textarea" ? <textarea dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={getStyle(entry) as React.CSSProperties} className="w-full min-h-28 border rounded-xl p-4"/> : <input dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={getStyle(entry) as React.CSSProperties} className="w-full border rounded-xl p-4"/>}</div>;
+              {entry.field_type === "textarea" ? <textarea dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={previewStyle(entry)} className="w-full min-h-28 border rounded-xl p-4"/> : <input dir={activeLang.direction} value={getValue(entry)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} style={previewStyle(entry)} className="w-full border rounded-xl p-4"/>}</div>;
             })}</div></section>)}
           </section>
         </div>

@@ -256,31 +256,32 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#B51F32] text-white">
-        <Image src="/mountains-bg.png" alt="" width={1000} height={400} className="absolute inset-x-0 bottom-0 mx-auto w-full max-h-[230px] object-cover opacity-15" />
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-12">
-          <div className="grid lg:grid-cols-[260px_1fr_260px] gap-8 items-center">
+      <section className="brand-gradient-section private-label-final-cta text-white">
+        <div className="private-label-final-cta__mountains" aria-hidden="true" />
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-14 lg:py-16">
+          <div className="grid lg:grid-cols-[240px_1fr_240px] gap-8 items-center">
             <div className="hidden lg:flex justify-center">
-              <Image src="/pet-bottles.png" alt="Private Label Bottles" width={300} height={260} className="max-h-[190px] w-auto object-contain" />
+              <Image src="/pet-bottles.png" alt="Private Label Bottles" width={300} height={260} className="max-h-[180px] w-auto object-contain drop-shadow-2xl" />
             </div>
             <div className="text-center">
-              <h2 className="font-black leading-tight" style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem,4vw,3.4rem)" }}>
+              <p className="uppercase tracking-[5px] text-xs font-black text-white/70">Private Label Partnership</p>
+              <h2 className="site-heading-font mt-3 font-black leading-tight" style={{ fontSize: "clamp(2.2rem,4vw,3.8rem)" }}>
                 Ready To Launch Your Own Salt Brand?
               </h2>
-              <p className="text-white/90 text-lg mt-4">Partner with a trusted Himalayan Pink Salt manufacturer for your private label requirements.</p>
-              <div className="flex flex-wrap justify-center gap-5 mt-8">
-                <Link href="/contact" className="bg-white text-[#B51F32] px-8 py-4 rounded-md font-black uppercase text-sm inline-flex items-center gap-3">
+              <p className="text-white/88 text-lg mt-4 max-w-3xl mx-auto">Partner with a trusted Himalayan Pink Salt supplier for product planning, packaging and export-ready private label support.</p>
+              <div className="flex flex-wrap justify-center gap-4 mt-8">
+                <Link href="/contact" className="brand-light-button">
                   Get Free Quote
                   <span className="text-xl">→</span>
                 </Link>
-                <Link href="https://wa.me/923462771693" target="_blank" className="border border-white px-8 py-4 rounded-md font-black uppercase text-sm inline-flex items-center gap-3">
+                <Link href="https://wa.me/923462771693" target="_blank" className="brand-glass-button">
                   WhatsApp Us
                   <MessageCircle className="w-5 h-5" />
                 </Link>
               </div>
             </div>
             <div className="hidden lg:flex justify-center">
-              <Image src="/standup-pouch.png" alt="Private Label Pouch" width={300} height={260} className="max-h-[190px] w-auto object-contain" />
+              <Image src="/standup-pouch.png" alt="Private Label Pouch" width={300} height={260} className="max-h-[180px] w-auto object-contain drop-shadow-2xl" />
             </div>
           </div>
         </div>
