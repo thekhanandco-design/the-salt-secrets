@@ -1,65 +1,200 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useMemo, useRef, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { adminFetch } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
-import { Check, CheckCircle2, Copy, Crop, Download, Edit3, FileText, Globe2, Image as ImageIcon, Languages, Link2, RefreshCw, Save, Send, Settings2, Sparkles, WandSparkles, X, Clock3, Search, Share2, Mail, Newspaper, MessageSquareText, UploadCloud } from "lucide-react";
+import { calculateGeoScore, calculateSeoScore, normalizeKeywordList } from "@/lib/content-quality";
+import {
+  CheckCircle2,
+  Eye,
+  Image as ImageIcon,
+  RefreshCw,
+  Save,
+  Send,
+  Sparkles,
+  UploadCloud,
+  XCircle,
+} from "lucide-react";
 
-const tools=["Blog Generator","SEO Article Generator","Product Page Writer","Landing Page Writer","Private Label Page Writer","Email Writer","Newsletter Writer","Facebook Post","Instagram Caption","LinkedIn Post","Pinterest Pin","Threads Post","X Post","YouTube Description","Press Release","FAQ Generator","Rewrite","Summarize","Translate"];
-const imageDefinitions=[
-  {key:"featured",title:"Featured Blog Image",size:"1200 × 675",group:"landscape"},{key:"banner",title:"Blog Banner",size:"1600 × 600",group:"landscape"},{key:"article1",title:"In-Article Image 1",size:"1200 × 800",group:"landscape"},{key:"article2",title:"In-Article Image 2",size:"1200 × 800",group:"landscape"},{key:"og",title:"Open Graph Image",size:"1200 × 630",group:"landscape"},{key:"linkedin",title:"LinkedIn Image",size:"1200 × 627",group:"landscape"},{key:"facebook",title:"Facebook Image",size:"1200 × 630",group:"landscape"},{key:"instagram",title:"Instagram Square Image",size:"1080 × 1080",group:"square"},{key:"pinterest",title:"Pinterest Vertical Image",size:"1000 × 1500",group:"vertical"},
-] as const;
-type ImageState={key:string;title:string;size:string;group:string;src:string;prompt:string;status:"Needs Review"|"Approved"|"Rejected";fit:"cover"|"contain"};
-type ContentState={title:string;slug:string;metaTitle:string;metaDescription:string;excerpt:string;body:string;faq:Array<{question?:string;answer?:string}>;internalLinks:string[];cta:string;imagePrompt:string;model?:string};
-const emptyContent:ContentState={title:"",slug:"",metaTitle:"",metaDescription:"",excerpt:"",body:"",faq:[],internalLinks:[],cta:"",imagePrompt:""};
+type PlatformKey = "facebook" | "linkedin" | "instagram" | "threads" | "x" | "youtube" | "pinterest" | "tiktok";
+type SocialDraft = { title: string; text: string; hashtags: string; image_prompt: string };
+type BlogDraft = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  seoTitle: string;
+  seoDescription: string;
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  imagePrompt: string;
+  status: string;
+};
 
-function scoreContent(content:ContentState,keyword:string){const text=`${content.title} ${content.metaTitle} ${content.metaDescription} ${content.excerpt} ${content.body}`.trim();if(!text)return{seo:0,geo:0,quality:0,reading:"—",density:"—"};const words=text.split(/\s+/).filter(Boolean);const occurrences=keyword?text.toLowerCase().split(keyword.toLowerCase()).length-1:0;const seo=Math.min(100,(content.title?18:0)+(content.metaTitle?18:0)+(content.metaDescription?18:0)+(content.slug?10:0)+(content.faq.length?16:0)+(occurrences?20:0));const geo=Math.min(100,(content.faq.length?30:0)+(content.internalLinks.length?20:0)+(text.includes("[ADD SOURCE]")||text.includes("[VERIFY")?15:0)+(words.length>500?35:Math.round(words.length/15)));const quality=Math.min(100,Math.round(Math.min(words.length,1200)/12)+(content.excerpt?10:0)+(content.cta?10:0));return{seo,geo,quality,reading:`${Math.max(1,Math.round(words.length/210))} min`,density:keyword&&words.length?`${(occurrences/words.length*100).toFixed(2)}%`:`—`}}
-function dataUrlToBlob(dataUrl:string){const [meta,data]=dataUrl.split(",");const mime=meta.match(/data:(.*?);/)?.[1]||"image/png";const binary=atob(data);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return new Blob([bytes],{type:mime})}
+const platformKeys: PlatformKey[] = ["facebook", "linkedin", "instagram", "threads", "x", "youtube", "pinterest", "tiktok"];
+const labels: Record<PlatformKey, string> = { facebook: "Facebook", linkedin: "LinkedIn", instagram: "Instagram", threads: "Threads", x: "X", youtube: "YouTube", pinterest: "Pinterest", tiktok: "TikTok" };
+const blankBlog: BlogDraft = { title: "", slug: "", excerpt: "", content: "", seoTitle: "", seoDescription: "", primaryKeyword: "", secondaryKeywords: [], imagePrompt: "", status: "Draft" };
+const blankSocial = () => Object.fromEntries(platformKeys.map((platform) => [platform, { title: "", text: "", hashtags: "", image_prompt: "" }])) as Record<PlatformKey, SocialDraft>;
 
-export default function AIContentStudio(){
-  const[tool,setTool]=useState("Blog Generator");const[topic,setTopic]=useState("");const[country,setCountry]=useState("Global");const[audience,setAudience]=useState("");const[buyerType,setBuyerType]=useState("Importer");const[product,setProduct]=useState("");const[searchIntent,setSearchIntent]=useState("Commercial Research");const[keyword,setKeyword]=useState("");const[secondaryKeywords,setSecondaryKeywords]=useState("");const[tone,setTone]=useState("Professional and authoritative");const[language,setLanguage]=useState("English");const[length,setLength]=useState("Standard");const[cta,setCta]=useState("Request a quotation");const[internalLinks,setInternalLinks]=useState("");const[referenceNotes,setReferenceNotes]=useState("");const[brandVoice,setBrandVoice]=useState("Premium, factual, clear and export-focused");
-  const[content,setContent]=useState<ContentState>(emptyContent);const[images,setImages]=useState<ImageState[]>([]);const[status,setStatus]=useState("Draft");const[moduleRecordId,setModuleRecordId]=useState<string|number|undefined>();const[generating,setGenerating]=useState(false);const[saving,setSaving]=useState(false);const[error,setError]=useState("");const[toast,setToast]=useState<string|null>(null);const[draftId,setDraftId]=useState<string|undefined>();const[products,setProducts]=useState<any[]>([]);const[fileTarget,setFileTarget]=useState<string|null>(null);const fileInput=useRef<HTMLInputElement>(null);
-  useEffect(()=>{void(async()=>{const{data}=await supabase.from("products").select("id,title,name").order("title");setProducts(data||[])})()},[]);useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(null),2800);return()=>clearTimeout(timer)},[toast]);
-  const scores=useMemo(()=>scoreContent(content,keyword),[content,keyword]);
+function slugify(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
-  async function generateImage(group:string,prompt:string){const size=group==="landscape"?"1536x1024":"1024x1024";const response=await adminFetch("/api/ai/image",{method:"POST",body:JSON.stringify({prompt,size})});const payload=await response.json();if(!response.ok)throw new Error(payload.error||"Image generation failed.");return String(payload.image||"")}
-  async function generate(){if(!topic.trim()){setError("Topic is required.");return}setGenerating(true);setError("");setImages([]);setStatus("Draft");try{const response=await adminFetch("/api/admin/ai-content",{method:"POST",body:JSON.stringify({tool,topic,country,audience,buyerType,product,searchIntent,keyword,secondaryKeywords,tone,language,length,cta,internalLinks,referenceNotes,brandVoice,research:true})});const payload=await response.json();if(!response.ok)throw new Error(payload.error||"AI generation failed.");const next:ContentState={title:payload.title||topic,slug:payload.slug||"",metaTitle:payload.meta_title||payload.seo_title||"",metaDescription:payload.meta_description||payload.seo_description||"",excerpt:payload.excerpt||"",body:payload.content||payload.caption||"",faq:Array.isArray(payload.faq)?payload.faq:[],internalLinks:Array.isArray(payload.internal_links)?payload.internal_links:[],cta:payload.cta||cta,imagePrompt:payload.image_prompt||`${topic}, premium B2B export photography, Himalayan pink salt, clean professional composition`,model:payload.model};setContent(next);
-      const prompts={landscape:`${next.imagePrompt}. Landscape editorial composition, no text, premium international B2B export brand.`,square:`${next.imagePrompt}. Square social media composition, no text, premium product photography.`,vertical:`${next.imagePrompt}. Vertical Pinterest composition, no text, premium product photography.`};
-      const results=await Promise.allSettled([generateImage("landscape",prompts.landscape),generateImage("square",prompts.square),generateImage("vertical",prompts.vertical)]);const source:Record<string,string>={landscape:results[0].status==="fulfilled"?results[0].value:"",square:results[1].status==="fulfilled"?results[1].value:"",vertical:results[2].status==="fulfilled"?results[2].value:""};setImages(imageDefinitions.map(item=>({...item,src:source[item.group]||"",prompt:prompts[item.group as keyof typeof prompts],status:"Needs Review",fit:"cover"})));if(results.every(result=>result.status==="rejected"))setError("Text was generated, but image generation is not connected or failed. Use Regenerate after configuring the image model.");setToast("Content draft generated from the connected AI provider");
-    }catch(generateError){setError(generateError instanceof Error?generateError.message:"Generation failed.")}finally{setGenerating(false)}}
-  async function saveDraft(nextStatus=status){if(!content.title){setError("Generate or enter content before saving.");return null}setSaving(true);setError("");const payload={tool,topic,target_country:country,target_audience:audience,buyer_type:buyerType,product,search_intent:searchIntent,primary_keyword:keyword,secondary_keywords:secondaryKeywords.split(",").map(x=>x.trim()).filter(Boolean),tone,language,content_length:length,cta,internal_links:internalLinks,reference_notes:referenceNotes,brand_voice:brandVoice,title:content.title,slug:content.slug,meta_title:content.metaTitle,meta_description:content.metaDescription,excerpt:content.excerpt,content:content.body,faq:content.faq,image_prompt:content.imagePrompt,images:images.map(({src,...rest})=>({...rest,has_image:Boolean(src)})),seo_score:scores.seo,geo_score:scores.geo,quality_score:scores.quality,status:nextStatus,updated_at:new Date().toISOString()};const result=draftId?await supabase.from("content_drafts").update(payload).eq("id",draftId).select().single():await supabase.from("content_drafts").insert(payload).select().single();setSaving(false);if(result.error){setError(result.error.message);return null}setDraftId(result.data.id);setStatus(nextStatus);setToast("Draft saved to Supabase");return result.data}
-  const isBlogTool=tool==="Blog Generator"||tool==="SEO Article Generator";
-  const isFaqTool=tool==="FAQ Generator";
-  async function syncModuleRecord(nextStatus:string){
-    if(isBlogTool){
-      const mapped=nextStatus==="Needs Review"?"review":nextStatus.toLowerCase();
-      const payload={title:content.title,slug:content.slug||content.title.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),excerpt:content.excerpt,content:content.body,featured_image:images.find(image=>image.key==="featured")?.src||null,status:mapped,seo_title:content.metaTitle,seo_description:content.metaDescription,updated_at:new Date().toISOString(),...(mapped==="published"?{published_at:new Date().toISOString()}: {})};
-      const result=moduleRecordId?await supabase.from("blog_posts").update(payload).eq("id",moduleRecordId).select().single():await supabase.from("blog_posts").insert(payload).select().single();
-      if(result.error)throw result.error;setModuleRecordId(result.data.id);return;
-    }
-    if(isFaqTool){
-      const first=content.faq[0]||{question:content.title,answer:content.body};
-      const payload={question:first.question||content.title,ai_answer:first.answer||content.body,answer_length:String(first.answer||content.body).split(/\s+/).filter(Boolean).length,source:"AI Content Studio",source_mode:"Connected AI",target_country:country,related_keyword:keyword,recommended_category:"Website FAQ",schema_preview:{"@type":"FAQPage"},internal_links:content.internalLinks,reference_notes:referenceNotes,status:nextStatus==="Needs Review"?"In Review":nextStatus,updated_at:new Date().toISOString()};
-      const result=moduleRecordId?await supabase.from("faq_research_questions").update(payload).eq("id",moduleRecordId).select().single():await supabase.from("faq_research_questions").insert(payload).select().single();
-      if(result.error)throw result.error;setModuleRecordId(result.data.id);return;
-    }
+export default function ContentStudioPage() {
+  const [topic, setTopic] = useState("");
+  const [country, setCountry] = useState("Global");
+  const [audience, setAudience] = useState("Importers, distributors and private-label buyers");
+  const [keyword, setKeyword] = useState("");
+  const [cta, setCta] = useState("Request a quotation");
+  const [blog, setBlog] = useState<BlogDraft>(blankBlog);
+  const [social, setSocial] = useState<Record<PlatformKey, SocialDraft>>(blankSocial());
+  const [activePlatform, setActivePlatform] = useState<PlatformKey>("facebook");
+  const [sharedImage, setSharedImage] = useState("");
+  const [blogId, setBlogId] = useState<string | number | null>(null);
+  const [socialId, setSocialId] = useState<string | null>(null);
+  const [working, setWorking] = useState("");
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const scores = useMemo(() => {
+    const keywords = normalizeKeywordList(blog.primaryKeyword || keyword, blog.secondaryKeywords, blog.title || topic);
+    const primaryKeyword = blog.primaryKeyword || keyword || keywords[0] || "";
+    return {
+      seo: calculateSeoScore({ title: blog.title, slug: blog.slug, excerpt: blog.excerpt, content: blog.content, seoTitle: blog.seoTitle, seoDescription: blog.seoDescription, primaryKeyword, secondaryKeywords: keywords, featuredImage: sharedImage }),
+      geo: calculateGeoScore({ title: blog.title, excerpt: blog.excerpt, content: blog.content, primaryKeyword, targetCountry: country }),
+    };
+  }, [blog, keyword, country, sharedImage, topic]);
+
+  function flash(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2800);
   }
-  async function sendForReview(){const draft=await saveDraft("Needs Review");if(!draft)return;try{await syncModuleRecord("Needs Review");setToast(isBlogTool?"Draft saved in Blog Center for review":isFaqTool?"FAQ saved in FAQ Intelligence for review":"Draft saved for manual review")}catch(reviewError){setError(reviewError instanceof Error?reviewError.message:"Review workflow failed.")}}
-  async function updateStatus(next:string){const draft=await saveDraft(next);if(!draft)return;try{await syncModuleRecord(next);setToast(`${next}: saved to ${isBlogTool?"Blog Center":isFaqTool?"FAQ Intelligence":"Content Studio"}`)}catch(statusError){setError(statusError instanceof Error?statusError.message:"Status update failed.")}}
-  async function regenerateImage(key:string){const target=images.find(image=>image.key===key);if(!target)return;setError("");try{const src=await generateImage(target.group,target.prompt);setImages(previous=>previous.map(image=>image.key===key?{...image,src,status:"Needs Review"}:image));setToast(`${target.title} regenerated`)}catch(imageError){setError(imageError instanceof Error?imageError.message:"Image generation failed.")}}
-  async function saveImage(image:ImageState){if(!image.src){setError("Generate or replace this image first.");return}try{const blob=image.src.startsWith("data:")?dataUrlToBlob(image.src):await fetch(image.src).then(response=>response.blob());const path=`ai-content/${Date.now()}-${image.key}.png`;const{error:uploadError}=await supabase.storage.from("cms-media").upload(path,blob,{contentType:blob.type||"image/png",upsert:false});if(uploadError)throw uploadError;const{data}=supabase.storage.from("cms-media").getPublicUrl(path);const{error:assetError}=await supabase.from("website_assets").insert({title:image.title,filename:path.split("/").pop(),file_url:data.publicUrl,asset_type:"AI Content",status:image.status,alt_text:content.title,website_section:"AI Content Studio"});if(assetError)throw assetError;setToast(`${image.title} saved to Images Manager`)}catch(saveError){setError(saveError instanceof Error?saveError.message:"Image save failed.")}}
-  function downloadImage(image:ImageState){if(!image.src){setError("No image is available.");return}const anchor=document.createElement("a");anchor.href=image.src;anchor.download=`${image.key}.png`;anchor.click()}
-  function replaceImage(event:React.ChangeEvent<HTMLInputElement>){const file=event.target.files?.[0];if(!file||!fileTarget)return;const reader=new FileReader();reader.onload=()=>setImages(previous=>previous.map(image=>image.key===fileTarget?{...image,src:String(reader.result),status:"Needs Review"}:image));reader.readAsDataURL(file);event.target.value=""}
 
-  return <AdminShell><div className="os-page"><header className="os-page-header"><div><div className="os-page-eyebrow">Human-approved AI workspace</div><h1 className="os-page-title">AI Content Studio</h1><p className="os-page-subtitle">Each tool creates its own content format. Blog and SEO drafts flow to Blog Center; FAQ drafts flow to FAQ Intelligence for your review.</p></div><div className="os-page-actions"><span className={`os-badge ${status==="Approved"?"green":status==="Needs Review"?"amber":"blue"}`}>{status}</span><button className="os-btn soft" onClick={()=>void saveDraft()} disabled={saving}><Save/>{saving?"Saving…":"Save Draft"}</button><button className="os-btn primary" onClick={()=>void sendForReview()} disabled={!content.title||saving}><Send/>Send for Review</button></div></header>
-    {error&&<section className="os-card" style={{borderColor:"rgba(214,69,69,.35)"}}><div className="os-card-body"><strong>Content Studio</strong><p className="os-page-subtitle">{error}</p></div></section>}
-    <div className="os-three-panel"><aside className="os-card os-panel-sticky"><div className="os-card-header"><div><h2>AI Tools</h2><p>Select a workflow</p></div><Sparkles size={16}/></div><div className="os-card-body" style={{padding:9}}><div className="os-tool-list">{tools.map((item,index)=><button className={`os-tool-button ${tool===item?"active":""}`} key={item} onClick={()=>setTool(item)}>{index<2?<Newspaper/>:index<5?<FileText/>:index<7?<Mail/>:index<15?<Share2/>:index===15?<MessageSquareText/>:index===18?<Languages/>:<WandSparkles/>}{item}</button>)}</div></div></aside>
-      <main style={{display:"flex",flexDirection:"column",gap:12,minWidth:0}}><section className="os-card"><div className="os-card-header"><div><h2>{tool}</h2><p>Real AI generation settings</p></div><span className="os-badge pink">Connected provider required</span></div><div className="os-card-body"><div className="os-form-grid"><label className="os-label full"><span>Topic *</span><textarea value={topic} onChange={event=>setTopic(event.target.value)} placeholder="Enter the exact content topic"/></label><Select label="Target Country" value={country} onChange={setCountry} options={["Global","United States","Germany","United Kingdom","UAE","Canada","Saudi Arabia","France","Netherlands","Australia"]}/><Field label="Target Audience" value={audience} onChange={setAudience}/><Select label="Buyer Type" value={buyerType} onChange={setBuyerType} options={["Importer","Distributor","Wholesaler","Private Label Brand","Food Manufacturer","Retail Chain","Hospitality Buyer"]}/><label className="os-label"><span>Product</span><select value={product} onChange={event=>setProduct(event.target.value)}><option value="">Select product…</option>{products.map(row=><option key={row.id} value={row.title||row.name}>{row.title||row.name}</option>)}</select></label><Select label="Search Intent" value={searchIntent} onChange={setSearchIntent} options={["Informational","Commercial Research","Supplier Search","Manufacturer Search","Distributor Search","Private Label","Bulk Purchase","Certification Research"]}/><Field label="Primary Keyword" value={keyword} onChange={setKeyword}/><Field label="Secondary Keywords" value={secondaryKeywords} onChange={setSecondaryKeywords}/><Select label="Tone" value={tone} onChange={setTone} options={["Professional and authoritative","Technical and factual","Premium and confident","Clear and concise","Warm B2B relationship"]}/><Select label="Language" value={language} onChange={setLanguage} options={["English","German","French","Arabic","Spanish","Dutch"]}/><Select label="Content Length" value={length} onChange={setLength} options={["Short","Standard","Long-form","Pillar article"]}/><Field label="CTA" value={cta} onChange={setCta}/><label className="os-label full"><span>Internal Links</span><textarea value={internalLinks} onChange={event=>setInternalLinks(event.target.value)} placeholder="Add real website URLs or page names"/></label><label className="os-label full"><span>Reference Notes</span><textarea value={referenceNotes} onChange={event=>setReferenceNotes(event.target.value)} placeholder="Add verified facts, certifications and source notes. The AI will not invent missing claims."/></label><label className="os-label full"><span>Brand Voice</span><textarea value={brandVoice} onChange={event=>setBrandVoice(event.target.value)}/></label></div><div style={{display:"flex",justifyContent:"flex-end",marginTop:14}}><button className="os-btn primary" onClick={()=>void generate()} disabled={generating}>{generating?<><RefreshCw className="animate-spin"/>Generating text and images…</>:<><WandSparkles/>Generate Content + Images</>}</button></div></div></section>
-        <section className="os-card"><div className="os-card-header"><div><h2>Generated Content</h2><p>Editable output returned by the connected AI provider</p></div>{content.model&&<span className="os-badge blue">{content.model}</span>}</div><div className="os-card-body">{generating?<div style={{display:"grid",gap:12}}>{[70,95,82,90,76,88].map((width,index)=><div className="os-skeleton" key={index} style={{height:index===0?28:10,width:`${width}%`}}/>)}</div>:content.title?<div className="os-editor"><label className="os-label"><span>Article Title</span><input value={content.title} onChange={event=>setContent(previous=>({...previous,title:event.target.value}))}/></label><div className="os-grid two" style={{margin:"12px 0"}}><Field label="Slug" value={content.slug} onChange={value=>setContent(previous=>({...previous,slug:value}))}/><Field label="Meta Title" value={content.metaTitle} onChange={value=>setContent(previous=>({...previous,metaTitle:value}))}/><label className="os-label full"><span>Meta Description</span><textarea value={content.metaDescription} onChange={event=>setContent(previous=>({...previous,metaDescription:event.target.value}))}/></label><label className="os-label full"><span>Excerpt</span><textarea value={content.excerpt} onChange={event=>setContent(previous=>({...previous,excerpt:event.target.value}))}/></label><label className="os-label full"><span>Full Content</span><textarea rows={22} value={content.body} onChange={event=>setContent(previous=>({...previous,body:event.target.value}))}/></label></div>{content.faq.length>0&&<><h2>FAQ Section</h2>{content.faq.map((item,index)=><div key={index} style={{marginBottom:12}}><strong>{item.question||""}</strong><p>{item.answer||""}</p></div>)}</>}{content.internalLinks.length>0&&<><h2>Internal Link Suggestions</h2><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{content.internalLinks.map(link=><span className="os-badge blue" key={link}><Link2 size={10}/>{link}</span>)}</div></>}</div>:<div className="os-empty"><div className="os-empty-icon"><Sparkles/></div><h3>No generated draft</h3><p>Enter a real topic and use the connected AI provider. No pre-filled article is displayed.</p></div>}</div></section>
-        {images.length>0&&<section className="os-card"><div className="os-card-header"><div><h2>Generated Image Set</h2><p>Every image remains in review until manually approved</p></div><span className="os-badge amber">{images.filter(image=>image.status==="Needs Review").length} need review</span></div><div className="os-card-body"><div className="os-image-grid">{images.map(image=><article className={`os-image-card ${image.group==="vertical"?"vertical":image.group==="square"?"square":""}`} key={image.key}>{image.src?<img src={image.src} alt={image.title} style={{objectFit:image.fit}}/>:<div className="os-empty" style={{minHeight:160}}><ImageIcon/><p>Image generation unavailable</p></div>}<div className="os-image-card-body"><strong>{image.title}</strong><span>{image.size} · PNG · {image.status}</span><div className="os-image-actions"><button onClick={()=>void regenerateImage(image.key)}><RefreshCw size={9}/>Regenerate</button><button onClick={()=>{const next=window.prompt("Edit image prompt",image.prompt);if(next)setImages(previous=>previous.map(item=>item.key===image.key?{...item,prompt:next}:item))}}><Edit3 size={9}/>Edit Prompt</button><button onClick={()=>setImages(previous=>previous.map(item=>item.key===image.key?{...item,fit:item.fit==="cover"?"contain":"cover"}:item))}><Crop size={9}/>Crop</button><button onClick={()=>{setFileTarget(image.key);fileInput.current?.click()}}><UploadCloud size={9}/>Replace</button><button onClick={()=>setImages(previous=>previous.map(item=>item.key===image.key?{...item,status:"Approved"}:item))}><Check size={9}/>Approve</button><button onClick={()=>setImages(previous=>previous.map(item=>item.key===image.key?{...item,status:"Rejected"}:item))}><X size={9}/>Reject</button><button onClick={()=>downloadImage(image)}><Download size={9}/>Download</button><button onClick={()=>void saveImage(image)}><ImageIcon size={9}/>Save to Images</button><button onClick={()=>setError("Google Drive connection is required before this image can be saved to Drive.")}><Globe2 size={9}/>Google Drive</button></div></div></article>)}</div></div></section>}
-      </main>
-      <aside style={{display:"flex",flexDirection:"column",gap:12}} className="os-panel-sticky"><section className="os-card"><div className="os-card-header"><div><h2>Live Preview</h2><p>{country} · {language}</p></div><Globe2 size={16}/></div><div className="os-card-body"><div style={{border:"1px solid var(--os-line)",borderRadius:13,overflow:"hidden",background:"#fff",color:"#17181c"}}>{images.find(image=>image.key==="featured")?.src?<img src={images.find(image=>image.key==="featured")?.src} alt="" style={{width:"100%",height:130,objectFit:"cover"}}/>:<div style={{height:130,background:"#f3f4f7"}}/>}<div style={{padding:14}}><span style={{fontSize:7,color:"#e55d79",fontWeight:900,textTransform:"uppercase"}}>{tool}</span><h3 style={{fontSize:14,lineHeight:1.25,margin:"7px 0"}}>{content.title||topic||"Content preview"}</h3><p style={{fontSize:8,lineHeight:1.5,color:"#6d7280"}}>{content.excerpt||"Generated excerpt will appear here."}</p></div></div></div></section><section className="os-card"><div className="os-card-header"><div><h2>Content Scores</h2><p>Calculated from the current text</p></div><Sparkles size={16}/></div><div className="os-card-body"><div className="os-list">{[["SEO Score",scores.seo],["GEO Readiness",scores.geo],["Content Quality",scores.quality]].map(([label,value])=><div className="os-list-row" key={String(label)}><div className="os-list-main"><strong>{String(label)}</strong><div className="os-progress" style={{marginTop:7}}><span style={{width:`${Number(value)}%`}}/></div></div><span className="os-list-value">{String(value)}</span></div>)}<div className="os-list-row"><span className="os-list-icon"><Clock3/></span><div className="os-list-main"><strong>Reading Time</strong><span>{scores.reading}</span></div></div><div className="os-list-row"><span className="os-list-icon"><Search/></span><div className="os-list-main"><strong>Keyword Density</strong><span>{scores.density}</span></div></div></div></div></section><section className="os-card"><div className="os-card-header"><div><h2>Review & Publish Workflow</h2><p>Drafts remain unpublished until you approve them</p></div><Settings2 size={16}/></div><div className="os-card-body"><div className="os-list">{["Draft","Needs Review","Approved","Scheduled","Published"].map((item,index)=><div className="os-list-row" key={item}><span className={`os-record-icon ${status===item?"active":""}`}>{index+1}</span><div className="os-list-main"><strong>{item}</strong><span>{status===item?"Current status":"Manual transition"}</span></div>{status===item&&<CheckCircle2 size={15}/>}</div>)}</div><div className="os-grid two" style={{marginTop:12}}><button className="os-btn success" disabled={!content.title} onClick={()=>void updateStatus("Approved")}><Check/>Approve</button><button className="os-btn soft" disabled={!content.title} onClick={()=>void updateStatus("Changes Requested")}><X/>Request Changes</button></div></div></section></aside>
-    </div><input type="file" ref={fileInput} hidden accept="image/*" onChange={replaceImage}/>{toast&&<div className="os-toast-stack"><div className="os-toast"><span className="os-toast-icon"><CheckCircle2/></span><div><strong>{toast}</strong><span>The CMS used the current generated or connected data.</span></div></div></div>}</div></AdminShell>}
-function Field({label,value,onChange}:{label:string;value:string;onChange:(value:string)=>void}){return <label className="os-label"><span>{label}</span><input value={value} onChange={event=>onChange(event.target.value)}/></label>}
-function Select({label,value,onChange,options}:{label:string;value:string;onChange:(value:string)=>void;options:string[]}){return <label className="os-label"><span>{label}</span><select value={value} onChange={event=>onChange(event.target.value)}>{options.map(option=><option key={option}>{option}</option>)}</select></label>}
+  async function uploadGeneratedImage(source: string) {
+    if (!source) return "";
+    if (!source.startsWith("data:")) return source;
+    const blob = await fetch(source).then((response) => response.blob());
+    const path = `content-studio/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.png`;
+    const result = await supabase.storage.from("cms-media").upload(path, blob, { contentType: blob.type || "image/png", upsert: false });
+    if (result.error) throw new Error(result.error.message);
+    return supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
+  }
+
+  async function generatePackage() {
+    if (!topic.trim()) { setError("Enter a topic first."); return; }
+    setWorking("package"); setError(""); setBlogId(null); setSocialId(null);
+    try {
+      const [blogResponse, socialResponse] = await Promise.all([
+        adminFetch("/api/admin/ai-content", { method: "POST", body: JSON.stringify({ tool: "Blog Generator", topic, country, audience, buyerType: "International B2B buyer", searchIntent: "Commercial research", keyword, tone: "Premium, factual and professional", language: "English", length: "Standard", cta, brandVoice: "Premium, factual, clear and export-focused", research: true }) }),
+        adminFetch("/api/admin/social-content", { method: "POST", body: JSON.stringify({ topic, targetCountry: country, targetAudience: audience, objective: "Commercial awareness and buyer education", product: "Himalayan pink salt", tone: "Premium professional B2B", cta, platforms: platformKeys }) }),
+      ]);
+      const [blogPayload, socialPayload] = await Promise.all([blogResponse.json(), socialResponse.json()]);
+      if (!blogResponse.ok) throw new Error(blogPayload.error || "Blog generation failed.");
+      if (!socialResponse.ok) throw new Error(socialPayload.error || "Social content generation failed.");
+
+      const secondaryKeywords = Array.isArray(blogPayload.secondary_keywords) ? blogPayload.secondary_keywords.map(String) : [];
+      const nextBlog: BlogDraft = {
+        title: String(blogPayload.title || topic),
+        slug: String(blogPayload.slug || slugify(blogPayload.title || topic)),
+        excerpt: String(blogPayload.excerpt || ""),
+        content: String(blogPayload.content || ""),
+        seoTitle: String(blogPayload.meta_title || blogPayload.seo_title || blogPayload.title || topic),
+        seoDescription: String(blogPayload.meta_description || blogPayload.seo_description || blogPayload.excerpt || ""),
+        primaryKeyword: String(blogPayload.primary_keyword || keyword || ""),
+        secondaryKeywords,
+        imagePrompt: String(blogPayload.image_prompt || `${topic}, premium Himalayan pink salt B2B editorial photography`),
+        status: "Draft",
+      };
+      setBlog(nextBlog);
+      const nextSocial = blankSocial();
+      platformKeys.forEach((platform) => {
+        const item = socialPayload.platforms?.[platform] || {};
+        nextSocial[platform] = { title: String(item.title || ""), text: String(item.text || ""), hashtags: String(item.hashtags || ""), image_prompt: String(item.image_prompt || nextBlog.imagePrompt) };
+      });
+      setSocial(nextSocial);
+      flash("Complete blog + social content package generated for review.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Content package generation failed.");
+    } finally { setWorking(""); }
+  }
+
+  async function generateSharedImage() {
+    const prompt = blog.imagePrompt || social[activePlatform].image_prompt || topic;
+    if (!prompt.trim()) { setError("Generate the content package or enter a topic first."); return; }
+    setWorking("image"); setError("");
+    try {
+      const response = await adminFetch("/api/ai/image", { method: "POST", body: JSON.stringify({ prompt: `${prompt}. Premium commercial editorial image for The Salt Origin, Himalayan pink salt, refined pink and charcoal brand mood, no medical claims, no third-party logos, no readable text.`, size: "1536x1024" }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "AI image generation failed.");
+      const url = await uploadGeneratedImage(String(payload.image || ""));
+      setSharedImage(url); flash("Shared campaign image generated and saved to CMS media.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Image generation failed."); }
+    finally { setWorking(""); }
+  }
+
+  async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]; if (!file) return;
+    setWorking("upload"); setError("");
+    const path = `content-studio/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+    const result = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type, upsert: false });
+    if (result.error) setError(result.error.message); else { setSharedImage(supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl); flash("Image uploaded and attached to the complete campaign."); }
+    setWorking(""); event.target.value = "";
+  }
+
+  async function saveBlog(status: "draft" | "review" | "published" | "archived") {
+    if (!blog.title.trim()) { setError("Generate or enter the blog before saving."); return; }
+    setWorking(`blog-${status}`); setError("");
+    const keywords = normalizeKeywordList(blog.primaryKeyword || keyword, blog.secondaryKeywords, blog.title);
+    const payload = {
+      title: blog.title.trim(), slug: blog.slug.trim() || slugify(blog.title), excerpt: blog.excerpt, content: blog.content, featured_image: sharedImage || null,
+      status, approval_status: status === "published" ? "Published" : status === "review" ? "Needs Review" : status === "archived" ? "Rejected" : "Draft",
+      seo_title: blog.seoTitle, seo_description: blog.seoDescription, content_type: "blog", keywords, primary_keyword: blog.primaryKeyword || keyword || keywords[0] || null,
+      target_country: country, image_prompt: blog.imagePrompt, seo_score: scores.seo, geo_score: scores.geo, published_at: status === "published" ? new Date().toISOString() : null, updated_at: new Date().toISOString(),
+    };
+    const result = blogId ? await supabase.from("blog_posts").update(payload).eq("id", blogId).select().single() : await supabase.from("blog_posts").insert(payload).select().single();
+    setWorking("");
+    if (result.error) { setError(result.error.message); return; }
+    setBlogId(result.data.id); setBlog((current) => ({ ...current, status: payload.approval_status }));
+    window.dispatchEvent(new Event("salt-cms-updated"));
+    flash(status === "published" ? "Blog approved and published to the website." : status === "review" ? "Blog sent to the review queue." : status === "archived" ? "Blog rejected and archived." : "Blog draft saved.");
+  }
+
+  async function saveSocial(status: "Draft" | "Needs Review" | "Approved" | "Rejected") {
+    if (!topic.trim()) { setError("Topic is required."); return; }
+    setWorking(`social-${status}`); setError("");
+    const primary = social[platformKeys[0]];
+    const payload = {
+      title: topic.trim(), caption: primary.text, hashtags: primary.hashtags, keywords: blog.primaryKeyword || keyword || "", image_url: sharedImage,
+      platforms: platformKeys, scheduled_at: new Date().toISOString(), status: status.toLowerCase().replaceAll(" ", "_"), approval_status: status,
+      platform_content: Object.fromEntries(platformKeys.map((platform) => [platform, social[platform]])),
+      platform_images: Object.fromEntries(platformKeys.map((platform) => [platform, sharedImage]).filter(([, image]) => Boolean(image))),
+      platform_results: {}, last_error: null, brief: { topic, targetCountry: country, targetAudience: audience, objective: "Commercial awareness and buyer education", cta, source: "AI Content Studio" }, updated_at: new Date().toISOString(), approved_at: status === "Approved" ? new Date().toISOString() : null,
+    };
+    const result = socialId ? await supabase.from("social_scheduled_posts").update(payload).eq("id", socialId).select().single() : await supabase.from("social_scheduled_posts").insert(payload).select().single();
+    setWorking("");
+    if (result.error) { setError(result.error.message); return; }
+    setSocialId(result.data.id); flash(`Social campaign saved as ${status}.`);
+  }
+
+  const active = social[activePlatform];
+
+  return <AdminShell><div className="os-page content-ops-studio">
+    <header className="os-page-header"><div><div className="os-page-eyebrow">One topic · complete content system</div><h1 className="os-page-title">AI Content Studio</h1><p className="os-page-subtitle">Research one commercial topic, generate the full website blog and every platform-specific social draft, use one shared campaign image, then review and approve each publishing path.</p></div><div className="os-page-actions"><button className="os-btn soft" onClick={() => { setBlog(blankBlog); setSocial(blankSocial()); setSharedImage(""); setBlogId(null); setSocialId(null); setError(""); }}><RefreshCw/>New Package</button><button className="os-btn primary" disabled={Boolean(working)} onClick={() => void generatePackage()}><Sparkles/>{working === "package" ? "Researching & Writing…" : "Generate Complete Package"}</button></div></header>
+
+    {error && <section className="os-card" style={{ borderColor: "rgba(214,69,69,.35)" }}><div className="os-card-body"><strong>Content operation needs attention</strong><p className="os-page-subtitle">{error}</p></div></section>}
+
+    <section className="os-card content-brief-card"><div className="os-card-header"><div><h2>Campaign Brief</h2><p>The same commercial brief drives the blog and every social platform.</p></div><Sparkles/></div><div className="os-card-body"><div className="os-form-grid"><label className="os-label full"><span>Topic</span><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Example: Difference between pink salt and white salt"/></label><label className="os-label"><span>Target Market</span><input value={country} onChange={(event) => setCountry(event.target.value)}/></label><label className="os-label"><span>Primary Keyword</span><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Optional — AI can research the topic"/></label><label className="os-label full"><span>Target Audience</span><input value={audience} onChange={(event) => setAudience(event.target.value)}/></label><label className="os-label full"><span>Call to Action</span><input value={cta} onChange={(event) => setCta(event.target.value)}/></label></div></div></section>
+
+    <div className="content-studio-grid">
+      <section className="os-card"><div className="os-card-header"><div><h2>Blog Draft</h2><p>Full long-form website article with SEO/GEO review.</p></div><span className={`os-badge ${blog.status === "Published" ? "green" : blog.status === "Needs Review" ? "amber" : "pink"}`}>{blog.status}</span></div><div className="os-card-body"><div className="blog-quality-strip"><div><span>SEO</span><b>{scores.seo}%</b></div><div><span>GEO</span><b>{scores.geo}%</b></div><div><span>Image</span><b>{sharedImage ? "Ready" : "Pending"}</b></div></div><div className="os-form-grid" style={{ marginTop: 14 }}><label className="os-label full"><span>Blog Title</span><input value={blog.title} onChange={(event) => setBlog((current) => ({ ...current, title: event.target.value, slug: current.slug || slugify(event.target.value) }))}/></label><label className="os-label full"><span>Excerpt</span><textarea value={blog.excerpt} onChange={(event) => setBlog((current) => ({ ...current, excerpt: event.target.value }))}/></label><label className="os-label full"><span>Article Content</span><textarea className="content-studio-article" value={blog.content} onChange={(event) => setBlog((current) => ({ ...current, content: event.target.value }))}/></label><label className="os-label"><span>SEO Title</span><input value={blog.seoTitle} onChange={(event) => setBlog((current) => ({ ...current, seoTitle: event.target.value }))}/></label><label className="os-label"><span>Slug</span><input value={blog.slug} onChange={(event) => setBlog((current) => ({ ...current, slug: slugify(event.target.value) }))}/></label><label className="os-label full"><span>SEO Description</span><textarea value={blog.seoDescription} onChange={(event) => setBlog((current) => ({ ...current, seoDescription: event.target.value }))}/></label></div><div className="content-approval-row"><button className="os-btn soft" onClick={() => void saveBlog("draft")} disabled={Boolean(working)}><Save/>Save Draft</button><button className="os-btn soft" onClick={() => void saveBlog("review")} disabled={Boolean(working)}><Eye/>Send for Review</button><button className="os-btn success" onClick={() => void saveBlog("published")} disabled={Boolean(working)}><CheckCircle2/>Approve & Publish</button><button className="os-btn danger" onClick={() => void saveBlog("archived")} disabled={Boolean(working)}><XCircle/>Reject</button></div></div></section>
+
+      <aside className="os-card os-panel-sticky"><div className="os-card-header"><div><h2>Shared Campaign Image</h2><p>One creative can be reused across the blog and social package.</p></div><ImageIcon/></div><div className="os-card-body"><div className="content-shared-image">{sharedImage ? <img src={sharedImage} alt="Campaign creative"/> : <div><ImageIcon/><strong>No campaign image yet</strong><span>Generate from the topic or upload your own image.</span></div>}</div><label className="os-label" style={{ marginTop: 13 }}><span>AI Image Prompt</span><textarea value={blog.imagePrompt} onChange={(event) => setBlog((current) => ({ ...current, imagePrompt: event.target.value }))} placeholder="Generated from the topic automatically"/></label><div className="content-image-actions"><button className="os-btn primary" onClick={() => void generateSharedImage()} disabled={Boolean(working)}><Sparkles/>{working === "image" ? "Generating…" : "Create Image with AI"}</button><button className="os-btn soft" onClick={() => fileInput.current?.click()} disabled={Boolean(working)}><UploadCloud/>{working === "upload" ? "Uploading…" : "Upload Image"}</button></div><input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadImage}/><div className="content-image-note"><CheckCircle2/><span>Same image is attached to all selected social platforms. You can replace platform-specific creatives later in Social Media Studio.</span></div></div></aside>
+    </div>
+
+    <section className="os-card"><div className="os-card-header"><div><h2>Social Media Package</h2><p>Every platform receives the same topic with copy adapted to its format and audience.</p></div><span className="os-badge pink">{platformKeys.length} platforms</span></div><div className="os-card-body"><div className="os-tabs content-platform-tabs">{platformKeys.map((platform) => <button key={platform} className={`os-tab ${activePlatform === platform ? "active" : ""}`} onClick={() => setActivePlatform(platform)}>{labels[platform]}</button>)}</div><div className="content-social-grid"><div><div className="os-form-grid"><label className="os-label full"><span>{labels[activePlatform]} Title / Hook</span><input value={active.title} onChange={(event) => setSocial((current) => ({ ...current, [activePlatform]: { ...current[activePlatform], title: event.target.value } }))}/></label><label className="os-label full"><span>{labels[activePlatform]} Copy</span><textarea className="content-social-copy" value={active.text} onChange={(event) => setSocial((current) => ({ ...current, [activePlatform]: { ...current[activePlatform], text: event.target.value } }))}/><small>{active.text.length} characters · written for {labels[activePlatform]}</small></label><label className="os-label full"><span>Hashtags / Search Terms</span><textarea value={active.hashtags} onChange={(event) => setSocial((current) => ({ ...current, [activePlatform]: { ...current[activePlatform], hashtags: event.target.value } }))}/></label></div></div><div className="social-package-preview"><div className="social-package-profile"><img src="/salt-origin-logo.png" alt="The Salt Origin"/><div><strong>The Salt Origin</strong><span>{labels[activePlatform]} preview</span></div></div>{sharedImage ? <img src={sharedImage} alt="Campaign preview"/> : <div className="social-package-empty"><ImageIcon/><span>Shared image preview</span></div>}<div className="social-package-copy">{active.title && <strong>{active.title}</strong>}<p>{active.text || "Generate the content package to preview platform-specific copy."}</p><em>{active.hashtags}</em></div></div></div><div className="content-approval-row"><button className="os-btn soft" onClick={() => void saveSocial("Draft")} disabled={Boolean(working)}><Save/>Save Social Drafts</button><button className="os-btn soft" onClick={() => void saveSocial("Needs Review")} disabled={Boolean(working)}><Eye/>Send for Review</button><button className="os-btn success" onClick={() => void saveSocial("Approved")} disabled={Boolean(working)}><CheckCircle2/>Approve Campaign</button><button className="os-btn danger" onClick={() => void saveSocial("Rejected")} disabled={Boolean(working)}><XCircle/>Reject</button><a href="/admin/social-studio" className="os-btn primary"><Send/>Open Social Studio</a></div></div></section>
+
+    {toast && <div className="os-toast-stack"><div className="os-toast"><span className="os-toast-icon"><CheckCircle2/></span><div><strong>{toast}</strong><span>Connected CMS records were updated.</span></div></div></div>}
+  </div></AdminShell>;
+}

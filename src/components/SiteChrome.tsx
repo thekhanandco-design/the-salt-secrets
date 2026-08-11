@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import PublicSectionLayoutController from "@/components/PublicSectionLayoutController";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   return (
     <div className="site-shell">
       <Navbar />
+      <PublicSectionLayoutController />
       {children}
       <Footer />
       <WhatsAppButton />

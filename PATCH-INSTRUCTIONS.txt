@@ -1,0 +1,18 @@
+THE SALT ORIGIN — UNIFIED DESIGN PATCH
+
+1. Extract this ZIP into the project root and replace matching files.
+2. In Supabase SQL Editor, run:
+   supabase/migrations/20260805_unified_brand_footer_pages_text_manager.sql
+3. In VS Code terminal run:
+   npm run build
+4. If build passes, commit and deploy.
+
+Included changes:
+- Reference-style charcoal gradient footer with WhatsApp, Instagram, Facebook, LinkedIn, TikTok and YouTube icons.
+- Footer newsletter/subscription band removed.
+- About page rebuilt: Who We Are, two compact Mission/Vision cards, full-width Founder Message.
+- Private Label final CTA converted into one unified dark-pink gradient section.
+- Contact page and contact form redesigned.
+- Text Manager expanded to 30 font choices, text color and highlight color controls.
+- Header/Footer logo upload support preserved.
+- New About and Contact text fields added to CMS registry and Supabase.

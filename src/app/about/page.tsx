@@ -66,7 +66,7 @@ export default function AboutPage() {
 
   return (
     <main className="about-premium-page">
-      <section className="about-premium-hero">
+      <section data-cms-section="hero" className="about-premium-hero">
         <div
           className="about-premium-hero__art"
           style={{ backgroundImage: `url('${heroBackground}')` }}
@@ -107,7 +107,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-20 lg:pb-24">
+      <section data-cms-section="story" className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-20 lg:pb-24">
         <article className="about-story-card">
           <div className="about-story-icon" aria-hidden="true">
             <Mountain className="h-16 w-16" />

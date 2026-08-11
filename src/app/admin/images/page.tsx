@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminFetch } from "@/lib/admin-client";
 import {
   cmsImageRegistry,
   cmsPageLabels,
@@ -14,6 +15,7 @@ import {
   List,
   RefreshCw,
   Search,
+  Sparkles,
   Upload,
 } from "lucide-react";
 
@@ -25,6 +27,7 @@ export default function ImagesManagerPage() {
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [generating, setGenerating] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
@@ -160,6 +163,41 @@ export default function ImagesManagerPage() {
       ),
     );
     window.dispatchEvent(new Event("salt-cms-updated"));
+  }
+
+  async function saveGeneratedImage(slot: Slot, image: string) {
+    const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+    let url = image;
+    if (image.startsWith("data:")) {
+      const blob = await fetch(image).then((response) => response.blob());
+      const path = `${slot.page_slug}/${slot.section_slug}/${Date.now()}-${slot.slot_key}-ai.png`;
+      const upload = await supabase.storage.from("site-media").upload(path, blob, { contentType: "image/png", upsert: true });
+      if (upload.error) throw new Error(upload.error.message);
+      url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
+    }
+    const payload = { ...slot, current_url: url, updated_at: new Date().toISOString() };
+    delete (payload as Partial<Slot>).id;
+    const result = await supabase.from("cms_image_slots").upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
+    if (result.error) throw new Error(result.error.message);
+    setSlots((items) => items.map((item) => `${item.page_slug}:${item.section_slug}:${item.slot_key}` === key ? { ...item, current_url: url } : item));
+    window.dispatchEvent(new Event("salt-cms-updated"));
+  }
+
+  async function generateWithAi(slot: Slot) {
+    const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+    setGenerating(key);
+    try {
+      const prompt = `Create a premium editorial product or brand image for The Salt Origin, an international Himalayan pink salt B2B brand. Website page: ${cmsPageLabels[slot.page_slug] || slot.page_slug}. Section: ${slot.section_slug}. Image purpose: ${slot.title}. Alt text/context: ${slot.alt_text || "premium Himalayan pink salt"}. Use the brand visual language: sophisticated white and soft blush environment, controlled dark-pink accents, charcoal details, elegant natural Himalayan mountain cues, clean luxury export presentation, photorealistic commercial photography, generous negative space, no visible text, no fake certifications, no watermarks, no unrelated logos.`;
+      const response = await adminFetch("/api/ai/image", { method: "POST", body: JSON.stringify({ prompt, size: "1536x1024" }) });
+      const data = await response.json();
+      if (!response.ok || !data.image) throw new Error(data.error || "AI image generation failed.");
+      await saveGeneratedImage(slot, String(data.image));
+      alert("AI image generated and saved to this website image slot. Review it before publishing or keep replacing it as needed.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "AI image generation failed.");
+    } finally {
+      setGenerating(null);
+    }
   }
 
   async function reset(slot: Slot) {
@@ -369,26 +407,17 @@ export default function ImagesManagerPage() {
                         </p>
                       </div>
 
-                      <div
-                        className={`flex gap-2 ${view === "grid" ? "mt-3" : ""}`}
-                      >
-                        <label className="cms-gradient-button flex-1 inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-xs font-black cursor-pointer text-white">
+                      <div className={`image-slot-actions ${view === "grid" ? "mt-3" : ""}`}>
+                        <label className="cms-gradient-button inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-xs font-black cursor-pointer text-white">
                           <Upload className="w-4 h-4" />
-                          {uploading === key ? "Uploading..." : "Replace Image"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(event) =>
-                              replace(slot, event.target.files?.[0])
-                            }
-                          />
+                          {uploading === key ? "Uploading..." : "Upload / Replace"}
+                          <input type="file" accept="image/*" className="hidden" disabled={generating === key} onChange={(event) => replace(slot, event.target.files?.[0])} />
                         </label>
-                        <button
-                          onClick={() => reset(slot)}
-                          title="Reset to original"
-                          className="rounded-xl border border-white/10 px-3 text-slate-300"
-                        >
+                        <button type="button" onClick={() => void generateWithAi(slot)} disabled={Boolean(generating) || uploading === key} className="image-ai-button inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-xs font-black">
+                          <Sparkles className={`w-4 h-4 ${generating === key ? "animate-pulse" : ""}`} />
+                          {generating === key ? "Creating..." : "Create with AI"}
+                        </button>
+                        <button onClick={() => reset(slot)} title="Reset to original" className="image-reset-button rounded-xl border px-3">
                           <RefreshCw className="w-4 h-4" />
                         </button>
                       </div>

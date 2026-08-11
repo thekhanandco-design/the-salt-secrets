@@ -106,7 +106,7 @@ function ProcessStep({
 export default function PrivateLabelPage() {
   return (
     <main className="bg-white text-[#081325]">
-      <section className="bg-gradient-to-b from-[#FFF0F2] via-[#FFF7F8] to-white">
+      <section data-cms-section="hero" className="bg-gradient-to-b from-[#FFF0F2] via-[#FFF7F8] to-white">
         <div className="max-w-[1400px] mx-auto px-6 pt-20 pb-10 text-center">
           <div className="flex items-center justify-center gap-4">
             <span className="hidden sm:block w-16 h-[2px] bg-[#D9909A]" />
@@ -160,7 +160,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="max-w-[1200px] mx-auto px-6 py-12">
+      <section data-cms-section="benefits" className="max-w-[1200px] mx-auto px-6 py-12">
         <SectionTitle>Why Private Label?</SectionTitle>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-7 mt-10">
           <WhyCard icon={<TrendingUp className="w-12 h-12 text-[#C23B4A]" />} title="Higher Profit Margins" text="Sell under your own brand and maximize your profits." />
@@ -170,7 +170,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="max-w-[1300px] mx-auto px-6 py-8">
+      <section data-cms-section="packaging" className="max-w-[1300px] mx-auto px-6 py-8">
         <SectionTitle>What We Customize</SectionTitle>
         <div className="grid lg:grid-cols-3 gap-7 mt-10">
           <CustomizeCard image="/custom-logo-design.png" title="Logo Design" text="Create a unique logo that represents your brand." />
@@ -179,7 +179,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="max-w-[1400px] mx-auto px-6 py-10">
+      <section data-cms-section="process" className="max-w-[1400px] mx-auto px-6 py-10">
         <SectionTitle>Packaging Options</SectionTitle>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5 mt-10">
           {packagingOptions.map((item) => (
@@ -194,7 +194,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#FFF0F2] py-14">
+      <section data-cms-section="quality" className="relative overflow-hidden bg-[#FFF0F2] py-14">
         <Image src="/mountains-bg.png" alt="" width={900} height={400} className="absolute left-0 bottom-0 w-[360px] lg:w-[520px] opacity-20" />
         <Image src="/mountains-bg.png" alt="" width={900} height={400} className="absolute right-0 bottom-0 w-[360px] lg:w-[520px] opacity-20 scale-x-[-1]" />
         <div className="relative z-10 max-w-[1300px] mx-auto px-6">
@@ -208,7 +208,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="max-w-[1300px] mx-auto px-6 py-14">
+      <section data-cms-section="capabilities" className="max-w-[1300px] mx-auto px-6 py-14">
         <div className="grid lg:grid-cols-2 gap-10 items-start">
           <div>
             <h2 className="font-black text-[#081325] mb-8" style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem,3vw,3rem)" }}>
@@ -256,7 +256,7 @@ export default function PrivateLabelPage() {
         </div>
       </section>
 
-      <section className="brand-gradient-section private-label-final-cta text-white">
+      <section data-cms-section="cta" className="brand-gradient-section private-label-final-cta text-white">
         <div className="private-label-final-cta__mountains" aria-hidden="true" />
         <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-14 lg:py-16">
           <div className="grid lg:grid-cols-[240px_1fr_240px] gap-8 items-center">

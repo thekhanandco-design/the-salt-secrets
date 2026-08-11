@@ -59,7 +59,7 @@ export default function CertificationsPage() {
     <main className="bg-white text-[#081325]">
       {/* HERO */}
 
-      <section className="relative overflow-hidden bg-gradient-to-r from-[#FFF0F2] via-[#FFF6F7] to-white">
+      <section data-cms-section="hero" className="relative overflow-hidden bg-gradient-to-r from-[#FFF0F2] via-[#FFF6F7] to-white">
         <div
           className="absolute inset-y-0 right-0 w-full lg:w-[65%] bg-right bg-no-repeat bg-contain opacity-40"
           style={{
@@ -118,7 +118,7 @@ export default function CertificationsPage() {
 
       {/* CERTIFICATIONS */}
 
-      <section className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
+      <section data-cms-section="cards" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
         <div className="text-center">
           <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">
             Quality Standards Supported
@@ -174,7 +174,7 @@ export default function CertificationsPage() {
 
       {/* COMMITMENT */}
 
-      <section className="max-w-[1400px] mx-auto px-6 lg:px-12 pb-16">
+      <section data-cms-section="commitment" className="max-w-[1400px] mx-auto px-6 lg:px-12 pb-16">
         <div className="text-center">
           <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">
             Why Quality Matters
@@ -228,7 +228,7 @@ export default function CertificationsPage() {
 
       {/* DOCUMENTS */}
 
-      <section className="bg-[#FFF8F8] py-16">
+      <section data-cms-section="documents" className="bg-[#FFF8F8] py-16">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
           <div className="text-center">
             <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">

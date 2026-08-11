@@ -91,7 +91,7 @@ export default function ContactPage() {
 
   return (
     <main className="contact-premium-page text-[#081325]">
-      <section className="contact-premium-hero">
+      <section data-cms-section="hero" className="contact-premium-hero">
         <div className="contact-premium-hero__mountains" aria-hidden="true" />
 
         <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 py-16 lg:py-24">
@@ -166,7 +166,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section id="contact-form" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16 lg:py-20">
+      <section data-cms-section="form" id="contact-form" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16 lg:py-20">
         <div className="grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:items-start">
           <div className="contact-form-intro">
             <p className="brand-eyebrow text-left" style={textStyle("form", "eyebrow")}>
@@ -203,7 +203,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="contact-help-section">
+      <section data-cms-section="help" className="contact-help-section">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
           <div className="text-center">
             <p className="brand-eyebrow" style={textStyle("help", "eyebrow")}>

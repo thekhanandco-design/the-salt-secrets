@@ -179,17 +179,17 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
-        <div className="max-w-[1700px] mx-auto px-6 lg:px-16 h-[84px] flex items-center justify-between">
+      <header className="premium-public-header sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
+        <div className="max-w-[1500px] mx-auto px-5 lg:px-10 h-[72px] flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label="Go to homepage">
             <img
               src={logo}
               alt={logoAlt}
-              className="h-[55px] lg:h-[62px] w-auto object-contain"
+              className="h-[48px] lg:h-[54px] w-auto object-contain"
             />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8 text-[15px] font-semibold text-[#111827]">
+          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-bold text-[#2f2b30]">
             {links.map(([href, label, key]) => (
               <Link
                 key={href}
@@ -234,7 +234,7 @@ export default function Navbar() {
             <Link
               href="/contact"
               style={navStyle("quote")}
-              className="site-gradient-button hidden md:flex items-center justify-center text-white px-7 py-3 rounded-xl font-bold transition"
+              className="site-gradient-button hidden md:flex items-center justify-center text-white px-6 py-2.5 rounded-full font-bold transition"
             >
               {labels.quote}
             </Link>

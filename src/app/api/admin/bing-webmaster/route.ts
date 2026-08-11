@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     const configuredSiteUrl =
       process.env.BING_WEBMASTER_SITE_URL?.trim() ||
       process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-      "https://thesaltorigin.com/";
+      "https://www.thesaltorigin.com/";
 
     const endpoint =
       "https://ssl.bing.com/webmaster/api.svc/json/GetUserSites" +

@@ -9,18 +9,7 @@ type Definition = {
   anyOf?: string[][];
   mode?: "external" | "database";
   requiresStoredConnection?: boolean;
-  storedProvider?: string;
-  storedConfigKey?: string;
-  authorizationLabel?: string;
 };
-
-const metaRequired = [
-  "META_APP_ID",
-  "META_APP_SECRET",
-  "META_REDIRECT_URI",
-  "META_LOGIN_CONFIG_ID",
-  "INTEGRATION_TOKEN_ENCRYPTION_KEY",
-];
 
 const definitions: Definition[] = [
   {
@@ -89,19 +78,13 @@ const definitions: Definition[] = [
   { id: "teams", required: ["MICROSOFT_TEAMS_WEBHOOK_URL"] },
   {
     id: "facebook",
-    required: metaRequired,
-    requiresStoredConnection: true,
-    storedProvider: "meta",
-    storedConfigKey: "facebookPageId",
-    authorizationLabel: "Authorize Meta Facebook Page",
+    required: [],
+    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_FACEBOOK_TOKEN"]],
   },
   {
     id: "instagram",
-    required: metaRequired,
-    requiresStoredConnection: true,
-    storedProvider: "meta",
-    storedConfigKey: "instagramAccountId",
-    authorizationLabel: "Authorize linked Instagram Professional account",
+    required: [],
+    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_INSTAGRAM_TOKEN"]],
   },
   {
     id: "linkedin",
@@ -132,7 +115,6 @@ const definitions: Definition[] = [
       "INTEGRATION_TOKEN_ENCRYPTION_KEY",
     ],
     requiresStoredConnection: true,
-    authorizationLabel: "Authorize YouTube channel",
   },
   {
     id: "x",
@@ -158,9 +140,7 @@ export async function GET(request: Request) {
 
     const { data: stored } = await client
       .from("integration_connections")
-      .select(
-        "provider,status,config_hint,last_checked_at,updated_at",
-      );
+      .select("provider,status,last_checked_at,updated_at");
 
     const storedMap = new Map(
       (stored || []).map((row) => [String(row.provider), row]),
@@ -180,32 +160,14 @@ export async function GET(request: Request) {
         ...missingGroups.map((group) => group.join(" or ")),
       );
 
-      const db = storedMap.get(
-        definition.storedProvider || definition.id,
-      );
-      const configHint =
-        db?.config_hint && typeof db.config_hint === "object"
-          ? (db.config_hint as Record<string, unknown>)
-          : {};
+      const db = storedMap.get(definition.id);
 
       if (
         definition.requiresStoredConnection &&
-        missing.length === 0
+        missing.length === 0 &&
+        db?.status !== "connected"
       ) {
-        if (db?.status !== "connected") {
-          missing.push(
-            definition.authorizationLabel ||
-              `Authorize ${definition.id}`,
-          );
-        } else if (
-          definition.storedConfigKey &&
-          !configHint[definition.storedConfigKey]
-        ) {
-          missing.push(
-            definition.authorizationLabel ||
-              `Authorize ${definition.id}`,
-          );
-        }
+        missing.push("Authorize YouTube channel");
       }
 
       const hasRequirements =

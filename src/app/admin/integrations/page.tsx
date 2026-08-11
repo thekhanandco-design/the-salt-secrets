@@ -86,26 +86,16 @@ export default function Integrations() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const youtubeStatus = searchParams.get("youtube");
-    const metaStatus = searchParams.get("meta");
-    const message = searchParams.get("message");
 
     if (youtubeStatus === "connected") {
       setToast("YouTube channel connected successfully.");
       void load();
     } else if (youtubeStatus === "error") {
-      setError(message || "YouTube connection failed.");
+      setError(searchParams.get("message") || "YouTube connection failed.");
     }
 
-    if (metaStatus === "connected") {
-      setToast(message || "Meta connection completed successfully.");
-      void load();
-    } else if (metaStatus === "error") {
-      setError(message || "Meta connection failed.");
-    }
-
-    if (youtubeStatus || metaStatus) {
+    if (youtubeStatus) {
       searchParams.delete("youtube");
-      searchParams.delete("meta");
       searchParams.delete("message");
       const nextQuery = searchParams.toString();
       window.history.replaceState(
@@ -141,12 +131,6 @@ export default function Integrations() {
         const verifiedSite = payload.site?.url || payload.sites?.find((site: { isVerified?: boolean }) => site.isVerified)?.url || "verified site";
         setToast(`Bing Webmaster connected: ${verifiedSite}`);
         await load();
-      } else if (item.id === "facebook" || item.id === "instagram") {
-        const response = await adminFetch("/api/admin/meta/oauth/start");
-        const payload = await response.json();
-        if (!response.ok || !payload.authorizationUrl) throw new Error(payload.error || "Unable to start Meta authorization.");
-        window.location.assign(payload.authorizationUrl);
-        return;
       } else if (item.id === "youtube") {
         const response = await adminFetch("/api/admin/youtube/oauth/start");
         const payload = await response.json();
@@ -164,8 +148,8 @@ export default function Integrations() {
     {error && <section className="os-card" style={{ borderColor: "rgba(239,68,68,.35)" }}><div className="os-card-body" style={{ display: "flex", gap: 12 }}><AlertTriangle/><div><strong>Integration status</strong><p className="os-page-subtitle">{error}</p></div></div></section>}
     <div className="os-grid four">{[["Configured", configured, CheckCircle2], ["Connection Required", required, Settings2], ["External Tools", external, ExternalLink], ["Total Integrations", catalog.length, Cable]].map(([label, value, Icon]) => { const Component = Icon as typeof Cable; return <article className="os-metric" key={String(label)}><div className="os-metric-top"><span className="os-metric-label">{String(label)}</span><span className="os-metric-icon"><Component/></span></div><div className="os-metric-value">{String(value)}</div><div className="os-metric-foot"><b>Actual configuration state</b></div></article>; })}</div>
     <div className="os-tabs">{categories.map(value => <button className={`os-tab ${category === value ? "active" : ""}`} onClick={() => setCategory(value)} key={value}>{value}</button>)}</div>
-    <section className="os-card"><div className="os-card-header"><div><h2>{category}</h2><p>{filtered.length} available services</p></div><label className="os-search-field"><Search/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search integrations…"/></label></div><div className="os-card-body"><div className="os-grid three">{filtered.map(item => { const status = statuses[item.id]; const isExternal = status?.mode === "external"; const isConfigured = Boolean(status?.configured && !isExternal); return <article className="os-card" key={item.id}><div className="os-card-body"><div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}><IntegrationLogo item={item}/><span className={`os-badge ${isConfigured ? "green" : isExternal ? "blue" : "amber"}`}>{isConfigured ? "Configured" : isExternal ? "External Tool" : "Connection Required"}</span></div><h3 style={{ marginTop: 14 }}>{item.name}</h3><p className="os-page-subtitle">{item.description}</p><div className="os-list" style={{ marginTop: 12 }}><div className="os-list-row"><span className="os-list-icon"><Clock3/></span><div className="os-list-main"><strong>Last Checked</strong><span>{formatDate(status?.lastCheckedAt)}</span></div></div>{!isConfigured && !isExternal && <div className="os-list-row"><span className="os-list-icon"><Settings2/></span><div className="os-list-main"><strong>Missing Configuration</strong><span>{status?.missing?.join(", ") || "Status loading…"}</span></div></div>}</div><div style={{ display: "flex", gap: 8, marginTop: 14 }}><button className="os-btn soft" onClick={() => setSelected(item)}><Settings2/>Details</button><button className="os-btn primary" onClick={() => void test(item)} disabled={testing === item.id}><TestTube2/>{testing === item.id ? "Testing…" : isExternal ? "Open Tool" : ["facebook", "instagram", "youtube"].includes(item.id) ? (isConfigured ? "Reconnect" : "Connect") : "Test"}</button></div></div></article>; })}</div></div></section>
-    {selected && <div className="os-drawer-backdrop" onMouseDown={() => setSelected(null)}><aside className="os-drawer" onMouseDown={event => event.stopPropagation()}><div className="os-modal-header"><div><h2>{selected.name}</h2><p className="os-page-subtitle">{selected.category}</p></div><button className="os-icon-button" onClick={() => setSelected(null)}><X/></button></div><div className="os-card-body"><p>{selected.description}</p><h3 style={{ marginTop: 18 }}>Required environment variables</h3>{statuses[selected.id]?.mode === "external" ? <p className="os-page-subtitle">This opens an official external tool and does not require a CMS API key.</p> : <div className="os-list">{(statuses[selected.id]?.missing || []).length ? statuses[selected.id].missing.map(name => <div className="os-list-row" key={name}><span className="os-list-icon"><Settings2/></span><div className="os-list-main"><strong>{name}</strong><span>Add this in .env.local and Vercel Environment Variables.</span></div></div>) : <div className="os-list-row"><span className="os-list-icon"><CheckCircle2/></span><div className="os-list-main"><strong>Configuration present</strong><span>No secret values are exposed in this screen.</span></div></div>}</div>}<button className="os-btn primary" style={{ width: "100%", marginTop: 18 }} onClick={() => void test(selected)}><TestTube2/>{["facebook", "instagram", "youtube"].includes(selected.id) ? (statuses[selected.id]?.configured ? "Reconnect" : "Connect") : "Test or Open"}</button></div></aside></div>}
+    <section className="os-card"><div className="os-card-header"><div><h2>{category}</h2><p>{filtered.length} available services</p></div><label className="os-search-field"><Search/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search integrations…"/></label></div><div className="os-card-body"><div className="os-grid three">{filtered.map(item => { const status = statuses[item.id]; const isExternal = status?.mode === "external"; const isConfigured = Boolean(status?.configured && !isExternal); return <article className="os-card" key={item.id}><div className="os-card-body"><div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}><IntegrationLogo item={item}/><span className={`os-badge ${isConfigured ? "green" : isExternal ? "blue" : "amber"}`}>{isConfigured ? "Configured" : isExternal ? "External Tool" : "Connection Required"}</span></div><h3 style={{ marginTop: 14 }}>{item.name}</h3><p className="os-page-subtitle">{item.description}</p><div className="os-list" style={{ marginTop: 12 }}><div className="os-list-row"><span className="os-list-icon"><Clock3/></span><div className="os-list-main"><strong>Last Checked</strong><span>{formatDate(status?.lastCheckedAt)}</span></div></div>{!isConfigured && !isExternal && <div className="os-list-row"><span className="os-list-icon"><Settings2/></span><div className="os-list-main"><strong>Missing Configuration</strong><span>{status?.missing?.join(", ") || "Status loading…"}</span></div></div>}</div><div style={{ display: "flex", gap: 8, marginTop: 14 }}><button className="os-btn soft" onClick={() => setSelected(item)}><Settings2/>Details</button><button className="os-btn primary" onClick={() => void test(item)} disabled={testing === item.id}><TestTube2/>{testing === item.id ? "Testing…" : isExternal ? "Open Tool" : item.id === "youtube" ? (isConfigured ? "Reconnect" : "Connect") : "Test"}</button></div></div></article>; })}</div></div></section>
+    {selected && <div className="os-drawer-backdrop" onMouseDown={() => setSelected(null)}><aside className="os-drawer" onMouseDown={event => event.stopPropagation()}><div className="os-modal-header"><div><h2>{selected.name}</h2><p className="os-page-subtitle">{selected.category}</p></div><button className="os-icon-button" onClick={() => setSelected(null)}><X/></button></div><div className="os-card-body"><p>{selected.description}</p><h3 style={{ marginTop: 18 }}>Required environment variables</h3>{statuses[selected.id]?.mode === "external" ? <p className="os-page-subtitle">This opens an official external tool and does not require a CMS API key.</p> : <div className="os-list">{(statuses[selected.id]?.missing || []).length ? statuses[selected.id].missing.map(name => <div className="os-list-row" key={name}><span className="os-list-icon"><Settings2/></span><div className="os-list-main"><strong>{name}</strong><span>Add this in .env.local and Vercel Environment Variables.</span></div></div>) : <div className="os-list-row"><span className="os-list-icon"><CheckCircle2/></span><div className="os-list-main"><strong>Configuration present</strong><span>No secret values are exposed in this screen.</span></div></div>}</div>}<button className="os-btn primary" style={{ width: "100%", marginTop: 18 }} onClick={() => void test(selected)}><TestTube2/>Test or Open</button></div></aside></div>}
     {toast && <div className="os-toast-stack"><div className="os-toast"><span className="os-toast-icon"><CheckCircle2/></span><div><strong>{toast}</strong><span>Connection status was checked without exposing credentials.</span></div></div></div>}
   </div></AdminShell>;
 }

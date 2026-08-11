@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://thesaltsecrets.com/sitemap.xml",
+    sitemap: "https://www.thesaltorigin.com/sitemap.xml",
   };
 }

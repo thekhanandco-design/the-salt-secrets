@@ -94,7 +94,7 @@ export default function ProductsPage() {
   return (
     <main className="bg-[#FFF8F5]">
       <div className="max-w-[1500px] mx-auto px-5 lg:px-12 py-14">
-        <section className="text-center max-w-4xl mx-auto">
+        <section data-cms-section="hero" className="text-center max-w-4xl mx-auto">
           <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-sm">
             Products
           </span>
@@ -111,7 +111,7 @@ export default function ProductsPage() {
         </section>
 
         {cmsProducts.length > 0 && (
-          <section className="mt-10">
+          <section data-cms-section="latest" className="mt-10">
             <SectionHeading
               title="Latest Products"
               subtitle="Products added from admin CMS."
@@ -170,7 +170,7 @@ export default function ProductsPage() {
           </section>
         )}
 
-        <section className="mt-10">
+        <section data-cms-section="retail" className="mt-10">
           <SectionHeading
             title="Retail Packaging"
             subtitle="Perfect for everyday use with premium quality and attractive packaging."
@@ -218,7 +218,7 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section data-cms-section="grinder" className="mt-10">
           <SectionHeading
             title="Grinder Collection"
             subtitle="Available in plastic and ceramic grinder bottles."
@@ -272,7 +272,7 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section data-cms-section="bulk" className="mt-10">
           <SectionHeading
             title="Bulk Salt Packaging"
             subtitle="Ideal for industrial use, food processing and large scale supply."
@@ -284,7 +284,7 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section data-cms-section="private_label" className="mt-10">
           <SectionHeading
             title="Private Label Solutions"
             subtitle="We help brands create their identity with custom packaging and branding."
@@ -309,7 +309,7 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section data-cms-section="comparison" className="mt-10">
           <SectionHeading
             title="Product Comparison"
             subtitle="Explore our product range at a glance."
@@ -350,7 +350,7 @@ export default function ProductsPage() {
           </div>
         </section>
 
-        <section className="mt-10 bg-[#C23B4A] rounded-[24px] p-8 lg:p-10 text-white grid lg:grid-cols-[1fr_auto] gap-8 items-center">
+        <section data-cms-section="cta" className="mt-10 bg-[#C23B4A] rounded-[24px] p-8 lg:p-10 text-white grid lg:grid-cols-[1fr_auto] gap-8 items-center">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center shrink-0">
               <ShoppingBag className="w-10 h-10" />

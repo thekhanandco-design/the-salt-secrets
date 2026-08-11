@@ -38,12 +38,12 @@ export default async function FaqPage() {
   return (
     <main className="public-faq">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-      <section className="faq-hero">
+      <section data-cms-section="hero" className="faq-hero">
         <p>{eyebrow}</p>
         <h1>{title}</h1>
         <span>{description}</span>
       </section>
-      <section className="faq-public-list">
+      <section data-cms-section="faq" className="faq-public-list">
         {rows.map((row: any) => (
           <details key={row.id}>
             <summary>{row.question}<i>+</i></summary>

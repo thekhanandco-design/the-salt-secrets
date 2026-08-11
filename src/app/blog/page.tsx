@@ -19,7 +19,7 @@ export default async function BlogPage() {
 
   return (
     <main className="bg-[#FFF8F5] min-h-screen">
-      <section className="max-w-[1450px] mx-auto px-6 lg:px-12 py-20">
+      <section data-cms-section="listing" className="max-w-[1450px] mx-auto px-6 lg:px-12 py-20">
         <div className="text-center max-w-4xl mx-auto">
           <p className="uppercase tracking-[7px] text-[#C23B4A] font-black text-sm">Knowledge Center</p>
           <h1 className="mt-4 text-[#081325] font-black" style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.8rem,5vw,5rem)" }}>The Salt Origin Blog</h1>
