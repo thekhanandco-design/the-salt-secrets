@@ -1,10 +1,32 @@
 {
   "crons": [
-    { "path": "/api/seo/keyword-research", "schedule": "30 5 * * *" },
-    { "path": "/api/blog/daily-draft", "schedule": "0 6 * * *" },
-    { "path": "/api/faq/daily-research", "schedule": "15 6 * * *" },
-    { "path": "/api/outreach/daily-research", "schedule": "0 5 * * 1,4" },
-    { "path": "/api/competitors/daily-research", "schedule": "30 5 * * 2,5" },
-    { "path": "/api/social/daily-draft", "schedule": "30 6 * * *" }
+    {
+      "path": "/api/seo/keyword-research",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/blog/daily-draft",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/faq/daily-research",
+      "schedule": "45 2 * * *"
+    },
+    {
+      "path": "/api/outreach/daily-research",
+      "schedule": "0 5 * * 1,4"
+    },
+    {
+      "path": "/api/competitors/daily-research",
+      "schedule": "30 5 * * 2,5"
+    },
+    {
+      "path": "/api/social/daily-draft",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/social/publish-due",
+      "schedule": "0 * * * *"
+    }
   ]
 }

@@ -10,6 +10,7 @@ import {
   Factory,
   FileCheck2,
   Globe2,
+  Headphones,
   PackageCheck,
   ShieldCheck,
   Sparkles,
@@ -28,12 +29,12 @@ type HomepageContent = {
   buyers_count: string | null;
 };
 
-type HomeSection = { slug: string; label: string; visible: boolean };
+type HomeSection = { slug: string; label: string; visible: boolean; minHeight?: number; paddingTop?: number; paddingBottom?: number };
 type BlogRow = { id: string | number; title: string; slug: string; excerpt?: string | null; featured_image?: string | null; category?: string | null };
 type FaqRow = { id: string | number; question: string; answer: string };
 
 const defaultContent: HomepageContent = {
-  hero_title: "Premium Himalayan Pink Salt for Global Markets",
+  hero_title: "Himalayan Pink Salt,",
   hero_description:
     "Premium retail, private-label and bulk salt programs for importers, distributors, wholesalers and international brands.",
   private_label_title: "Private Label, Built Around Your Market",
@@ -80,7 +81,7 @@ const collectionDefaults = [
     number: "03",
     eyebrow: "Private Label",
     title: "Custom Brand Programs",
-    text: "Packaging and brand-development workflows for buyers building a premium salt range under their own identity.",
+    text: "Packaging and brand-development support for buyers building a premium salt range under their own identity.",
     image: "/custom-labels.png",
     tags: ["Branding", "Packaging", "MOQ"],
   },
@@ -126,6 +127,9 @@ function normalizeSections(value: unknown): HomeSection[] {
         slug: fallback.slug,
         label: String(candidate.label || fallback.label),
         visible: candidate.visible !== false,
+        minHeight: typeof candidate.minHeight === "number" ? candidate.minHeight : undefined,
+        paddingTop: typeof candidate.paddingTop === "number" ? candidate.paddingTop : undefined,
+        paddingBottom: typeof candidate.paddingBottom === "number" ? candidate.paddingBottom : undefined,
       } satisfies HomeSection;
     })
     .filter(Boolean) as HomeSection[];
@@ -166,10 +170,19 @@ export default function HomepageClone() {
     ]);
 
     setCmsRichText(texts);
-    setCmsText(Object.fromEntries(Object.entries(texts).map(([key, payload]) => [key, payload.value])));
+    const loadedText = Object.fromEntries(Object.entries(texts).map(([key, payload]) => [key, payload.value]));
+    const legacyHeroTitles = new Set([
+      "Premium Himalayan Pink Salt for Global Markets",
+      "Himalayan Pink Salt Solutions For Global Markets",
+      "Premium Himalayan Pink Salt Solutions for Global Markets",
+    ]);
+    const rawHeroTitle = texts["home.hero.title"]?.value || homepage?.hero_title || defaultContent.hero_title;
+    if (legacyHeroTitles.has(String(rawHeroTitle).trim())) loadedText["home.hero.title"] = "Himalayan Pink Salt,";
+    if (!String(loadedText["home.hero.title_accent"] || "").trim()) loadedText["home.hero.title_accent"] = "refined for global commerce.";
+    setCmsText(loadedText);
     setCmsImages(images);
     setContent({
-      hero_title: texts["home.hero.title"]?.value || homepage?.hero_title || defaultContent.hero_title,
+      hero_title: legacyHeroTitles.has(String(rawHeroTitle).trim()) ? "Himalayan Pink Salt," : rawHeroTitle,
       hero_description: texts["home.hero.description"]?.value || homepage?.hero_description || defaultContent.hero_description,
       private_label_title: texts["home.private_label.title"]?.value || homepage?.private_label_title || defaultContent.private_label_title,
       private_label_description: texts["home.private_label.description"]?.value || homepage?.private_label_description || defaultContent.private_label_description,
@@ -197,18 +210,26 @@ export default function HomepageClone() {
   );
 
   const visibleSections = sections.filter((section) => section.visible);
+  const sectionStyle = (slug: string): React.CSSProperties => {
+    const section = sections.find((item) => item.slug === slug);
+    return {
+      minHeight: section?.minHeight ? `${section.minHeight}px` : undefined,
+      paddingTop: section?.paddingTop !== undefined ? `${section.paddingTop}px` : undefined,
+      paddingBottom: section?.paddingBottom !== undefined ? `${section.paddingBottom}px` : undefined,
+    };
+  };
 
   const renderSection = (slug: string) => {
     if (slug === "hero") {
       return (
-        <section className="tso-home-hero" data-cms-section="hero" key={slug}>
+        <section className="tso-home-hero" data-cms-section="hero" key={slug} style={sectionStyle(slug)}>
           <div className="tso-hero-glow" />
           <div className="tso-public-container tso-home-hero-grid">
             <div className="tso-home-hero-copy">
               <div className="tso-eyebrow" style={styleToReact(cmsRichText["home.hero.badge"]?.style)}>
                 {cmsText["home.hero.badge"] || "THE SALT ORIGIN · PREMIUM EXPORT COLLECTION"}
               </div>
-              <h1 style={styleToReact(cmsRichText["home.hero.title"]?.style)}>{content.hero_title}</h1>
+              <h1 style={styleToReact(cmsRichText["home.hero.title"]?.style)} data-cms-key="home.hero.title"><span data-cms-segment="base">{content.hero_title}</span>{cmsText["home.hero.title_accent"] ? <> <em className="tso-cms-accent-heading" data-cms-key="home.hero.title_accent" style={styleToReact(cmsRichText["home.hero.title_accent"]?.style)}>{cmsText["home.hero.title_accent"]}</em></> : null}</h1>
               <p className="tso-hero-lead" style={styleToReact(cmsRichText["home.hero.description"]?.style)}>{content.hero_description}</p>
               <div className="tso-hero-signals">
                 <div><span>Private Label</span><b>Custom retail presentation</b></div>
@@ -226,11 +247,8 @@ export default function HomepageClone() {
               </div>
             </div>
             <div className="tso-hero-visual">
-              <div className="tso-hero-visual-card">
-                <img src={cmsImages["home.hero.mountains"]?.url || "/mountains-bg.png"} alt="" className="tso-hero-mountains" />
-                <div className="tso-visual-label"><span>Signature collection</span><strong>Origin Series</strong></div>
-                <img src="/hero-banner.png" alt="Himalayan pink salt collection" className="tso-hero-product-scene" />
-                <div className="tso-origin-mark"><img src="/salt-origin-logo.png" alt="The Salt Origin" /></div>
+              <div className="tso-hero-free-image">
+                <img src={cmsImages["home.hero.products"]?.url || "/hero-products.png"} alt={cmsImages["home.hero.products"]?.alt || "The Salt Origin Himalayan pink salt collection"} />
               </div>
             </div>
           </div>
@@ -240,32 +258,114 @@ export default function HomepageClone() {
     }
 
     if (slug === "private_label") {
+      const privateFormats = [
+        {
+          key: "pouch",
+          label: cmsText["home.private_label.pouch_title"] || "POUCH",
+          sublabel: cmsText["home.private_label.pouch_text"] || "Stand-up & Ziplock",
+          image: cmsImages["home.private_label.pouch"]?.url || "/pouches.png",
+          alt: cmsImages["home.private_label.pouch"]?.alt || "Private label Himalayan pink salt pouch",
+        },
+        {
+          key: "jar",
+          label: cmsText["home.private_label.jar_title"] || "JAR",
+          sublabel: cmsText["home.private_label.jar_text"] || "Plastic / Glass",
+          image: cmsImages["home.private_label.jar"]?.url || "/pet-jars.png",
+          alt: cmsImages["home.private_label.jar"]?.alt || "Private label Himalayan pink salt jar",
+        },
+        {
+          key: "grinder",
+          label: cmsText["home.private_label.grinder_title"] || "GRINDER",
+          sublabel: cmsText["home.private_label.grinder_text"] || "Plastic / Glass",
+          image: cmsImages["home.private_label.grinder"]?.url || "/grinder-bottles.png",
+          alt: cmsImages["home.private_label.grinder"]?.alt || "Private label Himalayan pink salt grinder",
+        },
+        {
+          key: "bulk",
+          label: cmsText["home.private_label.bulk_title"] || "BULK",
+          sublabel: cmsText["home.private_label.bulk_text"] || "5kg to 25kg+",
+          image: cmsImages["home.private_label.bulk"]?.url || "/white-sack.png",
+          alt: cmsImages["home.private_label.bulk"]?.alt || "Private label Himalayan pink salt bulk bag",
+        },
+      ];
+
+      const privateBenefits = [
+        [PackageCheck, cmsText["home.private_label.feature_one_title"] || "MULTIPLE FORMATS", cmsText["home.private_label.feature_one_text"] || "Pouch, Jar, Grinder or Bulk — we’ve got you covered."],
+        [Sparkles, cmsText["home.private_label.feature_two_title"] || "FULLY CUSTOMIZABLE", cmsText["home.private_label.feature_two_text"] || "Your logo, colors, labels & design — 100% yours."],
+        [ShieldCheck, cmsText["home.private_label.feature_three_title"] || "PREMIUM QUALITY", cmsText["home.private_label.feature_three_text"] || "100% natural Himalayan pink salt, processed with care."],
+        [Globe2, cmsText["home.private_label.feature_four_title"] || "GLOBAL SUPPLY", cmsText["home.private_label.feature_four_text"] || "Reliable export, on-time delivery, worldwide."],
+      ] as const;
+
       return (
-        <section className="tso-section tso-private-label" data-cms-section="private_label" key={slug}>
+        <section className="tso-section tso-private-label tso-private-program" data-cms-section="private_label" key={slug} style={sectionStyle(slug)}>
           <div className="tso-public-container">
-            <div className="tso-private-shell">
-              <div className="tso-private-watermark" />
-              <div className="tso-private-copy">
-                <div className="tso-eyebrow light">Private Label Program</div>
-                <h2 style={styleToReact(cmsRichText["home.private_label.title"]?.style)}>{content.private_label_title}</h2>
-                <p style={styleToReact(cmsRichText["home.private_label.description"]?.style)}>{content.private_label_description}</p>
-                <div className="tso-private-points">
-                  <div><strong>Retail-first formats</strong><span>Pouches, jars, grinders and coordinated shelf packs.</span></div>
-                  <div><strong>Brand presentation</strong><span>Artwork, label hierarchy and packaging-family consistency.</span></div>
-                  <div><strong>Commercial clarity</strong><span>Format, quantity, market and requirements aligned before quotation.</span></div>
+            <div className="tso-private-program-shell">
+              <div className="tso-private-program-watermark" aria-hidden="true" />
+              <div className="tso-private-program-main">
+                <div className="tso-private-program-copy">
+                  <div className="tso-private-program-eyebrow">
+                    <span />
+                    {cmsText["home.private_label.eyebrow"] || "PRIVATE LABEL PROGRAM"}
+                  </div>
+                  <h2 className="tso-private-program-title">
+                    <span>{cmsText["home.private_label.title_main"] || "Private Label."}</span>
+                    <em>{cmsText["home.private_label.title_accent"] || "Built Around Your Brand."}</em>
+                  </h2>
+                  <div className="tso-private-program-rule"><span /></div>
+                  <p className="tso-private-program-description">
+                    {cmsText["home.private_label.description_v2"] || "From concept to shelf, we create fully customized Himalayan pink salt packaging that reflects your identity and connects with your customers. You imagine it, we make it real."}
+                  </p>
+
+                  <div className="tso-private-program-benefits">
+                    {privateBenefits.map(([Icon, title, text]) => (
+                      <article key={title}>
+                        <Icon aria-hidden="true" />
+                        <strong>{title}</strong>
+                        <p>{text}</p>
+                      </article>
+                    ))}
+                  </div>
+
+                  <div className="tso-public-actions tso-private-program-actions">
+                    <Link href="/private-label" className="tso-button primary">
+                      {cmsText["home.private_label.button"] || "Explore Solutions"}<ArrowRight />
+                    </Link>
+                    <Link href="/contact" className="tso-button light">
+                      {cmsText["home.private_label.quote_button"] || "Request Private Label Quote"}<ArrowRight />
+                    </Link>
+                  </div>
                 </div>
-                <div className="tso-public-actions">
-                  <Link href="/private-label" className="tso-button primary">{cmsText["home.private_label.button"] || "Explore Private Label"}<ArrowRight /></Link>
-                  <Link href="/contact" className="tso-button light">Request Private Label Quote<ArrowRight /></Link>
+
+                <div className="tso-private-program-collection">
+                  <div className="tso-private-program-collection-title">
+                    <span />
+                    <strong>{cmsText["home.private_label.collection_title"] || "TAILORED PACKAGING COLLECTION"}</strong>
+                    <span />
+                  </div>
+                  <div className="tso-private-program-format-grid">
+                    {privateFormats.map((format) => (
+                      <article key={format.key}>
+                        <div className="tso-private-program-format-icon"><PackageCheck aria-hidden="true" /></div>
+                        <h3>{format.label}</h3>
+                        <p>{format.sublabel}</p>
+                        <div className="tso-private-program-product-image">
+                          <img src={format.image} alt={format.alt} />
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="tso-private-stage">
-                <div className="tso-private-stage-head"><span>Private Label Studio</span><strong>Your brand. Our origin.</strong></div>
-                <div className="tso-private-pack-row">
-                  <div className="tso-pack-art"><img src={cmsImages["home.private_label.custom_labels"]?.url || "/custom-labels.png"} alt={cmsImages["home.private_label.custom_labels"]?.alt || "Private label jars"} /></div>
-                  <div className="tso-pack-art"><img src={cmsImages["home.private_label.custom_packaging"]?.url || "/custom-packaging.png"} alt={cmsImages["home.private_label.custom_packaging"]?.alt || "Private label packaging"} /></div>
-                </div>
-                <div className="tso-private-stage-meta"><div><b>Branding</b><span>Artwork-ready</span></div><div><b>Formats</b><span>Retail + bulk</span></div><div><b>Workflow</b><span>Human approved</span></div></div>
+
+              <div className="tso-private-program-footer">
+                <article>
+                  <Headphones aria-hidden="true" />
+                  <div><strong>{cmsText["home.private_label.support_title"] || "DEDICATED SUPPORT"}</strong><p>{cmsText["home.private_label.support_text"] || "Our team is with you at every step — from design approval to final delivery."}</p></div>
+                </article>
+                <article>
+                  <ShieldCheck aria-hidden="true" />
+                  <div><strong>{cmsText["home.private_label.compliance_title"] || "QUALITY & COMPLIANCE"}</strong><p>{cmsText["home.private_label.compliance_text"] || "Manufactured in certified facilities with strict quality control and international food safety standards."}</p></div>
+                </article>
               </div>
             </div>
           </div>
@@ -275,7 +375,7 @@ export default function HomepageClone() {
 
     if (slug === "collections") {
       return (
-        <section className="tso-section" data-cms-section="collections" key={slug}>
+        <section className="tso-section" data-cms-section="collections" key={slug} style={sectionStyle(slug)}>
           <div className="tso-public-container">
             <div className="tso-section-head"><div><div className="tso-eyebrow">Signature Collections</div><h2>{cmsText["home.collections.title"] || "Product families for international buyers."}</h2><p>{cmsText["home.collections.description"] || "A refined collection architecture covering retail, private label, bulk, livestock, foodservice and premium market formats."}</p></div><Link href="/products" className="tso-button secondary">View Full Catalog<ArrowRight /></Link></div>
             <div className="tso-collection-grid">
@@ -298,30 +398,30 @@ export default function HomepageClone() {
         ["03", "Approve", "Review specifications, artwork and quotation before production.", CheckCircle2],
         ["04", "Ship", "Coordinate production, documentation and export movement.", Truck],
       ] as const;
-      return <section className="tso-section tso-process-section" data-cms-section="process" key={slug}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">Source to Shelf</div><h2>A more disciplined B2B buying journey.</h2><p>Designed to reduce commercial friction from first inquiry through approved shipment.</p></div></div><div className="tso-process-grid">{steps.map(([number, title, text, Icon]) => <article key={number}><span>{number}</span><Icon /><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>;
+      return <section className="tso-section tso-process-section" data-cms-section="process" key={slug} style={sectionStyle(slug)}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">Source to Shelf</div><h2>A more disciplined B2B buying journey.</h2><p>Designed to reduce commercial friction from first inquiry through approved shipment.</p></div></div><div className="tso-process-grid">{steps.map(([number, title, text, Icon]) => <article key={number}><span>{number}</span><Icon /><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>;
     }
 
     if (slug === "quality") {
-      return <section className="tso-section tso-quality-section" data-cms-section="quality" key={slug}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">Quality & Documentation</div><h2>Buyer confidence starts with organized evidence.</h2><p>Keep product specifications, certificates, COA files and quality documents structured and accessible for qualified buyers.</p></div><Link href="/certifications" className="tso-button secondary">Certification Center<ArrowRight /></Link></div><div className="tso-quality-grid"><article><ShieldCheck/><b>Quality Records</b><span>Verified documents managed from the CMS.</span></article><article><FileCheck2/><b>COA & Specifications</b><span>Product-level files and supporting documentation.</span></article><article><Building2/><b>Buyer Requests</b><span>Controlled access for commercial document requests.</span></article><article><CheckCircle2/><b>Approval Workflow</b><span>Human review before a document becomes public.</span></article></div></div></section>;
+      return <section className="tso-section tso-quality-section" data-cms-section="quality" key={slug} style={sectionStyle(slug)}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">Quality & Documentation</div><h2>Buyer confidence starts with organized evidence.</h2><p>Keep product specifications, certificates, COA files and quality documents structured and accessible for qualified buyers.</p></div><Link href="/certifications" className="tso-button secondary">Certification Center<ArrowRight /></Link></div><div className="tso-quality-grid"><article><ShieldCheck/><b>Quality Records</b><span>Organized quality records for qualified buyer review.</span></article><article><FileCheck2/><b>COA & Specifications</b><span>Product-level files and supporting documentation.</span></article><article><Building2/><b>Buyer Requests</b><span>Controlled access for commercial document requests.</span></article><article><CheckCircle2/><b>Document Control</b><span>Controlled document release for qualified commercial requests.</span></article></div></div></section>;
     }
 
     if (slug === "export") {
-      return <section className="tso-section tso-export-section" data-cms-section="export" key={slug}><div className="tso-public-container tso-export-grid"><div><div className="tso-eyebrow light">Export Program</div><h2>Built for international trade conversations.</h2><p>From product selection to shipment documentation, the website and CMS are structured around importer, distributor, private-label and foodservice workflows.</p><div className="tso-export-metrics"><div><strong>{content.export_countries || "Global"}</strong><span>Market focus</span></div><div><strong>{content.buyers_count || "B2B"}</strong><span>Buyer workflow</span></div><div><strong>CMS</strong><span>Lead-to-quote management</span></div></div><Link href="/contact" className="tso-button light">Start an Export Inquiry<ArrowRight /></Link></div><div className="tso-map-card"><img src={cmsImages["home.export.map"]?.url || "/world-map.png"} alt={cmsImages["home.export.map"]?.alt || "International export markets"}/><span><Globe2/>International B2B market planning</span></div></div></section>;
+      return <section className="tso-section tso-export-section" data-cms-section="export" key={slug} style={sectionStyle(slug)}><div className="tso-public-container tso-export-grid"><div><div className="tso-eyebrow light">Export Program</div><h2>Built for international trade conversations.</h2><p>From product selection to shipment documentation, our export program supports importers, distributors, private-label brands and foodservice buyers.</p><div className="tso-export-metrics"><div><strong>{content.export_countries || "Global"}</strong><span>Market focus</span></div><div><strong>{content.buyers_count || "B2B"}</strong><span>Buyer support</span></div><div><strong>B2B</strong><span>Commercial support</span></div></div><Link href="/contact" className="tso-button light">Start an Export Inquiry<ArrowRight /></Link></div><div className="tso-map-card"><img src={cmsImages["home.export.map"]?.url || "/world-map.png"} alt={cmsImages["home.export.map"]?.alt || "International export markets"}/><span><Globe2/>International B2B market planning</span></div></div></section>;
     }
 
     if (slug === "story") {
-      return <section className="tso-section" data-cms-section="story" key={slug}><div className="tso-public-container tso-story-grid"><div className="tso-story-art"><img src="/hero-banner.png" alt="Himalayan pink salt origin"/><div><Sparkles/><span>Origin-led positioning</span><strong>Premium presentation with commercial discipline.</strong></div></div><div><div className="tso-eyebrow">The Origin Behind the Product</div><h2>A brand built to feel established before the first sales call.</h2><p>The Salt Origin combines provenance, structured product information, private-label flexibility and buyer-focused service in one premium international presentation.</p><div className="tso-story-points"><span><CheckCircle2/>Clear product architecture</span><span><CheckCircle2/>Professional B2B communication</span><span><CheckCircle2/>CMS-managed website content</span><span><CheckCircle2/>Human-approved AI workflows</span></div><Link href="/about" className="tso-button secondary">Read Our Story<ArrowRight /></Link></div></div></section>;
+      return <section className="tso-section" data-cms-section="story" key={slug} style={sectionStyle(slug)}><div className="tso-public-container tso-story-grid"><div className="tso-story-art"><img src="/hero-banner.png" alt="Himalayan pink salt origin"/><div><Sparkles/><span>Origin-led positioning</span><strong>Premium presentation with commercial discipline.</strong></div></div><div><div className="tso-eyebrow">The Origin Behind the Product</div><h2>A brand built to feel established before the first sales call.</h2><p>The Salt Origin combines provenance, structured product information, private-label flexibility and buyer-focused service in one premium international presentation.</p><div className="tso-story-points"><span><CheckCircle2/>Clear product architecture</span><span><CheckCircle2/>Professional B2B communication</span><span><CheckCircle2/>Clear buyer documentation</span><span><CheckCircle2/>Responsive export support</span></div><Link href="/about" className="tso-button secondary">Read Our Story<ArrowRight /></Link></div></div></section>;
     }
 
     if (slug === "journal") {
-      return <section className="tso-section tso-journal-section" data-cms-section="journal" key={slug}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">The Salt Journal</div><h2>Research-led content for serious buyers.</h2><p>Commercial guides, private-label insights, sourcing topics and export-oriented educational content.</p></div><Link href="/blog" className="tso-button secondary">Open Journal<ArrowRight /></Link></div><div className="tso-blog-grid">{blogs.length ? blogs.map((post) => <article key={post.id}><div className="tso-blog-media">{post.featured_image ? <img src={post.featured_image} alt={post.title}/> : <img src="/hero-banner.png" alt="Himalayan pink salt editorial"/>}</div><div><span>{post.category || "Buyer Intelligence"}</span><h3>{post.title}</h3><p>{post.excerpt || "Read the latest commercial insight from The Salt Origin."}</p><Link href={`/blog/${post.slug}`}>Read Article<ArrowRight/></Link></div></article>) : ["Choosing the right salt format for your market", "Private-label planning before artwork approval", "What buyers should prepare before requesting a quotation"].map((title,index)=><article key={title}><div className="tso-blog-media"><img src={index===0?"/hero-banner.png":index===1?"/custom-labels.png":"/white-sack.png"} alt="Salt buyer guide"/></div><div><span>Buyer Guide</span><h3>{title}</h3><p>Approved CMS articles will appear here automatically after publication.</p><Link href="/blog">Open Journal<ArrowRight/></Link></div></article>)}</div></div></section>;
+      return <section className="tso-section tso-journal-section" data-cms-section="journal" key={slug} style={sectionStyle(slug)}><div className="tso-public-container"><div className="tso-section-head"><div><div className="tso-eyebrow">The Salt Journal</div><h2>Research-led content for serious buyers.</h2><p>Commercial guides, private-label insights, sourcing topics and export-oriented educational content.</p></div><Link href="/blog" className="tso-button secondary">Open Journal<ArrowRight /></Link></div><div className="tso-blog-grid">{blogs.length ? blogs.map((post) => <article key={post.id}><div className="tso-blog-media">{post.featured_image ? <img src={post.featured_image} alt={post.title}/> : <img src="/hero-banner.png" alt="Himalayan pink salt editorial"/>}</div><div><span>{post.category || "Buyer Intelligence"}</span><h3>{post.title}</h3><p>{post.excerpt || "Read the latest commercial insight from The Salt Origin."}</p><Link href={`/blog/${post.slug}`}>Read Blog<ArrowRight/></Link></div></article>) : ["Choosing the right salt format for your market", "Private-label planning before artwork approval", "What buyers should prepare before requesting a quotation"].map((title,index)=><article key={title}><div className="tso-blog-media"><img src={index===0?"/hero-banner.png":index===1?"/custom-labels.png":"/white-sack.png"} alt="Salt buyer guide"/></div><div><span>Buyer Guide</span><h3>{title}</h3><p>Practical sourcing, packaging and export guidance for professional salt buyers.</p><Link href="/blog">Open Journal<ArrowRight/></Link></div></article>)}</div></div></section>;
     }
 
     if (slug === "faq") {
-      return <section className="tso-section" data-cms-section="faq" key={slug}><div className="tso-public-container tso-faq-grid"><div><div className="tso-eyebrow">Buyer Questions</div><h2>Fewer emails. Faster commercial decisions.</h2><p>Published FAQ Intelligence answers appear here automatically after human approval.</p><Link href="/faqs" className="tso-button secondary">View All FAQ<ArrowRight/></Link></div><div className="tso-faq-list">{faqs.length ? faqs.map((faq,index)=><details key={faq.id} open={index===0}><summary>{faq.question}<span>+</span></summary><p>{faq.answer}</p></details>) : <><details open><summary>Can buyers request private-label packaging?<span>+</span></summary><p>Yes. The private-label workflow is designed to collect market, pack format, quantity and branding requirements before quotation.</p></details><details><summary>Can product documents be requested online?<span>+</span></summary><p>Verified specifications and supporting files can be managed from the CMS and shared through controlled buyer workflows.</p></details></>}</div></div></section>;
+      return <section className="tso-section" data-cms-section="faq" key={slug} style={sectionStyle(slug)}><div className="tso-public-container tso-faq-grid"><div><div className="tso-eyebrow">Buyer Questions</div><h2>Fewer emails. Faster commercial decisions.</h2><p>Clear answers to common sourcing, packaging, documentation and export questions.</p><Link href="/faqs" className="tso-button secondary">View All FAQ<ArrowRight/></Link></div><div className="tso-faq-list">{faqs.length ? faqs.map((faq,index)=><details key={faq.id} open={index===0}><summary>{faq.question}<span>+</span></summary><p>{faq.answer}</p></details>) : <><details open><summary>Can buyers request private-label packaging?<span>+</span></summary><p>Yes. Share your target market, pack format, quantity and branding requirements so our team can prepare the right quotation.</p></details><details><summary>Can product documents be requested online?<span>+</span></summary><p>Verified specifications and supporting files can be provided to qualified buyers upon request.</p></details></>}</div></div></section>;
     }
 
-    return <section className="tso-home-cta" data-cms-section="cta" key={slug}><div className="tso-public-container"><div><span>Commercial Desk</span><h2>Ready to build your salt program?</h2><p>Share the product, packaging, destination and approximate volume. Your inquiry can flow directly into the connected CMS lead and quotation workflow.</p></div><div><Link href="/contact" className="tso-button light">Request a Quote<ArrowRight/></Link><Link href="/products" className="tso-button glass">Explore Products<ArrowRight/></Link></div></div></section>;
+    return <section className="tso-home-cta" data-cms-section="cta" key={slug} style={sectionStyle(slug)}><div className="tso-public-container"><div><span>Commercial Desk</span><h2>Ready to build your salt program?</h2><p>Share the product, packaging, destination and approximate volume. Our export team will review your requirements and prepare the appropriate commercial response.</p></div><div><Link href="/contact" className="tso-button light">Request a Quote<ArrowRight/></Link><Link href="/products" className="tso-button glass">Explore Products<ArrowRight/></Link></div></div></section>;
   };
 
   return <main className="tso-public-home">{visibleSections.map((section) => renderSection(section.slug))}</main>;

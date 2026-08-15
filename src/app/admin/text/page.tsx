@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
 import { cmsPageLabels, cmsTextRegistry, type CmsTextSeed } from "@/lib/cms-registry";
+import { defaultSectionsForPage, isCanonicalCmsSection } from "@/lib/cms-section-registry";
 import {
   AlignCenter,
   AlignLeft,
@@ -41,7 +42,7 @@ const fallbackLanguages: Language[] = [
 ];
 const fontOptions = [
   { label: "Automatic — match live website", value: "inherit" },
-  { label: "Website Heading — Georgia", value: SITE_HEADING_FONT },
+  { label: "Website Heading — Cormorant Garamond", value: SITE_HEADING_FONT },
   { label: "Website Body — Inter", value: SITE_BODY_FONT },
   { label: "Georgia", value: "Georgia, Times New Roman, serif" },
   { label: "Times New Roman", value: "Times New Roman, Times, serif" },
@@ -70,7 +71,37 @@ const fontOptions = [
   { label: "Copperplate", value: "Copperplate, Copperplate Gothic Light, serif" },
   { label: "Brush Script", value: "Brush Script MT, Segoe Script, cursive" },
   { label: "Lucida Handwriting", value: "Lucida Handwriting, Segoe Script, cursive" },
-] as const;
+ ] as const;
+
+const livePageRoutes: Record<string, string> = {
+  home: "/",
+  about: "/about",
+  products: "/products",
+  "private-label": "/private-label",
+  certifications: "/certifications",
+  contact: "/contact",
+  blog: "/blog",
+  faqs: "/faqs",
+  "privacy-policy": "/privacy-policy",
+  "terms-and-conditions": "/terms-and-conditions",
+};
+
+function cleanLiveText(value: string | null | undefined) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function fieldLabelFrom(section: string, tag: string, position: number) {
+  const sectionLabel = section.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const tagLabel = ({ h1: "Main Heading", h2: "Heading", h3: "Subheading", h4: "Subheading", p: "Paragraph", a: "Link", button: "Button", label: "Label", summary: "FAQ Question", small: "Small Text", strong: "Strong Text", em: "Accent / Italic Text", span: "Text" } as Record<string, string>)[tag] || "Text";
+  return `${sectionLabel} — ${tagLabel} ${position}`;
+}
+
+function baseStyleForEntry(entry: Pick<Entry, "field_key" | "field_label">): CmsTextStyle {
+  if (entry.field_key.endsWith("title_accent") || /accent\s*\/\s*italic/i.test(entry.field_label)) {
+    return { ...defaultCmsTextStyle, fontFamily: SITE_HEADING_FONT, fontStyle: "italic", fontWeight: "500", color: "#8f1834" };
+  }
+  return { ...defaultCmsTextStyle };
+}
 
 export default function TextManagerPage() {
   const [languages, setLanguages] = useState<Language[]>(fallbackLanguages);
@@ -78,30 +109,48 @@ export default function TextManagerPage() {
   const [language, setLanguage] = useState("en");
   const [page, setPage] = useState("global");
   const [query, setQuery] = useState("");
+  const [activeSection, setActiveSection] = useState("all");
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [discovering, setDiscovering] = useState(false);
   const [translatingPage, setTranslatingPage] = useState(false);
   const [styles, setStyles] = useState<Record<string, CmsTextStyle>>({});
 
   useEffect(() => { void load(); }, []);
+  useEffect(() => { setActiveSection("all"); }, [page]);
 
   async function load() {
+    // Keep the CMS registry synchronized with the current coded website before reading it.
+    // This adds newly introduced fields without overwriting saved translations or styles.
+    const canonicalRegistry = cmsTextRegistry.filter((item) => isCanonicalCmsSection(item.page_slug, item.section_slug));
+    await supabase.from("cms_text_entries").upsert(canonicalRegistry, { onConflict: "page_slug,section_slug,field_key" });
     const [{ data: langs }, { data: rows }] = await Promise.all([
       supabase.from("cms_languages").select("*").eq("enabled", true).order("display_order"),
       supabase.from("cms_text_entries").select("*,cms_text_translations(language_code,value)").order("display_order"),
     ]);
     if (langs?.length) setLanguages(langs as Language[]);
     const db = (rows as Entry[]) || [];
-    const merged: Entry[] = cmsTextRegistry.map((seed): Entry => {
+    const merged: Entry[] = canonicalRegistry.map((seed): Entry => {
       const found = db.find((row) => row.page_slug === seed.page_slug && row.section_slug === seed.section_slug && row.field_key === seed.field_key);
       return found ? { ...seed, ...found } : seed;
     });
-    const extras = db.filter((row) => !merged.some((item) => item.page_slug === row.page_slug && item.section_slug === row.section_slug && item.field_key === row.field_key));
+    const registryKeys = new Set(canonicalRegistry.map((item) => `${item.page_slug}:${item.section_slug}:${item.field_key}`));
+    const extras = db.filter((row) => {
+      const key = `${row.page_slug}:${row.section_slug}:${row.field_key}`;
+      if (registryKeys.has(key)) return false;
+      // Global content is intentionally strict: old prototype navbar/footer/search
+      // records must never reappear in Text Manager or override the live website.
+      if (row.page_slug === "global") return false;
+      if (!isCanonicalCmsSection(row.page_slug, row.section_slug)) return false;
+      const pageHasCanonicalSections = defaultSectionsForPage(row.page_slug).length > 0;
+      if (!pageHasCanonicalSections) return true;
+      return row.section_slug.startsWith("custom-") || row.field_key.startsWith("live_");
+    });
     const all: Entry[] = [...merged, ...extras];
     setEntries(all);
     const nextStyles: Record<string, CmsTextStyle> = {};
-    all.forEach((row) => { nextStyles[`${row.page_slug}:${row.section_slug}:${row.field_key}`] = { ...defaultCmsTextStyle, ...(row.style_json || {}) }; });
+    all.forEach((row) => { nextStyles[`${row.page_slug}:${row.section_slug}:${row.field_key}`] = { ...baseStyleForEntry(row), ...(row.style_json || {}) }; });
     setStyles(nextStyles);
     const next: Record<string, string> = {};
     all.forEach((row) => {
@@ -114,7 +163,8 @@ export default function TextManagerPage() {
 
   async function syncCurrentWebsite() {
     setSyncing(true);
-    const { error } = await supabase.from("cms_text_entries").upsert(cmsTextRegistry, { onConflict: "page_slug,section_slug,field_key" });
+    const canonicalRegistry = cmsTextRegistry.filter((item) => isCanonicalCmsSection(item.page_slug, item.section_slug));
+    const { error } = await supabase.from("cms_text_entries").upsert(canonicalRegistry, { onConflict: "page_slug,section_slug,field_key" });
     if (error) { setSyncing(false); return alert(`${error.message}\n\nRun THE-SALT-ORIGIN-LIVE-CMS.sql and confirm you are logged in.`); }
     const { data: synced } = await supabase
       .from("cms_text_entries")
@@ -132,13 +182,95 @@ export default function TextManagerPage() {
     alert("All current website text is now visible in the CMS.");
   }
 
+  async function discoverLivePageText() {
+    const route = livePageRoutes[page];
+    if (!route) {
+      alert("This area is already managed through the global branding and footer fields.");
+      return;
+    }
+    setDiscovering(true);
+    try {
+      const response = await fetch(route, { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok) throw new Error(`Could not open ${route} (${response.status})`);
+      const html = await response.text();
+      const documentCopy = new DOMParser().parseFromString(html, "text/html");
+      const sections = Array.from(documentCopy.querySelectorAll<HTMLElement>("[data-cms-section]"));
+      const seeds: CmsTextSeed[] = [];
+      let order = 5000;
+
+      for (const section of sections) {
+        const sectionSlug = section.dataset.cmsSection || "content";
+        const elements = Array.from(section.querySelectorAll<HTMLElement>("h1,h2,h3,h4,p,a,button,label,summary,small,strong,em,span"));
+        const seen = new Set<string>();
+        let position = 0;
+        for (const element of elements) {
+          if (element.closest("[data-cms-runtime-ignore]")) continue;
+          const text = cleanLiveText(element.textContent);
+          if (text.length < 2 || text.length > 650) continue;
+          const nestedSemantic = Array.from(element.children).some((child) => /^(H1|H2|H3|H4|P|A|BUTTON|LABEL|SUMMARY|SMALL|STRONG|EM|SPAN)$/.test(child.tagName) && cleanLiveText(child.textContent));
+          if (nestedSemantic) continue;
+          const fingerprint = `${sectionSlug}:${element.tagName}:${text}`;
+          if (seen.has(fingerprint)) continue;
+          seen.add(fingerprint);
+          position += 1;
+          const explicit = element.dataset.cmsKey?.split(".").slice(-1)[0];
+          const fieldKey = explicit || `live_${element.tagName.toLowerCase()}_${String(position).padStart(2, "0")}`;
+          seeds.push({
+            page_slug: page,
+            section_slug: sectionSlug,
+            field_key: fieldKey,
+            field_label: fieldLabelFrom(sectionSlug, element.tagName.toLowerCase(), position),
+            field_type: text.length > 120 ? "textarea" : "text",
+            default_value: text,
+            display_order: order++,
+          });
+        }
+      }
+
+      if (!seeds.length) {
+        alert("No additional live text was found on this page.");
+        return;
+      }
+
+      const { data: currentRows, error: currentError } = await supabase
+        .from("cms_text_entries")
+        .select("page_slug,section_slug,field_key")
+        .eq("page_slug", page);
+      if (currentError) throw currentError;
+      const existingKeys = new Set((currentRows || []).map((row) => `${row.page_slug}:${row.section_slug}:${row.field_key}`));
+      const missing = seeds.filter((seed) => !existingKeys.has(`${seed.page_slug}:${seed.section_slug}:${seed.field_key}`));
+      if (missing.length) {
+        const { error } = await supabase.from("cms_text_entries").insert(missing);
+        if (error) throw error;
+      }
+      await load();
+      alert(missing.length ? `${missing.length} live text fields were added to ${cmsPageLabels[page] || page}.` : "All visible text on this page is already available in Text Manager.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Live page scan failed");
+    } finally {
+      setDiscovering(false);
+    }
+  }
+
   const pages = useMemo(() => Array.from(new Set(entries.map((entry) => entry.page_slug))), [entries]);
-  const visible = useMemo(() => entries.filter((entry) => entry.page_slug === page && (!query || `${entry.field_label} ${entry.section_slug} ${entry.field_key}`.toLowerCase().includes(query.toLowerCase()))), [entries, page, query]);
+  const pageEntries = useMemo(() => entries.filter((entry) => entry.page_slug === page), [entries, page]);
+  const sectionOptions = useMemo(() => {
+    const canonical = defaultSectionsForPage(page).map((section) => ({ slug: section.slug, label: section.label }));
+    const seen = new Set(canonical.map((section) => section.slug));
+    for (const entry of pageEntries) {
+      if (!seen.has(entry.section_slug)) {
+        canonical.push({ slug: entry.section_slug, label: entry.section_slug.replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) });
+        seen.add(entry.section_slug);
+      }
+    }
+    return canonical;
+  }, [page, pageEntries]);
+  const visible = useMemo(() => pageEntries.filter((entry) => (activeSection === "all" || entry.section_slug === activeSection) && (!query || `${entry.field_label} ${entry.section_slug} ${entry.field_key}`.toLowerCase().includes(query.toLowerCase()))), [pageEntries, activeSection, query]);
   const grouped = useMemo(() => visible.reduce<Record<string, Entry[]>>((groups, entry) => { (groups[entry.section_slug] ||= []).push(entry); return groups; }, {}), [visible]);
 
   function localKey(entry: Entry, lang = language) { return `${entry.page_slug}:${entry.section_slug}:${entry.field_key}:${lang}`; }
   function styleKey(entry: Entry) { return `${entry.page_slug}:${entry.section_slug}:${entry.field_key}`; }
-  function getStyle(entry: Entry) { return styles[styleKey(entry)] || { ...defaultCmsTextStyle }; }
+  function getStyle(entry: Entry) { return styles[styleKey(entry)] || baseStyleForEntry(entry); }
   function updateStyle(entry: Entry, patch: Partial<CmsTextStyle>) { setStyles((current) => ({ ...current, [styleKey(entry)]: { ...getStyle(entry), ...patch } })); }
   function getValue(entry: Entry, lang = language) {
     const direct = values[localKey(entry, lang)];
@@ -246,12 +378,13 @@ export default function TextManagerPage() {
       <div className="os-page legacy-unified-page text-manager-page space-y-5">
         <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
           <div>
-            <p className="uppercase tracking-[4px] text-blue-400 font-black text-xs">Content Manager</p>
-            <h1 className="cms-page-title">Text Manager</h1>
+            <p className="uppercase tracking-[4px] text-blue-400 font-black text-xs">Website Management</p>
+            <h1 className="cms-page-title">Website Text Manager</h1>
+            <p className="os-page-subtitle">Edit every live page section field-by-field, including mixed heading accents, font, size, color, alignment, spacing and language variants.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search text fields..." className="w-72 max-w-[70vw] rounded-xl border pl-11 pr-4 py-3"/></div>
-            <button onClick={syncCurrentWebsite} disabled={syncing} className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 px-4 py-3 font-black text-sm"><RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`}/>{syncing ? "Syncing..." : "Sync Current Website"}</button>
+            <button onClick={syncCurrentWebsite} disabled={syncing} className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 px-4 py-3 font-black text-sm"><RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`}/>{syncing ? "Syncing..." : "Sync Current Website"}</button><button onClick={discoverLivePageText} disabled={discovering || page === "global"} className="inline-flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 px-4 py-3 font-black text-sm"><Search className={`w-4 h-4 ${discovering ? "animate-pulse" : ""}`}/>{discovering ? "Scanning..." : "Scan Live Page A–Z"}</button>
             <button onClick={translateWholePage} disabled={translatingPage} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white px-4 py-3 font-black text-sm"><Sparkles className={`w-4 h-4 ${translatingPage ? "animate-spin" : ""}`}/>{translatingPage ? "Translating..." : "Translate Whole Page"}</button>
           </div>
         </div>
@@ -259,11 +392,24 @@ export default function TextManagerPage() {
         <div className="text-manager-shell cms-panel grid lg:grid-cols-[220px_1fr] rounded-[24px] border overflow-hidden min-h-[700px]">
           <aside className="text-manager-sidebar border-r p-4"><p className="text-[10px] uppercase tracking-[3px] text-slate-500 font-black px-2 mb-3">Website Pages</p><div className="space-y-1">{pages.map((pageSlug) => <button key={pageSlug} onClick={() => setPage(pageSlug)} className={`text-page-button w-full text-left px-3 py-3 rounded-xl font-bold text-sm ${page === pageSlug ? "active" : ""}`}>{cmsPageLabels[pageSlug] || pageSlug}</button>)}</div></aside>
           <section className="p-4 lg:p-6 space-y-5 min-w-0">
+            <div className="text-manager-sections rounded-2xl border p-4">
+              <div className="mb-3">
+                <p className="text-[10px] uppercase tracking-[3px] font-black">Page Sections</p>
+                <h2 className="mt-1 text-lg font-semibold">{cmsPageLabels[page] || page}</h2>
+                <p className="mt-1 text-xs opacity-60">Section select karo, phir usi section ke text aur styling controls neeche edit karo.</p>
+              </div>
+              <div className="text-manager-section-tabs" role="tablist" aria-label="Page sections">
+                <button type="button" onClick={() => setActiveSection("all")} className={`text-section-button ${activeSection === "all" ? "active" : ""}`}>All Sections</button>
+                {sectionOptions.map((section) => (
+                  <button key={section.slug} type="button" onClick={() => setActiveSection(section.slug)} className={`text-section-button ${activeSection === section.slug ? "active" : ""}`}>{section.label}</button>
+                ))}
+              </div>
+            </div>
             <div className="text-language-panel rounded-2xl border p-4"><div className="flex items-center gap-3 mb-3"><Languages className="text-blue-400"/><h2 className="font-black">Editing language</h2></div><div className="flex flex-wrap gap-2">{languages.map((item) => <button key={item.code} onClick={() => setLanguage(item.code)} className={`language-pill px-3 py-2 rounded-lg font-bold text-xs ${language === item.code ? "active" : ""}`}>{item.native_name}</button>)}</div><p className="text-[11px] text-slate-500 mt-3">English content can be automatically translated with the blue-violet translation controls. Missing translations fall back to English. {activeLang.direction === "rtl" ? "This language uses RTL." : ""}</p></div>
 
             {Object.entries(grouped).map(([section, rows]) => <section key={section} className="text-section-panel rounded-2xl border p-5"><div className="mb-5"><p className="text-[10px] uppercase tracking-[4px] text-blue-400 font-black">{cmsPageLabels[page] || page}</p><h2 className="text-xl font-black mt-1 capitalize">{section.replaceAll("_", " ")} Section</h2></div><div className="space-y-5">{rows.map((entry) => {
               const key = localKey(entry);
-              return <div key={`${entry.page_slug}-${entry.section_slug}-${entry.field_key}`} className="border-b border-white/10 pb-5 last:border-0 last:pb-0"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2"><div><label className="font-black text-sm">{entry.field_label}</label><p className="text-[11px] text-slate-500">{entry.field_key}</p></div><div className="flex gap-2"><button onClick={() => save(entry)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Save className="w-4 h-4"/>{saving === key ? "Saving..." : "Save"}</button>{language === "en" && <button onClick={() => save(entry, true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Sparkles className="w-4 h-4"/>Save + Translate All</button>}</div></div><div className="text-toolbar mb-3 flex flex-wrap items-center gap-2 rounded-xl border p-2">
+              return <div key={`${entry.page_slug}-${entry.section_slug}-${entry.field_key}`} className="text-manager-entry border-b border-white/10 pb-5 last:border-0 last:pb-0"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2"><div><label className="font-black text-sm">{entry.field_label}</label><p className="text-[11px] text-slate-500">{entry.field_key}</p></div><div className="flex gap-2"><button onClick={() => save(entry)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Save className="w-4 h-4"/>{saving === key ? "Saving..." : "Save"}</button>{language === "en" && <button onClick={() => save(entry, true)} className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-xs font-black"><Sparkles className="w-4 h-4"/>Save + Translate All</button>}</div></div><div className="text-toolbar mb-3 flex flex-wrap items-center gap-2 rounded-xl border p-2">
                 <span className="inline-flex items-center gap-2 px-2 text-[10px] font-black text-slate-500"><Type className="w-4 h-4"/>Website fonts</span>
                 <select
                   value={getStyle(entry).fontFamily || "inherit"}
@@ -311,13 +457,16 @@ export default function TextManagerPage() {
                     Clear
                   </button>
                 </label>
-                <button type="button" title="Reset to the live website font and default styling" onClick={()=>setStyles((current)=>({...current,[styleKey(entry)]:{...defaultCmsTextStyle}}))} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black"><RotateCcw className="w-4 h-4"/>Website Default</button>
+                <button type="button" title="Reset to the live website font and default styling" onClick={()=>setStyles((current)=>({...current,[styleKey(entry)]:baseStyleForEntry(entry)}))} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black"><RotateCcw className="w-4 h-4"/>Website Default</button>
                 <div className="inline-flex items-center overflow-hidden rounded-lg border bg-white/5">
                   <button type="button" className="px-3 py-2 font-black" onClick={()=>{const n=parseInt(getStyle(entry).fontSize||"16")||16;updateStyle(entry,{fontSize:`${Math.max(8,n-1)}px`})}}>−</button>
                   <input type="number" min={8} max={300} value={parseInt(getStyle(entry).fontSize||"16")||16} onChange={e=>updateStyle(entry,{fontSize:`${Math.min(300,Math.max(8,Number(e.target.value)||16))}px`})} className="w-20 border-x bg-transparent px-2 py-2 text-center text-xs" aria-label="Font size"/>
                   <span className="px-2 text-[10px] font-black text-slate-500">PX</span>
                   <button type="button" className="px-3 py-2 font-black" onClick={()=>{const n=parseInt(getStyle(entry).fontSize||"16")||16;updateStyle(entry,{fontSize:`${Math.min(300,n+1)}px`})}}>+</button>
                 </div>
+                <select value={getStyle(entry).fontWeight || ""} onChange={(event)=>updateStyle(entry,{fontWeight:event.target.value})} className="text-style-compact-select rounded-lg border px-2 py-2 text-xs" aria-label="Font weight"><option value="">Theme weight</option><option value="400">400 Regular</option><option value="500">500 Medium</option><option value="600">600 Semi Bold</option><option value="700">700 Bold</option><option value="800">800 Extra Bold</option><option value="900">900 Black</option></select>
+                <label className="text-style-number"><span>Letter Spacing</span><input type="number" step="0.1" value={parseFloat(getStyle(entry).letterSpacing || "0") || 0} onChange={(event)=>updateStyle(entry,{letterSpacing:`${Number(event.target.value) || 0}px`})}/><small>px</small></label>
+                <label className="text-style-number"><span>Line Height</span><input type="number" min="0.7" max="3" step="0.05" value={parseFloat(getStyle(entry).lineHeight || "1.2") || 1.2} onChange={(event)=>updateStyle(entry,{lineHeight:String(Math.max(.7,Math.min(3,Number(event.target.value)||1.2)))})}/></label>
                 <button type="button" title="Bold" onClick={()=>updateStyle(entry,{fontWeight:getStyle(entry).fontWeight==="700"?"":"700"})} className={`p-2 rounded-lg ${getStyle(entry).fontWeight==="700"?"bg-blue-600":"bg-white/5"}`}><Bold className="w-4 h-4"/></button>
                 <button type="button" title="Italic" onClick={()=>updateStyle(entry,{fontStyle:getStyle(entry).fontStyle==="italic"?"normal":"italic"})} className={`p-2 rounded-lg ${getStyle(entry).fontStyle==="italic"?"bg-blue-600":"bg-white/5"}`}><Italic className="w-4 h-4"/></button>
                 <button type="button" title="Underline" onClick={()=>updateStyle(entry,{textDecoration:getStyle(entry).textDecoration==="underline"?"none":"underline"})} className={`p-2 rounded-lg ${getStyle(entry).textDecoration==="underline"?"bg-blue-600":"bg-white/5"}`}><Underline className="w-4 h-4"/></button>

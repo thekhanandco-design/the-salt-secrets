@@ -50,8 +50,8 @@ export default async function LegalPolicyPage({ pageSlug, fallbackTitle }: Legal
             paragraphs.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>)
           ) : (
             <div className="legal-policy-empty">
-              <strong>Content not published yet</strong>
-              <p>This page is connected to the CMS. Add and publish the legal text from Website Text Manager or Pages.</p>
+              <strong>Policy information is being updated.</strong>
+              <p>Please contact our team if you need assistance with this policy.</p>
             </div>
           )}
           {page?.updated_at ? <small>Last updated: {new Date(page.updated_at).toLocaleDateString()}</small> : null}

@@ -40,7 +40,7 @@ export default function Turnstile({ onToken, action = "form_submit", theme = "li
     };
   }, [action, id, onToken, siteKey, theme]);
 
-  if (!siteKey) return process.env.NODE_ENV === "development" ? <p className="text-xs text-amber-700">Turnstile development bypass: add NEXT_PUBLIC_TURNSTILE_SITE_KEY before production.</p> : null;
+  if (!siteKey) return null;
 
   return <><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" /><div id={id} className="min-h-[65px]" /></>;
 }

@@ -11,6 +11,11 @@ export type ExportLineItem = {
   unit_price?: number;
   origin?: string;
   hs_code?: string;
+  cartons?: number;
+  net_weight?: number;
+  gross_weight?: number;
+  dimensions?: string;
+  shipping_marks?: string;
 };
 
 export type ExportDocumentPayload = {
@@ -41,6 +46,7 @@ export type ExportDocumentPayload = {
   company_website?: string;
   authorized_by?: string;
   authorized_title?: string;
+  bank_details?: string;
   freight?: number;
   discount?: number;
   insurance?: number;
@@ -159,7 +165,8 @@ function buildPage(payload: ExportDocumentPayload, items: ExportLineItem[], page
     page.text(item.moq || "", cols[2] + 4, y + 22, 5.8);
     page.text(Number(item.quantity || 0), cols[3] + 7, y + 22, 5.8);
     page.text(item.unit || "", cols[4] + 7, y + 22, 5.8);
-    const packagingLines = lineWrap(item.packaging || "", 17).slice(0, 2);
+    const packingText = [item.packaging || "", payload.document_type === "packing_list" && item.cartons ? `${item.cartons} pkgs` : "", payload.document_type === "packing_list" && item.net_weight ? `NW ${item.net_weight}kg` : "", payload.document_type === "packing_list" && item.gross_weight ? `GW ${item.gross_weight}kg` : "", payload.document_type === "packing_list" ? item.dimensions || "" : ""].filter(Boolean).join(" / ");
+    const packagingLines = lineWrap(packingText, 17).slice(0, 2);
     packagingLines.forEach((line, lineIndex) => page.text(line, cols[5] + 4, y + 25 - lineIndex * 9, 5.4));
     page.text(money(Number(item.unit_price || 0), currency), cols[6] + 4, y + 22, 5.2);
     page.text(money(Number(item.quantity || 0) * Number(item.unit_price || 0), currency), cols[7] + 4, y + 22, 5.2);
@@ -174,6 +181,7 @@ function buildPage(payload: ExportDocumentPayload, items: ExportLineItem[], page
       payload.shipment_method ? `Shipment: ${payload.shipment_method}` : "",
       payload.certifications?.length ? `Certifications: ${payload.certifications.join(", ")}` : "",
       payload.notes || "",
+      payload.bank_details ? `Bank: ${payload.bank_details}` : "",
     ].filter(Boolean).flatMap(value => lineWrap(String(value), 70).slice(0, 3));
     let termY = sectionTop - 15;
     for (const line of termLines.slice(0, 10)) { page.text(`• ${line}`, 52, termY, 5.4); termY -= 10; }

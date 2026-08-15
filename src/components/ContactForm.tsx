@@ -2,31 +2,24 @@
 
 import { useCallback, useState } from "react";
 import Turnstile from "@/components/security/Turnstile";
-import {
-  Building2,
-  Lock,
-  Mail,
-  MessageSquare,
-  Phone,
-  Send,
-  Tag,
-  User,
-} from "lucide-react";
 
-const productOptions = [
-  "Private Label",
-  "PET Bottles",
-  "PET Jars",
-  "Grinder Bottles",
-  "Stand-Up Pouches",
-  "Bulk Salt Supply",
-];
+const VOLUME_OPTIONS = [
+  "Sample / Trial Order",
+  "Up to 500 kg",
+  "500 kg – 1 ton",
+  "1 – 5 tons",
+  "5 – 10 tons",
+  "10 – 25 tons",
+  "25+ tons",
+  "Other",
+] as const;
 
 export default function ContactForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [volumeOption, setVolumeOption] = useState("");
   const onTurnstile = useCallback((token: string) => setTurnstileToken(token), []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -34,10 +27,11 @@ export default function ContactForm() {
     setLoading(true);
     setSuccess(false);
     setError("");
-
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const products = formData.getAll("product").map(String);
+    const quantity = volumeOption === "Other"
+      ? String(formData.get("quantity_other") || "").trim()
+      : String(formData.get("quantity_option") || "").trim();
 
     const response = await fetch("/api/contact", {
       method: "POST",
@@ -48,152 +42,52 @@ export default function ContactForm() {
         company: formData.get("company"),
         whatsapp: formData.get("whatsapp"),
         country: formData.get("country"),
-        product: products.join(", "),
-        quantity: formData.get("quantity"),
+        product: formData.get("inquiry_type"),
+        quantity,
         message: formData.get("message"),
         website: formData.get("website"),
         turnstileToken,
       }),
     });
-
     setLoading(false);
     const result = await response.json().catch(() => ({}));
-
     if (response.ok) {
       setSuccess(true);
       setTurnstileToken("");
+      setVolumeOption("");
       form.reset();
     } else {
       setError(result.error || "Inquiry could not be sent.");
     }
   }
 
-  const inputClass =
-    "contact-premium-input h-14 w-full rounded-xl border px-12 text-[#081325] outline-none transition placeholder:text-slate-400";
-
   return (
     <>
-      <div className="mb-7">
-        <p className="brand-eyebrow text-left">INQUIRY FORM</p>
-        <h2 className="site-heading-font mt-3 text-3xl font-black text-[#07142B]">
-          Send Us Your Requirements
-        </h2>
-      </div>
-
-      {success && (
-        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-center font-semibold text-green-700">
-          Inquiry sent successfully. Our team will contact you soon.
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center font-semibold text-red-700">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <input
-          name="website"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-          className="hidden"
-        />
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field icon={<User />}>
-            <input name="name" placeholder="Full Name *" required className={inputClass} />
-          </Field>
-          <Field icon={<Building2 />}>
-            <input name="company" placeholder="Company Name" className={inputClass} />
-          </Field>
-          <Field icon={<Mail />}>
-            <input name="email" type="email" placeholder="Email Address *" required className={inputClass} />
-          </Field>
-          <Field icon={<Phone />}>
-            <input name="whatsapp" placeholder="Phone / WhatsApp *" required className={inputClass} />
-          </Field>
-        </div>
-
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <input
-            name="country"
-            placeholder="Country / Market"
-            className="contact-premium-input h-14 w-full rounded-xl border px-5 text-[#081325] outline-none transition placeholder:text-slate-400"
-          />
-          <select
-            name="quantity"
-            defaultValue=""
-            className="contact-premium-input h-14 w-full rounded-xl border px-5 text-[#081325] outline-none transition"
-          >
-            <option value="" disabled>Estimated Quantity</option>
-            <option>6,000 PCS</option>
-            <option>10,000 PCS</option>
-            <option>25,000 PCS</option>
-            <option>50,000 PCS+</option>
-            <option>1 Ton+</option>
-            <option>5 Tons+</option>
+      <div className="tso-contact-form-title"><div className="tso-eyebrow">B2B Inquiry Form</div><h2>Send a message</h2></div>
+      {success ? <div className="tso-contact-alert success">Inquiry sent successfully. Our team will contact you soon.</div> : null}
+      {error ? <div className="tso-contact-alert error">{error}</div> : null}
+      <form onSubmit={handleSubmit} className="tso-contact-form-grid">
+        <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="tso-honeypot" />
+        <label><span>Full Name</span><input name="name" required placeholder="Your name" /></label>
+        <label><span>Business Email</span><input name="email" type="email" required placeholder="you@company.com" /></label>
+        <label><span>Company</span><input name="company" placeholder="Company name" /></label>
+        <label><span>WhatsApp / Phone</span><input name="whatsapp" required placeholder="+00 000 0000000" /></label>
+        <label><span>Country</span><input name="country" placeholder="Destination market" /></label>
+        <label><span>Inquiry Type</span><select name="inquiry_type" defaultValue="Product Inquiry"><option>Product Inquiry</option><option>Private Label</option><option>Bulk Supply</option><option>Samples</option><option>Documents</option></select></label>
+        <label className={volumeOption === "Other" ? "full" : ""}>
+          <span>Estimated Volume</span>
+          <select name="quantity_option" required value={volumeOption} onChange={(event) => setVolumeOption(event.target.value)}>
+            <option value="" disabled>Select estimated volume</option>
+            {VOLUME_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-[#EEDCE1] bg-[#FFF9FA] p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Tag className="h-5 w-5 text-[var(--brand-pink)]" />
-            <span className="font-black text-[#081325]">Product Interest *</span>
-          </div>
-          <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            {productOptions.map((product) => (
-              <label key={product} className="contact-product-option">
-                <input type="checkbox" name="product" value={product} />
-                <span>{product}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative mt-5">
-          <MessageSquare className="absolute left-4 top-5 h-5 w-5 text-slate-400" />
-          <textarea
-            name="message"
-            rows={6}
-            placeholder="Tell us about the product, packaging, quantity and destination market *"
-            required
-            className="contact-premium-input w-full rounded-xl border p-5 pl-12 text-[#081325] outline-none transition placeholder:text-slate-400"
-          />
-        </div>
-
-        <div className="mt-6 flex justify-center">
-          <Turnstile action="contact_form" onToken={onTurnstile} />
-        </div>
-
-        <button type="submit" disabled={loading} className="brand-gradient-button mt-6 w-full justify-center disabled:opacity-60">
-          <Send className="h-5 w-5" />
-          {loading ? "Sending…" : "Send Inquiry"}
-        </button>
-
-        <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
-          <Lock className="h-4 w-4" />
-          Your information is kept private and used only to respond to your inquiry.
-        </p>
+        </label>
+        {volumeOption === "Other" ? (
+          <label className="full tso-contact-other-volume"><span>Enter Your Volume / Quantity</span><input name="quantity_other" required placeholder="e.g. 18 tons / 24,000 units" /></label>
+        ) : null}
+        <label className="full"><span>Message</span><textarea name="message" required rows={5} placeholder="Product, grain size, packaging, destination and target timing…" /></label>
+        <div className="full tso-contact-turnstile"><Turnstile action="contact_form" onToken={onTurnstile} /></div>
+        <button className="full tso-contact-submit" disabled={loading} type="submit"><span>{loading ? "Sending…" : "Send Inquiry"}</span></button>
       </form>
     </>
-  );
-}
-
-function Field({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 [&>svg]:h-5 [&>svg]:w-5">
-        {icon}
-      </span>
-      {children}
-    </div>
   );
 }

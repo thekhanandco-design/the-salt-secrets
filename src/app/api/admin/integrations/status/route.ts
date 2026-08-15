@@ -9,6 +9,7 @@ type Definition = {
   anyOf?: string[][];
   mode?: "external" | "database";
   requiresStoredConnection?: boolean;
+  storedProviders?: string[];
 };
 
 const definitions: Definition[] = [
@@ -79,12 +80,14 @@ const definitions: Definition[] = [
   {
     id: "facebook",
     required: [],
-    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_FACEBOOK_TOKEN"]],
+    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_FACEBOOK_TOKEN", "FACEBOOK_ACCESS_TOKEN", "FACEBOOK_PAGE_ACCESS_TOKEN"]],
+    storedProviders: ["meta", "facebook", "facebook-page"],
   },
   {
     id: "instagram",
     required: [],
-    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_INSTAGRAM_TOKEN"]],
+    anyOf: [["META_ACCESS_TOKEN", "SOCIAL_INSTAGRAM_TOKEN", "INSTAGRAM_ACCESS_TOKEN", "INSTAGRAM_GRAPH_ACCESS_TOKEN"]],
+    storedProviders: ["meta", "instagram", "instagram-business"],
   },
   {
     id: "linkedin",
@@ -160,12 +163,14 @@ export async function GET(request: Request) {
         ...missingGroups.map((group) => group.join(" or ")),
       );
 
-      const db = storedMap.get(definition.id);
+      const providerCandidates = Array.from(new Set([definition.id, ...(definition.storedProviders || [])]));
+      const db = providerCandidates.map((provider) => storedMap.get(provider)).find(Boolean);
+      const storedConnected = providerCandidates.some((provider) => storedMap.get(provider)?.status === "connected");
 
       if (
         definition.requiresStoredConnection &&
         missing.length === 0 &&
-        db?.status !== "connected"
+        !storedConnected
       ) {
         missing.push("Authorize YouTube channel");
       }
@@ -178,14 +183,14 @@ export async function GET(request: Request) {
       const configured =
         definition.mode === "external"
           ? true
-          : hasRequirements && missing.length === 0;
+          : storedConnected || (hasRequirements && missing.length === 0);
 
       return {
         id: definition.id,
         configured,
         mode: definition.mode || "api",
-        missing,
-        storedStatus: db?.status || null,
+        missing: configured ? [] : missing,
+        storedStatus: storedConnected ? "connected" : db?.status || null,
         lastCheckedAt:
           db?.last_checked_at || db?.updated_at || null,
       };

@@ -1,275 +1,149 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
-import {
-  Award,
-  BadgeCheck,
-  ClipboardCheck,
-  Factory,
-  FileCheck,
-  Globe,
-  Search,
-  ShieldCheck,
-  Package,
-  FileText,
-} from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, X } from "lucide-react";
+import { supabase } from "@/lib/supabase-client";
+import { FACILITY_CERTIFICATIONS, certificationMatches } from "@/lib/certification-catalog";
 
-const certifications = [
-  {
-    title: "ISO 22000",
-    subtitle: "Food Safety Management System",
-    icon: ShieldCheck,
-  },
-  {
-    title: "HACCP",
-    subtitle: "Hazard Analysis & Critical Control Points",
-    icon: BadgeCheck,
-  },
-  {
-    title: "GMP",
-    subtitle: "Good Manufacturing Practice",
-    icon: Factory,
-  },
-  {
-    title: "HALAL",
-    subtitle: "Halal Compliant Production",
-    icon: Award,
-  },
-  {
-    title: "FDA",
-    subtitle: "FDA Registered Facility",
-    icon: ClipboardCheck,
-  },
-  {
-    title: "Food Safety",
-    subtitle: "International Food Safety Standards",
-    icon: ShieldCheck,
-  },
-];
-
-const documents = [
-  "ISO 22000 Certificate",
-  "HACCP Certificate",
-  "GMP Certificate",
-  "Halal Certificate",
-  "FDA Registration",
-];
+type Cert = {
+  id: string;
+  document_name: string;
+  category: string;
+  file_url?: string | null;
+  status?: string | null;
+  visibility?: string | null;
+};
 
 export default function CertificationsPage() {
+  const [certs, setCerts] = useState<Cert[]>([]);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    void supabase
+      .from("certifications")
+      .select("id,document_name,category,file_url,status,visibility")
+      .order("created_at")
+      .then(({ data }) => setCerts((data || []) as Cert[]));
+  }, []);
+
+  const items = useMemo(
+    () => FACILITY_CERTIFICATIONS.map((item) => ({
+      ...item,
+      record: certs.find((cert) => certificationMatches(cert, item)),
+    })).filter((item) => String(item.record?.visibility || "Public").toLowerCase() !== "hidden"),
+    [certs],
+  );
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSending(true);
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      name: form.get("name"),
+      email: form.get("email"),
+      company: form.get("company"),
+      designation: form.get("designation"),
+      whatsapp: form.get("whatsapp"),
+      country: form.get("country"),
+      message: form.get("message"),
+      certificates: selected,
+      website: form.get("website"),
+    };
+    const response = await fetch("/api/certification-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    setSending(false);
+    if (response.ok) {
+      setMessage("Your document request has been submitted for review.");
+      event.currentTarget.reset();
+      setSelected([]);
+    } else {
+      setMessage(data.error || "Unable to submit request.");
+    }
+  }
+
   return (
-    <main className="bg-white text-[#081325]">
-      {/* HERO */}
-
-      <section data-cms-section="hero" className="relative overflow-hidden bg-gradient-to-r from-[#FFF0F2] via-[#FFF6F7] to-white">
-        <div
-          className="absolute inset-y-0 right-0 w-full lg:w-[65%] bg-right bg-no-repeat bg-contain opacity-40"
-          style={{
-            backgroundImage: "url('/mountains-bg.png')",
-          }}
-        />
-
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 py-20">
-          <div className="max-w-[650px]">
-            <div className="flex items-center gap-4">
-              <span className="uppercase tracking-[5px] text-[#C23B4A] font-black text-sm">
-                Quality & Compliance
-              </span>
-              <span className="w-12 h-[2px] bg-[#C23B4A]" />
-            </div>
-
-            <h1
-              className="mt-5 font-black leading-tight text-[#081325]"
-              style={{
-                fontFamily: "Georgia, serif",
-                fontSize: "clamp(2.2rem,4vw,4.2rem)",
-              }}
-            >
-              Reliable Himalayan
-              <br />
-              Pink Salt Supply For
-              <br />
-              Brands Worldwide
-            </h1>
-
-            <p className="mt-6 text-slate-700 leading-relaxed text-lg">
-              From private label packaging to bulk export solutions,
-              we help businesses source premium Himalayan Pink Salt
-              products backed by quality-focused production, export
-              expertise, and reliable global supply.
-            </p>
-
-            <div className="flex flex-wrap gap-4 mt-8">
-              <Link
-                href="/contact"
-                className="bg-[#C23B4A] text-white px-8 py-4 rounded-md font-black"
-              >
-                Request Documents
-              </Link>
-
-              <Link
-                href="/contact"
-                className="border border-[#C23B4A] text-[#C23B4A] px-8 py-4 rounded-md font-black"
-              >
-                Get Quote →
-              </Link>
-            </div>
+    <main className="tso-route-page tso-certifications-page">
+      <section className="tso-page-hero" data-cms-section="hero">
+        <div className="tso-public-container tso-page-hero-grid">
+          <div>
+            <div className="tso-crumbs">HOME / CERTIFICATIONS</div>
+            <h1>Quality you can <em>verify.</em></h1>
+            <p>Our Himalayan pink salt products are manufactured and packed through certified facilities, with supporting documents available for qualified buyer review.</p>
           </div>
         </div>
       </section>
 
-      {/* CERTIFICATIONS */}
-
-      <section data-cms-section="cards" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
-        <div className="text-center">
-          <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">
-            Quality Standards Supported
-          </div>
-
-          <h2
-            className="mt-3 font-black"
-            style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "clamp(2rem,3vw,2.8rem)",
-            }}
-          >
-            Quality Certifications
-          </h2>
-
-          <p className="text-slate-600 mt-4 max-w-3xl mx-auto">
-            Our products are supplied in compliance with internationally
-            recognized quality and food safety standards required by
-            global buyers.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-5 mt-12">
-          {certifications.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <div
-                key={item.title}
-                className="border border-[#F1D9DD] rounded-[18px] p-6 text-center"
-              >
-                <Icon className="w-14 h-14 mx-auto text-[#C23B4A]" />
-
-                <h3 className="font-black mt-5">
-                  {item.title}
-                </h3>
-
-                <p className="text-sm text-slate-600 mt-3">
-                  {item.subtitle}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 border border-[#F1D9DD] rounded-xl p-5 text-center bg-[#FFF7F8]">
-          <span className="font-semibold text-slate-700">
-            These standards reflect our commitment to quality,
-            safety and consistency in every shipment we deliver.
-          </span>
-        </div>
-      </section>
-
-      {/* COMMITMENT */}
-
-      <section data-cms-section="commitment" className="max-w-[1400px] mx-auto px-6 lg:px-12 pb-16">
-        <div className="text-center">
-          <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">
-            Why Quality Matters
-          </div>
-
-          <h2
-            className="mt-3 font-black"
-            style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "clamp(2rem,3vw,2.8rem)",
-            }}
-          >
-            Our Commitment To Excellence
-          </h2>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mt-12">
-          <div className="text-center">
-            <ShieldCheck className="w-12 h-12 mx-auto text-[#C23B4A]" />
-            <h3 className="font-black mt-4">Food Safety</h3>
-            <p className="text-slate-600 text-sm mt-3">
-              Ensuring safe products for consumption.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <Award className="w-12 h-12 mx-auto text-[#C23B4A]" />
-            <h3 className="font-black mt-4">Quality Consistency</h3>
-            <p className="text-slate-600 text-sm mt-3">
-              Maintaining consistent quality in every batch.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <Globe className="w-12 h-12 mx-auto text-[#C23B4A]" />
-            <h3 className="font-black mt-4">Export Compliance</h3>
-            <p className="text-slate-600 text-sm mt-3">
-              Meeting international market requirements.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <BadgeCheck className="w-12 h-12 mx-auto text-[#C23B4A]" />
-            <h3 className="font-black mt-4">Customer Confidence</h3>
-            <p className="text-slate-600 text-sm mt-3">
-              Building long-term trust through quality.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* DOCUMENTS */}
-
-      <section data-cms-section="documents" className="bg-[#FFF8F8] py-16">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-          <div className="text-center">
-            <div className="uppercase tracking-[4px] text-[#C23B4A] font-black text-sm">
-              Quality & Compliance Documents
+      <section className="tso-route-section" data-cms-section="documents">
+        <div className="tso-public-container">
+          <div className="tso-section-head tso-certification-public-head">
+            <div>
+              <div className="tso-eyebrow">Certified Manufacturing & Packing Facility</div>
+              <h2>Facility documentation, <em>organized.</em></h2>
+              <p>The Salt Origin works with certified manufacturing and packing facilities. The documents below relate to the facility and supporting production/compliance systems, not a claim that every certification is issued directly to The Salt Origin.</p>
             </div>
-
-            <h2
-              className="mt-3 font-black"
-              style={{
-                fontFamily: "Georgia, serif",
-                fontSize: "clamp(2rem,3vw,2.8rem)",
-              }}
-            >
-              Documents Available On Request
-            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-5 mt-12">
-            {documents.map((doc) => (
-              <div
-                key={doc}
-                className="bg-white border border-[#F1D9DD] rounded-[18px] p-6 text-center"
-              >
-                <FileCheck className="w-12 h-12 mx-auto text-[#C23B4A]" />
-                <h3 className="font-black text-sm mt-4">
-                  {doc}
-                </h3>
-              </div>
+          <div className="tso-cert-grid-public tso-cert-grid-public--logos">
+            {items.map((item) => (
+              <article key={item.key} className="tso-cert-public-card">
+                <div className="tso-cert-logo-wrap">
+                  <Image src={item.image} alt={`${item.name} certification logo`} width={160} height={110} unoptimized />
+                </div>
+                <h3>{item.record?.document_name || item.name}</h3>
+                <p>{item.description}</p>
+                <span className="tso-cert-access-note">Available through approved document access</span>
+              </article>
             ))}
           </div>
 
-          <div className="text-center mt-8">
-            <Link
-              href="/contact"
-              className="bg-[#C23B4A] text-white px-8 py-4 rounded-md font-black inline-block"
-            >
-              Request Documents
-            </Link>
+          <div className="tso-compliance-note">Certificate copies, registration details, issue/expiry dates and supporting files are shared only after internal verification and buyer-access approval.</div>
+          <div className="tso-document-request-strip">
+            <div><h3>Need facility documents for your import review?</h3><p>Request the exact certificates and supporting files required by your company.</p></div>
+            <button className="tso-button primary" onClick={() => setOpen(true)}>Request Documents</button>
           </div>
         </div>
       </section>
+
+      {open ? (
+        <div className="tso-public-modal-backdrop">
+          <div className="tso-public-modal">
+            <button className="tso-public-modal-close" onClick={() => setOpen(false)}><X /></button>
+            <div className="tso-eyebrow">Document Access Request</div>
+            <h2>Request Facility Documents</h2>
+            <p>Tell us who you are and select the documents required for your review.</p>
+            <form onSubmit={submit} className="tso-request-form">
+              <input name="website" tabIndex={-1} autoComplete="off" className="tso-honeypot" />
+              <div><label>Name *</label><input name="name" required /></div>
+              <div><label>Business Email *</label><input name="email" type="email" required /></div>
+              <div><label>Company *</label><input name="company" required /></div>
+              <div><label>Designation</label><input name="designation" /></div>
+              <div><label>WhatsApp *</label><input name="whatsapp" required /></div>
+              <div><label>Country</label><input name="country" /></div>
+              <fieldset>
+                <legend>Documents Required *</legend>
+                {items.map((item) => (
+                  <label key={item.key}>
+                    <input type="checkbox" checked={selected.includes(item.name)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, item.name] : current.filter((value) => value !== item.name))} />
+                    {item.name}
+                  </label>
+                ))}
+              </fieldset>
+              <div className="full"><label>Notes</label><textarea name="message" rows={4} /></div>
+              {message ? <p className="full tso-form-message"><CheckCircle2 />{message}</p> : null}
+              <button className="tso-button primary full" disabled={sending || !selected.length}>{sending ? "Submitting…" : "Submit Document Request"}</button>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -15,10 +15,11 @@ export async function POST(request: Request) {
     if (!topic?.trim()) return NextResponse.json({ error: "Topic or primary keyword is required." }, { status: 400 });
     const { text, model } = await runOpenAI({
       model: process.env.OPENAI_BLOG_MODEL,
+      timeoutMs: 55_000,
       tools: [{ type: "web_search", search_context_size: "medium" }],
       input: `Research current buyer search intent and content gaps, then write an original ${language} B2B article about: ${topic}. Market: ${market}. Audience: ${audience}.
 Return only valid JSON with keys title, excerpt, content, seo_title, seo_description, slug, primary_keyword, secondary_keywords (array), keywords (array), image_prompt, source_topics (array), internal_link_suggestions (array), faq (array).
-The article must naturally include the primary keyword and useful secondary/long-tail keywords in the title, introduction, section headings, body and FAQ without keyword stuffing. Content length 1000-1400 words.
+The article must naturally include the primary keyword and useful secondary/long-tail keywords in the title, introduction, section headings, body and FAQ without keyword stuffing. Content length 550-850 words. Keep it concise, readable and useful as a blog rather than a long article.
 The content field must contain clean semantic HTML using only h2, h3, p, ul, ol, li and strong tags. Do not use #, ## or ### markdown headings. Do not include citations, external links, source URLs, markdown links or footnotes. Research is for topic selection and factual framing only. Include practical buyer guidance and a soft quotation CTA. Do not copy competitors, do not make medical claims, and do not invent statistics, prices, certifications, clients or backlinks.`,
     });
     const parsed = parseJsonResponse(text);

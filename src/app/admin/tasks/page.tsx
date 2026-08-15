@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
+import { adminFetch } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
 import {
   Bell,
@@ -48,10 +49,13 @@ type Task = {
   updated_at?: string;
 };
 
+type TeamMember = { id: string; email: string; fullName: string; role: string; enabled: boolean };
+
 type TaskForm = {
   title: string;
   description: string;
   assigned_name: string;
+  assigned_user_id: string;
   status: string;
   priority: string;
   due_at: string;
@@ -79,6 +83,7 @@ const blankForm: TaskForm = {
   title: "",
   description: "",
   assigned_name: "",
+  assigned_user_id: "",
   status: "To Do",
   priority: "Normal",
   due_at: "",
@@ -167,6 +172,7 @@ function TeamTasksPageContent() {
   const params = useSearchParams();
 
   const [rows, setRows] = useState<Task[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
@@ -204,6 +210,16 @@ function TeamTasksPageContent() {
     setLoading(false);
   }
 
+  async function loadMembers() {
+    try {
+      const response = await adminFetch("/api/admin/users");
+      const payload = await response.json();
+      if (response.ok) setMembers((payload.users || []).filter((member: TeamMember) => member.enabled !== false));
+    } catch {
+      setMembers([]);
+    }
+  }
+
   function openCreate() {
     setEditing(null);
     setForm(blankForm);
@@ -218,6 +234,7 @@ function TeamTasksPageContent() {
       title: row.title,
       description: row.description || "",
       assigned_name: row.assigned_name,
+      assigned_user_id: row.assigned_user_id || "",
       status: row.status,
       priority: row.priority,
       due_at: toLocalInput(row.due_at),
@@ -234,6 +251,7 @@ function TeamTasksPageContent() {
 
   useEffect(() => {
     void load();
+    void loadMembers();
   }, []);
 
   useEffect(() => {
@@ -448,6 +466,7 @@ function TeamTasksPageContent() {
       title: form.title.trim(),
       description: form.description.trim() || null,
       assigned_name: form.assigned_name.trim(),
+      assigned_user_id: form.assigned_user_id || null,
       status: form.status,
       priority: form.priority,
       due_at: form.due_at
@@ -658,6 +677,13 @@ function TeamTasksPageContent() {
           </div>
         </header>
 
+        {members.length > 0 && <section className="team-roster-strip">
+          <span className="team-roster-label">Team</span>
+          <div className="team-roster-avatars">{members.map((member) => <button key={member.id} title={`${member.fullName} · ${member.role.replaceAll("_", " ")}`} onClick={() => { setQuery(member.fullName); setActiveView("All"); }}>
+            <span>{member.fullName.split(/\s+/).map((part) => part[0]).join("").slice(0,2).toUpperCase()}</span><small>{member.fullName}</small>
+          </button>)}</div>
+        </section>}
+
         {error && (
           <section className="os-card">
             <div className="os-card-body">
@@ -816,6 +842,7 @@ function TeamTasksPageContent() {
                       setForm({
                         ...blankForm,
                         assigned_name: owner,
+                        assigned_user_id: members.find((member) => member.fullName === owner)?.id || "",
                       });
                       setModalOpen(true);
                     }}
@@ -1104,18 +1131,14 @@ function TeamTasksPageContent() {
 
                   <label className="os-label">
                     <span>Assigned Person *</span>
-
-                    <input
-                      value={form.assigned_name}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          assigned_name:
-                            event.target.value,
-                        }))
-                      }
-                      placeholder="e.g. Hamza"
-                    />
+                    <select value={form.assigned_user_id} onChange={(event) => {
+                      const member = members.find((item) => item.id === event.target.value);
+                      setForm((current) => ({ ...current, assigned_user_id: event.target.value, assigned_name: member?.fullName || current.assigned_name }));
+                    }}>
+                      <option value="">Manual / Unassigned staff</option>
+                      {members.map((member) => <option key={member.id} value={member.id}>{member.fullName} · {member.role.replaceAll("_", " ")}</option>)}
+                    </select>
+                    {!form.assigned_user_id && <input value={form.assigned_name} onChange={(event) => setForm((current) => ({ ...current, assigned_name: event.target.value }))} placeholder="Type staff name" style={{ marginTop: 7 }} />}
                   </label>
 
                   <label className="os-label">

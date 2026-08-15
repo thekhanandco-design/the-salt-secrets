@@ -7,7 +7,10 @@ import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 import { supabase } from "@/lib/supabase";
 import PwaRegister from "@/components/PwaRegister";
 
-const GA4_MEASUREMENT_ID = "G-D9ZSFZBT1E";
+const GA4_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID?.trim() ||
+  process.env.GA4_MEASUREMENT_ID?.trim() ||
+  "G-D9ZSFZBT1E";
 
 export async function generateMetadata(): Promise<Metadata> {
   let favicon = "/favicon.ico";

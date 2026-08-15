@@ -4,169 +4,143 @@ import { useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
 import { adminFetch } from "@/lib/admin-client";
-import {
-  cmsImageRegistry,
-  cmsPageLabels,
-  type CmsImageSlotSeed,
-} from "@/lib/cms-registry";
-import {
-  Grid2X2,
-  Image as ImageIcon,
-  List,
-  RefreshCw,
-  Search,
-  Sparkles,
-  Upload,
-} from "lucide-react";
+import { cmsImageRegistry, cmsPageLabels, type CmsImageSlotSeed } from "@/lib/cms-registry";
+import { Eye, EyeOff, ExternalLink, Grid2X2, Image as ImageIcon, List, RefreshCw, Search, Sparkles, Upload } from "lucide-react";
 
 type Slot = CmsImageSlotSeed & { id?: string };
 
+type SlotPatch = Partial<Pick<Slot, "current_url" | "alt_text" | "is_active">>;
+type ProductImageRow = { id: number; title: string; slug: string; image?: string | null; gallery?: string[] | null; status?: string | null };
+
+function productImageSlots(rows: ProductImageRow[]): Slot[] {
+  const slots: Slot[] = [];
+  rows.forEach((product, productIndex) => {
+    const section = `product-${product.id}`;
+    const main = String(product.image || "/product-2.png");
+    slots.push({ page_slug:"products", section_slug:section, slot_key:"main_image", title:`${product.title} — Main Product Image`, current_url:main, default_url:main, alt_text:product.title, recommended_width:1200, recommended_height:1200, display_order:5000 + productIndex * 10, is_active:true });
+    (Array.isArray(product.gallery) ? product.gallery : []).filter(Boolean).slice(0,6).forEach((url, index) => slots.push({ page_slug:"products", section_slug:section, slot_key:`gallery_${index + 1}`, title:`${product.title} — Gallery ${index + 1}`, current_url:String(url), default_url:String(url), alt_text:`${product.title} gallery ${index + 1}`, recommended_width:1200, recommended_height:1200, display_order:5001 + productIndex * 10 + index, is_active:true }));
+  });
+  return slots;
+}
+
+function productIdFromSlot(slot: Slot) { const match = /^product-(\d+)$/.exec(slot.section_slug); return match ? Number(match[1]) : null; }
+
+
+function slotKey(slot: Slot) {
+  return `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+}
+
+function routeFor(page: string) {
+  if (page === "global" || page === "home") return "/";
+  if (page === "privacy-policy") return "/privacy-policy";
+  if (page === "terms-and-conditions") return "/terms-and-conditions";
+  return `/${page}`;
+}
+
 export default function ImagesManagerPage() {
   const [slots, setSlots] = useState<Slot[]>(cmsImageRegistry);
-  const [activePage, setActivePage] = useState("global");
+  const [activePage, setActivePage] = useState("home");
+  const [activeSection, setActiveSection] = useState("all");
   const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
   async function load() {
-    const { data } = await supabase
-      .from("cms_image_slots")
-      .select("*")
-      .order("display_order");
-    const databaseSlots = (data as Slot[]) || [];
-
-    const merged = cmsImageRegistry.map((seed) => {
-      const found = databaseSlots.find(
-        (row) =>
-          row.page_slug === seed.page_slug &&
-          row.section_slug === seed.section_slug &&
-          row.slot_key === seed.slot_key,
-      );
-      return found
-        ? {
-            ...seed,
-            ...found,
-            current_url: found.current_url || seed.current_url,
-          }
-        : seed;
+    const [slotResult, productResult] = await Promise.all([
+      supabase.from("cms_image_slots").select("*").order("display_order"),
+      supabase.from("products").select("id,title,slug,image,gallery,status").order("display_order"),
+    ]);
+    const databaseSlots = (slotResult.data as Slot[]) || [];
+    const dynamicProductSlots = productImageSlots((productResult.data || []) as ProductImageRow[]);
+    const registry = [...cmsImageRegistry, ...dynamicProductSlots];
+    const merged = registry.map((seed) => {
+      const found = databaseSlots.find((row) => row.page_slug === seed.page_slug && row.section_slug === seed.section_slug && row.slot_key === seed.slot_key);
+      return found ? { ...seed, ...found, current_url: found.current_url || seed.current_url } : seed;
     });
-
-    const extras = databaseSlots.filter(
-      (row) =>
-        !merged.some(
-          (item) =>
-            item.page_slug === row.page_slug &&
-            item.section_slug === row.section_slug &&
-            item.slot_key === row.slot_key,
-        ),
-    );
-
+    const extras = databaseSlots.filter((row) => !merged.some((item) => item.page_slug === row.page_slug && item.section_slug === row.section_slug && item.slot_key === row.slot_key));
     setSlots([...merged, ...extras]);
+  }
+
+  async function persistSlot(slot: Slot, patch: SlotPatch) {
+    const next = { ...slot, ...patch, updated_at: new Date().toISOString() } as Slot & { updated_at: string };
+    delete (next as Partial<Slot>).id;
+    const { error } = await supabase.from("cms_image_slots").upsert(next, { onConflict: "page_slug,section_slug,slot_key" });
+    if (error) throw new Error(error.message);
+    const productId = productIdFromSlot(slot);
+    if (productId && patch.current_url) {
+      if (slot.slot_key === "main_image") {
+        const productUpdate = await supabase.from("products").update({ image:patch.current_url, updated_at:new Date().toISOString() }).eq("id", productId);
+        if (productUpdate.error) throw new Error(productUpdate.error.message);
+      } else if (slot.slot_key.startsWith("gallery_")) {
+        const index = Math.max(0, Number(slot.slot_key.replace("gallery_", "")) - 1);
+        const row = await supabase.from("products").select("gallery").eq("id", productId).maybeSingle();
+        if (row.error) throw new Error(row.error.message);
+        const gallery = Array.isArray(row.data?.gallery) ? [...row.data.gallery] : [];
+        gallery[index] = patch.current_url;
+        const productUpdate = await supabase.from("products").update({ gallery:gallery.filter(Boolean), updated_at:new Date().toISOString() }).eq("id", productId);
+        if (productUpdate.error) throw new Error(productUpdate.error.message);
+      }
+    }
+    setSlots((items) => items.map((item) => slotKey(item) === slotKey(slot) ? { ...item, ...patch } : item));
+    window.dispatchEvent(new Event("salt-cms-updated"));
   }
 
   async function syncCurrentWebsite() {
     setSyncing(true);
-
-    const { data: currentRows } = await supabase
-      .from("cms_image_slots")
-      .select("page_slug,section_slug,slot_key,current_url");
-
-    const currentMap = new Map(
-      ((currentRows as Array<{
-        page_slug: string;
-        section_slug: string;
-        slot_key: string;
-        current_url?: string | null;
-      }>) || []).map((row) => [
-        `${row.page_slug}:${row.section_slug}:${row.slot_key}`,
-        row.current_url,
-      ]),
-    );
-
-    const payload = cmsImageRegistry.map((item) => ({
-      ...item,
-      current_url:
-        currentMap.get(
-          `${item.page_slug}:${item.section_slug}:${item.slot_key}`,
-        ) || item.current_url,
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { error } = await supabase
-      .from("cms_image_slots")
-      .upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
-
-    setSyncing(false);
-
-    if (error) {
-      return alert(
-        `${error.message}\n\nMake sure you are logged in and have run THE-SALT-ORIGIN-LIVE-CMS.sql.`,
-      );
+    try {
+      const [slotRows, productRows] = await Promise.all([
+        supabase.from("cms_image_slots").select("page_slug,section_slug,slot_key,current_url,alt_text,is_active"),
+        supabase.from("products").select("id,title,slug,image,gallery,status").order("display_order"),
+      ]);
+      if (slotRows.error || productRows.error) throw new Error(slotRows.error?.message || productRows.error?.message || "Image sync failed.");
+      const currentMap = new Map((((slotRows.data as Slot[]) || [])).map((row) => [slotKey(row), row]));
+      const registry = [...cmsImageRegistry, ...productImageSlots((productRows.data || []) as ProductImageRow[])];
+      const payload = registry.map((item) => {
+        const current = currentMap.get(slotKey(item));
+        return {
+          ...item,
+          current_url: current?.current_url || item.current_url,
+          alt_text: current?.alt_text || item.alt_text,
+          is_active: current?.is_active !== false,
+          updated_at: new Date().toISOString(),
+        };
+      });
+      const { error } = await supabase.from("cms_image_slots").upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
+      if (error) throw new Error(error.message);
+      await load();
+      window.dispatchEvent(new Event("salt-cms-updated"));
+      alert(`Website image map synchronized. ${payload.length} live/static image slots are now mapped, including product detail images.`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Image synchronization failed.");
+    } finally {
+      setSyncing(false);
     }
-
-    await load();
-    window.dispatchEvent(new Event("salt-cms-updated"));
-    alert("Current website images synced without replacing uploaded images.");
   }
 
   async function replace(slot: Slot, file?: File) {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      return alert("Maximum image size is 5MB.");
-    }
-
-    const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+    if (file.size > 5 * 1024 * 1024) return alert("Maximum image size is 5MB.");
+    const key = slotKey(slot);
     setUploading(key);
-
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const path = `${slot.page_slug}/${slot.section_slug}/${Date.now()}-${safe}`;
-    const { error: uploadError } = await supabase.storage
-      .from("site-media")
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const path = `${slot.page_slug}/${slot.section_slug}/${Date.now()}-${safe}`;
+      const upload = await supabase.storage.from("site-media").upload(path, file, { upsert: true });
+      if (upload.error) throw new Error(upload.error.message);
+      const url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
+      await persistSlot(slot, { current_url: url, is_active: true });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Image upload failed.");
+    } finally {
       setUploading(null);
-      return alert(
-        `${uploadError.message}\n\nRun THE-SALT-ORIGIN-LIVE-CMS.sql and confirm the site-media bucket exists.`,
-      );
     }
-
-    const url = supabase.storage.from("site-media").getPublicUrl(path).data
-      .publicUrl;
-    const payload = {
-      ...slot,
-      current_url: url,
-      updated_at: new Date().toISOString(),
-    };
-    delete (payload as Partial<Slot>).id;
-
-    const { error } = await supabase
-      .from("cms_image_slots")
-      .upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
-
-    setUploading(null);
-    if (error) return alert(error.message);
-
-    setSlots((items) =>
-      items.map((item) =>
-        item.page_slug === slot.page_slug &&
-        item.section_slug === slot.section_slug &&
-        item.slot_key === slot.slot_key
-          ? { ...item, current_url: url }
-          : item,
-      ),
-    );
-    window.dispatchEvent(new Event("salt-cms-updated"));
   }
 
   async function saveGeneratedImage(slot: Slot, image: string) {
-    const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
     let url = image;
     if (image.startsWith("data:")) {
       const blob = await fetch(image).then((response) => response.blob());
@@ -175,24 +149,19 @@ export default function ImagesManagerPage() {
       if (upload.error) throw new Error(upload.error.message);
       url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl;
     }
-    const payload = { ...slot, current_url: url, updated_at: new Date().toISOString() };
-    delete (payload as Partial<Slot>).id;
-    const result = await supabase.from("cms_image_slots").upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
-    if (result.error) throw new Error(result.error.message);
-    setSlots((items) => items.map((item) => `${item.page_slug}:${item.section_slug}:${item.slot_key}` === key ? { ...item, current_url: url } : item));
-    window.dispatchEvent(new Event("salt-cms-updated"));
+    await persistSlot(slot, { current_url: url, is_active: true });
   }
 
   async function generateWithAi(slot: Slot) {
-    const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+    const key = slotKey(slot);
     setGenerating(key);
     try {
-      const prompt = `Create a premium editorial product or brand image for The Salt Origin, an international Himalayan pink salt B2B brand. Website page: ${cmsPageLabels[slot.page_slug] || slot.page_slug}. Section: ${slot.section_slug}. Image purpose: ${slot.title}. Alt text/context: ${slot.alt_text || "premium Himalayan pink salt"}. Use the brand visual language: sophisticated white and soft blush environment, controlled dark-pink accents, charcoal details, elegant natural Himalayan mountain cues, clean luxury export presentation, photorealistic commercial photography, generous negative space, no visible text, no fake certifications, no watermarks, no unrelated logos.`;
+      const prompt = `Create a premium editorial product or brand image for The Salt Origin, an international Himalayan pink salt B2B brand. Website page: ${cmsPageLabels[slot.page_slug] || slot.page_slug}. Section: ${slot.section_slug}. Image purpose: ${slot.title}. Alt text/context: ${slot.alt_text || "premium Himalayan pink salt"}. Match the approved New Theme: refined white and warm blush space, deep wine and charcoal details, elegant Himalayan cues, international luxury export presentation, photorealistic commercial photography, clean negative space, no visible text, no fake certifications, no watermarks, no unrelated logos.`;
       const response = await adminFetch("/api/ai/image", { method: "POST", body: JSON.stringify({ prompt, size: "1536x1024" }) });
       const data = await response.json();
       if (!response.ok || !data.image) throw new Error(data.error || "AI image generation failed.");
       await saveGeneratedImage(slot, String(data.image));
-      alert("AI image generated and saved to this website image slot. Review it before publishing or keep replacing it as needed.");
+      alert("AI image created and saved to this live website slot.");
     } catch (error) {
       alert(error instanceof Error ? error.message : "AI image generation failed.");
     } finally {
@@ -201,230 +170,66 @@ export default function ImagesManagerPage() {
   }
 
   async function reset(slot: Slot) {
-    const payload = {
-      ...slot,
-      current_url: slot.default_url,
-      updated_at: new Date().toISOString(),
-    };
-    delete (payload as Partial<Slot>).id;
+    try { await persistSlot(slot, { current_url: slot.default_url, is_active: true }); }
+    catch (error) { alert(error instanceof Error ? error.message : "Could not reset image."); }
+  }
 
-    const { error } = await supabase
-      .from("cms_image_slots")
-      .upsert(payload, { onConflict: "page_slug,section_slug,slot_key" });
-    if (error) return alert(error.message);
-
-    setSlots((items) =>
-      items.map((item) =>
-        item.page_slug === slot.page_slug &&
-        item.section_slug === slot.section_slug &&
-        item.slot_key === slot.slot_key
-          ? { ...item, current_url: slot.default_url }
-          : item,
-      ),
-    );
-    window.dispatchEvent(new Event("salt-cms-updated"));
+  async function toggleVisibility(slot: Slot) {
+    try { await persistSlot(slot, { is_active: slot.is_active === false }); }
+    catch (error) { alert(error instanceof Error ? error.message : "Could not update image visibility."); }
   }
 
   const pages = useMemo(() => {
     const values = Array.from(new Set(slots.map((slot) => slot.page_slug)));
-    return values.sort((a, b) => {
-      if (a === "global") return -1;
-      if (b === "global") return 1;
-      return a.localeCompare(b);
-    });
+    return values.sort((a, b) => a === "home" ? -1 : b === "home" ? 1 : a === "global" ? -1 : b === "global" ? 1 : a.localeCompare(b));
   }, [slots]);
 
-  const counts = useMemo(
-    () =>
-      Object.fromEntries(
-        pages.map((page) => [
-          page,
-          slots.filter((slot) => slot.page_slug === page).length,
-        ]),
-      ),
-    [pages, slots],
-  );
+  const counts = useMemo(() => Object.fromEntries(pages.map((page) => [page, slots.filter((slot) => slot.page_slug === page).length])), [pages, slots]);
+  const sections = useMemo(() => ["all", ...Array.from(new Set(slots.filter((slot) => slot.page_slug === activePage).map((slot) => slot.section_slug)))], [slots, activePage]);
 
-  const visible = useMemo(
-    () =>
-      slots.filter((slot) => {
-        const query = search.toLowerCase();
-        return (
-          slot.page_slug === activePage &&
-          (!query ||
-            `${slot.title} ${slot.section_slug} ${slot.slot_key}`
-              .toLowerCase()
-              .includes(query))
-        );
-      }),
-    [slots, activePage, search],
-  );
+  useEffect(() => { setActiveSection("all"); }, [activePage]);
+
+  const visible = useMemo(() => slots.filter((slot) => {
+    const query = search.toLowerCase();
+    return slot.page_slug === activePage &&
+      (activeSection === "all" || slot.section_slug === activeSection) &&
+      (!query || `${slot.title} ${slot.section_slug} ${slot.slot_key} ${slot.alt_text || ""}`.toLowerCase().includes(query));
+  }), [slots, activePage, activeSection, search]);
 
   return (
     <AdminShell>
       <div className="os-page legacy-unified-page images-manager-page space-y-5">
-        <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-          <div>
-            <p className="text-blue-400 uppercase tracking-[4px] text-xs font-black">
-              Visual Content
-            </p>
-            <h1 className="cms-page-title">Images Manager</h1>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search images..."
-                className="w-72 max-w-[70vw] rounded-xl border pl-11 pr-4 py-3"
-              />
-            </div>
-            <button
-              onClick={syncCurrentWebsite}
-              disabled={syncing}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 px-4 py-3 font-black text-sm"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`}
-              />
-              {syncing ? "Syncing..." : "Sync Current Website"}
-            </button>
-          </div>
-        </div>
+        <header className="os-page-header">
+          <div><div className="os-page-eyebrow">Website Visual Assets</div><h1 className="os-page-title">Images Manager</h1><p className="os-page-subtitle">Select a website page and section, confirm the image that is live, then replace, upload, create with AI, hide or restore it.</p></div>
+          <div className="os-page-actions"><button onClick={syncCurrentWebsite} disabled={syncing} className="os-btn soft"><RefreshCw className={syncing ? "animate-spin" : ""}/>{syncing ? "Syncing…" : "Sync Website Images"}</button><a className="os-btn primary" href={routeFor(activePage)} target="_blank" rel="noreferrer"><ExternalLink/>Open Live Page</a></div>
+        </header>
 
         <div className="image-manager-shell rounded-[24px] border overflow-hidden">
-          <div className="grid lg:grid-cols-[220px_1fr] min-h-[680px]">
+          <div className="grid lg:grid-cols-[230px_1fr] min-h-[720px]">
             <aside className="image-manager-sidebar border-r p-4">
-              <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black px-2 mb-3">
-                Website Pages
-              </p>
-              <div className="space-y-1">
-                {pages.map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setActivePage(page)}
-                    className={`image-page-button w-full flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-bold ${
-                      activePage === page ? "active" : ""
-                    }`}
-                  >
-                    <span>{cmsPageLabels[page] || page}</span>
-                    <span className="rounded-md bg-black/20 px-2 py-0.5 text-xs">
-                      {counts[page]}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="image-upload-note mt-7 rounded-2xl border p-4 text-xs leading-6">
-                <p className="font-black text-blue-300 mb-2">Image upload</p>
-                Header and footer logos are under Branding / Header & Footer.
-                <br />
-                JPG, PNG or WebP
-                <br />
-                Maximum 5MB
-              </div>
+              <p className="image-manager-label">Website Pages</p>
+              <div className="space-y-1">{pages.map((page) => <button key={page} onClick={() => setActivePage(page)} className={`image-page-button w-full flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-bold ${activePage === page ? "active" : ""}`}><span>{cmsPageLabels[page] || page}</span><span className="image-count-chip">{counts[page]}</span></button>)}</div>
+              <div className="image-upload-note mt-7 rounded-2xl border p-4 text-xs leading-6"><strong>Easy image replacement</strong><span>1. Select page<br/>2. Select section<br/>3. Check current live preview<br/>4. Upload / Replace or Create with AI<br/>5. Open Live Page to verify</span></div>
             </aside>
 
-            <section className="p-4 lg:p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className="text-xl font-black">
-                    {cmsPageLabels[activePage] || activePage} Images
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    {visible.length} editable image slots
-                  </p>
-                </div>
-                <div className="flex rounded-xl border border-white/10 overflow-hidden">
-                  <button
-                    onClick={() => setView("grid")}
-                    className={`p-3 ${
-                      view === "grid" ? "cms-gradient-button text-white" : ""
-                    }`}
-                    aria-label="Grid view"
-                  >
-                    <Grid2X2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setView("list")}
-                    className={`p-3 ${
-                      view === "list" ? "cms-gradient-button text-white" : ""
-                    }`}
-                    aria-label="List view"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                </div>
+            <section className="p-4 lg:p-6 min-w-0">
+              <div className="image-manager-toolbar">
+                <div><div className="os-page-eyebrow">{cmsPageLabels[activePage] || activePage}</div><h2>{activeSection === "all" ? "All Image Sections" : activeSection.replaceAll("_", " ")}</h2><p>{visible.length} mapped image slot{visible.length === 1 ? "" : "s"}</p></div>
+                <div className="image-manager-tools"><label className="os-search-field"><Search/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search image slots…"/></label><select className="os-field" value={activeSection} onChange={(event) => setActiveSection(event.target.value)}>{sections.map((section) => <option value={section} key={section}>{section === "all" ? "All sections" : section.replaceAll("_", " ")}</option>)}</select><div className="os-segmented"><button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")} aria-label="Grid view"><Grid2X2/></button><button className={view === "list" ? "active" : ""} onClick={() => setView("list")} aria-label="List view"><List/></button></div></div>
               </div>
 
-              <div
-                className={
-                  view === "grid"
-                    ? "grid md:grid-cols-2 xl:grid-cols-3 gap-4"
-                    : "space-y-4"
-                }
-              >
+              <div className={view === "grid" ? "image-slot-grid-live" : "space-y-4"}>
                 {visible.map((slot) => {
-                  const key = `${slot.page_slug}:${slot.section_slug}:${slot.slot_key}`;
+                  const key = slotKey(slot);
                   const preview = slot.current_url || slot.default_url;
-
-                  return (
-                    <article
-                      key={key}
-                      className={`image-slot-card rounded-2xl border p-3 ${
-                        view === "list"
-                          ? "grid md:grid-cols-[220px_1fr_auto] gap-5 items-center"
-                          : ""
-                      }`}
-                    >
-                      <div className="image-preview aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center">
-                        {preview ? (
-                          <img
-                            src={preview}
-                            alt={slot.alt_text || slot.title}
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <ImageIcon className="w-10 h-10 text-slate-600" />
-                        )}
-                      </div>
-
-                      <div className={view === "grid" ? "pt-3" : ""}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="font-black text-sm">{slot.title}</h3>
-                            <p className="text-[11px] text-slate-500 mt-1">
-                              {slot.section_slug.replaceAll("_", " ")}
-                            </p>
-                          </div>
-                          <span className="text-[10px] rounded-full bg-blue-500/10 text-blue-300 px-2 py-1">
-                            {cmsPageLabels[slot.page_slug] || slot.page_slug}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-amber-400 mt-2">
-                          Recommended: {slot.recommended_width} ×{" "}
-                          {slot.recommended_height}px
-                        </p>
-                      </div>
-
-                      <div className={`image-slot-actions ${view === "grid" ? "mt-3" : ""}`}>
-                        <label className="cms-gradient-button inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-xs font-black cursor-pointer text-white">
-                          <Upload className="w-4 h-4" />
-                          {uploading === key ? "Uploading..." : "Upload / Replace"}
-                          <input type="file" accept="image/*" className="hidden" disabled={generating === key} onChange={(event) => replace(slot, event.target.files?.[0])} />
-                        </label>
-                        <button type="button" onClick={() => void generateWithAi(slot)} disabled={Boolean(generating) || uploading === key} className="image-ai-button inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-xs font-black">
-                          <Sparkles className={`w-4 h-4 ${generating === key ? "animate-pulse" : ""}`} />
-                          {generating === key ? "Creating..." : "Create with AI"}
-                        </button>
-                        <button onClick={() => reset(slot)} title="Reset to original" className="image-reset-button rounded-xl border px-3">
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </article>
-                  );
+                  const live = slot.is_active !== false;
+                  return <article key={key} className={`image-slot-card-live ${view === "list" ? "is-list" : ""} ${live ? "" : "is-hidden"}`}>
+                    <div className="image-live-preview">{preview ? <img src={preview} alt={slot.alt_text || slot.title}/> : <ImageIcon/>}<span className={`image-live-status ${live ? "live" : "hidden"}`}>{live ? <><Eye/>LIVE ON WEBSITE</> : <><EyeOff/>HIDDEN</>}</span></div>
+                    <div className="image-slot-content"><div className="image-slot-heading"><div><small>{slot.section_slug.replaceAll("_", " ")} · {slot.slot_key.replaceAll("_", " ")}</small><h3>{slot.title}</h3></div><span>{slot.recommended_width} × {slot.recommended_height}px</span></div><label className="os-label"><span>Alt Text</span><input value={slot.alt_text || ""} onChange={(event) => setSlots((items) => items.map((item) => slotKey(item) === key ? { ...item, alt_text: event.target.value } : item))} onBlur={() => void persistSlot(slot, { alt_text: slots.find((item) => slotKey(item) === key)?.alt_text || "" })}/></label><div className="image-slot-actions-live"><label className="os-btn primary"><Upload/>{uploading === key ? "Uploading…" : "Upload / Replace"}<input type="file" accept="image/*" hidden disabled={generating === key} onChange={(event) => void replace(slot, event.target.files?.[0])}/></label><button className="os-btn soft" type="button" onClick={() => void generateWithAi(slot)} disabled={Boolean(generating) || uploading === key}><Sparkles className={generating === key ? "animate-pulse" : ""}/>{generating === key ? "Creating…" : "Create with AI"}</button><button className="os-btn soft" type="button" onClick={() => void toggleVisibility(slot)}>{live ? <EyeOff/> : <Eye/>}{live ? "Hide" : "Show"}</button><button className="os-btn soft" type="button" onClick={() => void reset(slot)} title="Reset to original"><RefreshCw/>Reset</button></div></div>
+                  </article>;
                 })}
               </div>
+              {!visible.length && <div className="os-empty"><div className="os-empty-icon"><ImageIcon/></div><h3>No mapped images found</h3><p>Try another page, section or search term.</p></div>}
             </section>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseJsonResponse, runOpenAI } from "@/lib/openai-server";
 import { publicApiError } from "@/lib/api-errors";
+import { requireAdminUser } from "@/lib/admin-auth";
 import { calculateGeoScore, calculateSeoScore, normalizeKeywordList, stripResearchLinks } from "@/lib/content-quality";
 
 type ContentType = "blog" | "article";
@@ -10,7 +11,12 @@ function slugify(value:string){return value.toLowerCase().trim().replace(/[^a-z0
 async function createFeaturedImage(supabase:any,prompt:string,type:ContentType){
   if(!process.env.OPENAI_API_KEY||process.env.OPENAI_IMAGE_AUTOGENERATE==="false")return{url:"",warning:"Automatic image generation is not enabled."};
   try{
-    const response=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:process.env.OPENAI_IMAGE_MODEL||"gpt-image-1",prompt:`${prompt}. Premium editorial B2B export image for The Salt Origin. Himalayan pink salt, realistic product or trade context, elegant pink and neutral palette, no medical claim, no invented certification, no third-party logo, no readable text.`,size:"1536x1024",n:1}),cache:"no-store"});
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),90_000);
+    let response:Response;
+    try{
+      response=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:process.env.OPENAI_IMAGE_MODEL||"gpt-image-1",prompt:`${prompt}. Premium editorial B2B export image for The Salt Origin. Himalayan pink salt, realistic product or trade context, elegant pink and neutral palette, no medical claim, no invented certification, no third-party logo, no readable text.`,size:"1024x1024",n:1}),cache:"no-store",signal:controller.signal});
+    }finally{clearTimeout(timeout)}
     const payload=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(payload?.error?.message||"Image generation failed.");
     const item=payload?.data?.[0];
@@ -24,9 +30,9 @@ async function generateOne(supabase:any,type:ContentType,focus:string,language:s
   const start=new Date();start.setUTCHours(0,0,0,0);const end=new Date(start);end.setUTCDate(end.getUTCDate()+1);
   const{data:existing}=await supabase.from("blog_posts").select("id,title,slug,content_type,featured_image,status,created_at,keywords,primary_keyword,seo_score,geo_score").gte("created_at",start.toISOString()).lt("created_at",end.toISOString()).in("status",["draft","review","approved","scheduled"]).eq("content_type",type).limit(1).maybeSingle();
   if(existing)return{skipped:true,reason:`Today's ${type} draft already exists.`,draft:existing};
-  const length=type==="blog"?"900 to 1300":"1500 to 2200";
-  const format=type==="blog"?"buyer-help blog with a focused practical angle and clear B2B action points":"authoritative SEO article with deeper supplier-selection, packaging, compliance and export guidance";
-  const{text,model}=await runOpenAI({model:process.env.OPENAI_BLOG_MODEL,tools:[{type:"web_search",search_context_size:"medium"}],input:`Act as the daily research and publishing editor for The Salt Origin, a B2B Himalayan pink salt exporter and private-label supplier. Research current public buyer questions, supplier-search intent, packaging interests, importer concerns and content gaps related to: ${focus}.
+  const length="500 to 800";
+  const format="buyer-help blog with a focused practical angle, engaging structure and clear B2B action points";
+  const{text,model}=await runOpenAI({model:process.env.OPENAI_BLOG_MODEL,timeoutMs:55_000,tools:[{type:"web_search",search_context_size:"medium"}],input:`Act as the daily research and publishing editor for The Salt Origin, a B2B Himalayan pink salt exporter and private-label supplier. Research current public buyer questions, supplier-search intent, packaging interests, importer concerns and content gaps related to: ${focus}.
 Choose ONE timely topic that has real buyer usefulness and is not a duplicate of generic salt content. Create a ${language} ${format}.
 Return valid JSON only with keys: title, excerpt, content, seo_title, seo_description, primary_keyword, secondary_keywords, target_country, category, image_prompt, internal_link_suggestions, reading_time.
 Requirements:
@@ -34,7 +40,7 @@ Requirements:
 - content must be clean semantic HTML using only h2, h3, p, ul, ol, li and strong tags.
 - Do not use markdown heading symbols such as #, ## or ###.
 - Do not include citations, source links, external URLs, markdown links or reference footnotes in the article.
-- Research is for topic selection and factual framing only; the published article must read as an original editorial article.
+- Research is for topic selection and factual framing only; the published blog must read as an original editorial blog.
 - Include the researched primary keyword and useful secondary long-tail keywords naturally, without stuffing.
 - Include concise FAQ question-and-answer sections for AI search visibility.
 - Include a soft quotation/contact CTA.
@@ -49,7 +55,7 @@ Requirements:
   const seoTitle=stripResearchLinks(result.seo_title||title);
   const seoDescription=stripResearchLinks(result.seo_description||excerpt);
   const targetCountry=String(result.target_country||"Global");
-  const image=await createFeaturedImage(supabase,String(result.image_prompt||title),type);
+  const image={url:"",warning:"Image can be generated or uploaded during human review."};
   const internalLinks=Array.isArray(result.internal_link_suggestions)?result.internal_link_suggestions.map(stripResearchLinks).filter(Boolean).slice(0,20):[];
   const seoScore=calculateSeoScore({title,slug,excerpt,content,seoTitle,seoDescription,primaryKeyword,secondaryKeywords:keywords,featuredImage:image.url});
   const geoScore=calculateGeoScore({title,excerpt,content,primaryKeyword,targetCountry});
@@ -59,11 +65,13 @@ Requirements:
 }
 
 async function createDailyDrafts(request:Request){
-  const isCron=request.method==="GET";if(isCron&&process.env.CRON_SECRET&&request.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)return NextResponse.json({error:"Unauthorized"},{status:401});
+  const isCron=request.method==="GET";
+  if(isCron&&process.env.CRON_SECRET&&request.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)return NextResponse.json({error:"Unauthorized"},{status:401});
+  if(!isCron) await requireAdminUser(request);
   if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)return NextResponse.json({error:"Supabase server environment variables are missing."},{status:500});
   const supabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});const{data:settings}=await supabase.from("blog_automation_settings").select("*").limit(1).maybeSingle();if(settings&&!settings.enabled&&isCron)return NextResponse.json({skipped:true,reason:"Blog automation is disabled."});
   const focus=settings?.topic_focus||"Himalayan pink salt sourcing, private-label packaging, food-industry specifications, importer questions and export guidance";const language=settings?.default_language||"English";
-  const[blog,article]=await Promise.all([generateOne(supabase,"blog",focus,language),generateOne(supabase,"article",focus,language)]);return NextResponse.json({success:true,blog,article,approval_required:true});
+  const blog=await generateOne(supabase,"blog",focus,language);return NextResponse.json({success:true,blog,approval_required:true});
 }
 export async function GET(request:Request){try{return await createDailyDrafts(request)}catch(error){return NextResponse.json({error:publicApiError(error,"Daily content generation failed.")},{status:500})}}
 export async function POST(request:Request){try{return await createDailyDrafts(request)}catch(error){return NextResponse.json({error:publicApiError(error,"Daily content generation failed.")},{status:500})}}

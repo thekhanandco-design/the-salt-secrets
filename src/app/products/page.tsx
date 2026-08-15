@@ -1,495 +1,238 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Boxes,
-  Check,
-  Globe2,
-  Package,
-  ShoppingBag,
-  Tag,
-} from "lucide-react";
+import { Boxes, Grid3X3, LampDesk, Mountain, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
+import { APPROVED_PRODUCT_CATEGORIES, APPROVED_PRODUCT_SHEET, LEGACY_PRODUCT_SLUGS } from "@/lib/product-catalog";
 
-type CmsProduct = {
-  id: number;
+type ProductSegment = "powder" | "coarse";
+
+type Product = {
+  id?: number | string;
   title: string;
   slug: string;
-  category: string;
-  description: string;
-  image: string;
-  moq: string;
-  packaging: string;
-  status: string;
+  category?: string;
+  description?: string;
+  short_description?: string;
+  image?: string;
+  packaging?: string;
+  status?: string;
+  grain_type?: string;
+  sizes?: string;
+  packaging_type?: string;
+  display_order?: number;
 };
 
-const retailProducts = [
-  {
-    title: "Salt Shaker",
-    subtitle: "(PET Bottle)",
-    grain: "Fine Grain",
-    sizes: "100g / 200g / 250g",
-    image: "/retail-packaging.png",
-  },
-  {
-    title: "Salt Jar",
-    subtitle: "(PET Jar)",
-    grain: "Fine Grain",
-    sizes: "500g / 750g / 1kg / 2kg",
-    image: "/retail-packaging.png",
-  },
-  {
-    title: "Stand-Up Pouch",
-    subtitle: "(Zip-Lock)",
-    grain: "Fine Grain",
-    sizes: "250g / 500g / 1kg",
-    image: "/pouches.png",
-  },
-];
+type CategoryRow = {
+  id?: number;
+  name: string;
+  slug: string;
+  subtitle?: string | null;
+  description?: string | null;
+  image?: string | null;
+  status?: string | null;
+  display_order?: number | null;
+};
 
-const grinders = [
-  {
-    title: "Grinder Bottle",
-    subtitle: "(Plastic)",
-    image: "/grinder-bottles.png",
-  },
-  {
-    title: "Grinder Bottle",
-    subtitle: "(Ceramic)",
-    image: "/grinder-bottles.png",
-  },
-];
+const iconByFamily = {
+  "edible-salt": UtensilsCrossed,
+  "salt-lamps": LampDesk,
+  "salt-tiles-bricks": Grid3X3,
+  "cooking-plates-slabs": UtensilsCrossed,
+  "animal-lick-salt": Mountain,
+  "bulk-raw-salt": Boxes,
+} as const;
 
-const bulkSizes = ["5 kg", "10 kg", "20 kg", "25 kg", "30 kg", "50 kg"];
+function isVisible(status?: string | null) {
+  return !status || status === "active" || status === "published";
+}
 
-const comparisonRows = [
-  ["Salt Shaker (PET Bottle)", "Fine Grain", "100g, 200g, 250g", "PET Bottle (Shaker)", "Daily Use, Retail"],
-  ["Salt Jar (PET Jar)", "Fine Grain", "500g, 750g, 1kg, 2kg", "PET Jar", "Kitchen Use, Retail"],
-  ["Grinder Bottle (Plastic)", "Coarse Grain", "100g, 200g, 225g, 360g, 500g", "Grinder Cap Bottle (Plastic)", "Premium Retail"],
-  ["Grinder Bottle (Ceramic)", "Coarse Grain", "100g, 200g, 225g, 360g, 500g", "Grinder Cap Bottle (Ceramic)", "Premium Retail"],
-  ["Stand-Up Pouch (Zip-Lock)", "Fine Grain", "250g, 500g, 1kg", "Stand-Up Pouch (Zip-Lock)", "Retail, E-commerce"],
-  ["Bulk Bags (PP Woven)", "Fine / Coarse Grain", "5kg, 10kg, 20kg, 25kg, 30kg, 50kg", "PP Woven Bags", "Industrial, Food Processing"],
-];
+function normalize(value?: string) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function segmentFor(product: Product): ProductSegment {
+  const signature = normalize(`${product.grain_type || ""} ${product.title || ""}`);
+  return signature.includes("extra-fine") || signature.includes("fine-powder") || signature.includes("powder") ? "powder" : "coarse";
+}
+
+function headingParts(value: string) {
+  const words = value.trim().split(/\s+/);
+  if (words.length < 2) return { main: value, accent: "" };
+  const accent = words.pop() || "";
+  return { main: `${words.join(" ")} `, accent };
+}
+
+function displayProductName(product: Product) {
+  if (product.category === "edible-salt") return product.packaging_type || product.packaging || product.title.split("—").pop()?.trim() || product.title;
+  return product.title.replace(/^Extra Fine Powder\s*[—-]\s*/i, "").replace(/^Coarse Salt\s*[—-]\s*/i, "");
+}
+
+const fallbackProducts: Product[] = APPROVED_PRODUCT_SHEET.map((product) => ({ ...product }));
 
 export default function ProductsPage() {
-  const [cmsProducts, setCmsProducts] = useState<CmsProduct[]>([]);
+  const [rows, setRows] = useState<Product[]>([]);
+  const [categoryRows, setCategoryRows] = useState<CategoryRow[]>([]);
+  const [activeFamily, setActiveFamily] = useState("edible-salt");
+  const [activeSegment, setActiveSegment] = useState<ProductSegment>("powder");
 
   useEffect(() => {
-    loadCmsProducts();
+    let mounted = true;
+    async function load() {
+      const [productResult, categoryResult] = await Promise.all([
+        supabase.from("products").select("*").order("display_order").order("created_at", { ascending: false }),
+        supabase.from("categories").select("id,name,slug,subtitle,description,image,status,display_order").order("display_order"),
+      ]);
+      if (!mounted) return;
+      setRows((productResult.data || []) as Product[]);
+      setCategoryRows((categoryResult.data || []) as CategoryRow[]);
+    }
+    void load();
+    const refresh = () => void load();
+    window.addEventListener("salt-cms-updated", refresh);
+    return () => {
+      mounted = false;
+      window.removeEventListener("salt-cms-updated", refresh);
+    };
   }, []);
 
-  async function loadCmsProducts() {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
+  const families = useMemo(() => APPROVED_PRODUCT_CATEGORIES.map((base) => {
+    const saved = categoryRows.find((row) => row.slug === base.slug);
+    return {
+      ...base,
+      ...saved,
+      name: saved?.name || base.name,
+      subtitle: saved?.subtitle || base.subtitle,
+      description: saved?.description || base.description,
+      image: saved?.image || base.image,
+      icon: iconByFamily[base.slug as keyof typeof iconByFamily] || Grid3X3,
+    };
+  }).filter((family) => isVisible(family.status)), [categoryRows]);
 
-    setCmsProducts((data as CmsProduct[]) || []);
+  useEffect(() => {
+    if (!families.some((family) => family.slug === activeFamily) && families[0]) setActiveFamily(families[0].slug);
+  }, [activeFamily, families]);
+
+  const products = useMemo(() => {
+    const approvedCategorySlugs = new Set(APPROVED_PRODUCT_CATEGORIES.map((item) => item.slug));
+    const legacy = new Set(LEGACY_PRODUCT_SLUGS);
+    const database = rows
+      .filter((row) => isVisible(row.status))
+      .filter((row) => approvedCategorySlugs.has(normalize(row.category)))
+      .filter((row) => !legacy.has(row.slug))
+      .map((row) => ({ ...row, category: normalize(row.category) }));
+    const databaseSlugs = new Set(database.map((row) => row.slug));
+    return [...database, ...fallbackProducts.filter((row) => !databaseSlugs.has(row.slug))]
+      .filter((row) => !legacy.has(row.slug))
+      .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0));
+  }, [rows]);
+
+  const currentFamily = families.find((family) => family.slug === activeFamily) || families[0] || APPROVED_PRODUCT_CATEGORIES[0];
+  const heroParts = headingParts(currentFamily.name);
+  const familyProducts = products.filter((product) => normalize(product.category) === activeFamily);
+  const edibleProducts = activeFamily === "edible-salt" ? familyProducts.filter((product) => segmentFor(product) === activeSegment) : familyProducts;
+
+  const bulkGroups = activeFamily === "bulk-raw-salt" ? [
+    { label: "Fine Powder", items: familyProducts.filter((product) => normalize(product.grain_type).includes("fine-powder")) },
+    { label: "Coarse", items: familyProducts.filter((product) => normalize(product.grain_type) === "coarse") },
+    { label: "Raw Salt", items: familyProducts.filter((product) => normalize(product.grain_type).includes("raw")) },
+  ].filter((group) => group.items.length) : [];
+
+  function productGrid(items: Product[]) {
+    return (
+      <div className="tso-showcase-product-grid">
+        {items.map((product, index) => (
+          <article className="tso-showcase-product-card" key={`${product.slug}-${index}`}>
+            <div className="tso-showcase-product-card__image">
+              <img src={product.image || "/hero-products.png"} alt={displayProductName(product)} />
+            </div>
+            <div className="tso-showcase-product-card__body">
+              <h3>{displayProductName(product)}</h3>
+              <div className="tso-showcase-product-specs">
+                <span><b>Form / Grain:</b> {product.grain_type === "Coarse" ? "Coarse · 2–4 mm" : product.grain_type || "Custom"}</span>
+                <span><b>Packaging:</b> {product.packaging_type || product.packaging || "Custom"}</span>
+                <span><b>Pack Size:</b> {product.sizes || "On request"}</span>
+              </div>
+              {product.id ? <Link href={`/products/${product.slug}`}>View Details <span>→</span></Link> : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    );
   }
 
   return (
-    <main className="bg-[#FFF8F5]">
-      <div className="max-w-[1500px] mx-auto px-5 lg:px-12 py-14">
-        <section data-cms-section="hero" className="text-center max-w-4xl mx-auto">
-          <span className="uppercase tracking-[8px] text-[#C23B4A] font-black text-sm">
-            Products
-          </span>
+    <main className="tso-route-page tso-products-showcase-page">
+      <section className="tso-products-showcase-hero" data-cms-section="hero">
+        <div className="tso-public-container tso-products-showcase-hero__grid">
+          <div className="tso-products-showcase-hero__copy">
+            <div className="tso-crumbs">PRODUCTS / {currentFamily.name.toUpperCase()}</div>
+            <h1><span>{heroParts.main}</span>{heroParts.accent ? <em>{heroParts.accent}</em> : null}</h1>
+            <p>{currentFamily.description}</p>
+          </div>
+          <div className="tso-products-showcase-hero__visual">
+            <img src={currentFamily.image || "/hero-banner.png"} alt={`${currentFamily.name} collection`} />
+          </div>
+        </div>
+      </section>
 
-          <h1 className="text-4xl lg:text-6xl font-black text-[#07142B] mt-4 leading-tight">
-            Himalayan Pink Salt Product Collection
-          </h1>
-
-          <p className="text-slate-600 text-base lg:text-lg mt-5 leading-relaxed">
-            Export-ready Himalayan Pink Salt products available in retail
-            packaging, grinder bottles, stand-up pouches, bulk supply and
-            private label solutions.
-          </p>
-        </section>
-
-        {cmsProducts.length > 0 && (
-          <section data-cms-section="latest" className="mt-10">
-            <SectionHeading
-              title="Latest Products"
-              subtitle="Products added from admin CMS."
-            />
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {cmsProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white border border-[#EFE3E5] rounded-[24px] p-6 shadow-[0_12px_30px_rgba(194,59,74,0.05)]"
+      <section className="tso-product-family-nav" data-cms-section="categories">
+        <div className="tso-public-container">
+          <div className="tso-product-family-nav__grid">
+            {families.map((family) => {
+              const Icon = family.icon;
+              return (
+                <button
+                  key={family.slug}
+                  type="button"
+                  onClick={() => {
+                    setActiveFamily(family.slug);
+                    if (family.slug === "edible-salt") setActiveSegment("powder");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={activeFamily === family.slug ? "active" : ""}
                 >
-                  {product.image && (
-                    <div className="h-[240px] flex items-center justify-center bg-[#FFF8F5] rounded-[18px] overflow-hidden">
-                      <img
-                        src={product.image}
-                        alt={product.title}
-                        className="max-h-[220px] w-auto object-contain"
-                      />
-                    </div>
-                  )}
+                  <span><Icon /></span>
+                  <div><strong>{family.name}</strong><small>{family.subtitle}</small></div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-                  <h3 className="text-2xl font-black text-[#07142B] mt-5">
-                    {product.title}
-                  </h3>
+      <section className="tso-product-family-section" data-cms-section="product_family">
+        <div className="tso-public-container">
+          <header className="tso-product-family-heading">
+            <span>{currentFamily.name.toUpperCase()}</span>
+            <h2>
+              {activeFamily === "edible-salt" ? (
+                activeSegment === "powder" ? <><span>Extra Fine </span><em>Powder</em></> : <><span>Coarse </span><em>Salt</em></>
+              ) : <><span>{heroParts.main}</span><em>{heroParts.accent}</em></>}
+            </h2>
+            <p>{currentFamily.subtitle}</p>
+          </header>
 
-                  <p className="text-sm text-[#C23B4A] font-bold mt-1">
-                    {product.category}
-                  </p>
+          {activeFamily === "edible-salt" ? (
+            <div className="tso-product-segment-tabs">
+              <button type="button" onClick={() => setActiveSegment("powder")} className={activeSegment === "powder" ? "active" : ""}>Extra Fine Powder</button>
+              <button type="button" onClick={() => setActiveSegment("coarse")} className={activeSegment === "coarse" ? "active" : ""}>Coarse</button>
+            </div>
+          ) : null}
 
-                  <p className="text-slate-600 text-sm mt-3 leading-relaxed">
-                    {product.description}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3 mt-5 text-sm">
-                    <div className="bg-[#FFF4F5] rounded-xl p-3">
-                      <p className="font-black text-[#07142B]">MOQ</p>
-                      <p className="text-slate-600">{product.moq || "Ask for MOQ"}</p>
-                    </div>
-
-                    <div className="bg-[#FFF4F5] rounded-xl p-3">
-                      <p className="font-black text-[#07142B]">Packaging</p>
-                      <p className="text-slate-600">{product.packaging || "Custom"}</p>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="mt-5 flex items-center justify-center gap-3 bg-[#C23B4A] text-white rounded-lg py-3 font-black hover:opacity-90 transition"
-                  >
-                    View Details
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
+          {activeFamily === "bulk-raw-salt" ? (
+            <div className="tso-product-group-stack">
+              {bulkGroups.map((group) => (
+                <section key={group.label} className="tso-product-subgroup">
+                  <h3>{group.label}</h3>
+                  {productGrid(group.items)}
+                </section>
               ))}
             </div>
-          </section>
-        )}
-
-        <section data-cms-section="retail" className="mt-10">
-          <SectionHeading
-            title="Retail Packaging"
-            subtitle="Perfect for everyday use with premium quality and attractive packaging."
-          />
-
-          <div className="grid md:grid-cols-3 gap-6 mt-6">
-            {retailProducts.map((product) => (
-              <div
-                key={product.title}
-                className="bg-white border border-[#EFE3E5] rounded-[24px] p-6 shadow-[0_12px_30px_rgba(194,59,74,0.05)]"
-              >
-                <h3 className="text-xl font-black text-[#07142B]">
-                  {product.title}
-                </h3>
-                <p className="text-sm font-bold text-[#07142B]">
-                  {product.subtitle}
-                </p>
-
-                <p className="text-sm text-slate-600 mt-4">
-                  {product.grain}
-                </p>
-                <p className="text-sm text-slate-600">
-                  {product.sizes}
-                </p>
-
-                <div className="h-[190px] flex items-center justify-center mt-4">
-                  <Image
-                    src={product.image}
-                    alt={product.title}
-                    width={360}
-                    height={260}
-                    className="max-h-[180px] w-auto object-contain"
-                  />
-                </div>
-
-                <Link
-                  href="/contact"
-                  className="mt-5 flex items-center justify-center gap-3 border border-[#C23B4A] text-[#C23B4A] rounded-lg py-3 font-black hover:bg-[#C23B4A] hover:text-white transition"
-                >
-                  View Details
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section data-cms-section="grinder" className="mt-10">
-          <SectionHeading
-            title="Grinder Collection"
-            subtitle="Available in plastic and ceramic grinder bottles."
-          />
-
-          <div className="grid lg:grid-cols-2 gap-6 mt-6">
-            {grinders.map((item) => (
-              <div
-                key={item.subtitle}
-                className="bg-white border border-[#EFE3E5] rounded-[24px] p-7 grid md:grid-cols-[180px_1fr] gap-5 items-center shadow-[0_12px_30px_rgba(194,59,74,0.05)]"
-              >
-                <div>
-                  <h3 className="text-xl font-black text-[#07142B]">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm font-bold text-[#07142B]">
-                    {item.subtitle}
-                  </p>
-
-                  <ul className="mt-5 space-y-2 text-sm text-slate-700">
-                    {["100 g", "200 g", "225 g", "360 g", "500 g"].map(
-                      (size) => (
-                        <li key={size} className="flex items-center gap-2">
-                          <Check className="w-4 h-4 text-[#C23B4A]" />
-                          {size}
-                        </li>
-                      )
-                    )}
-                  </ul>
-
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center gap-3 mt-5 bg-[#C23B4A] text-white px-5 py-3 rounded-lg font-black text-sm"
-                  >
-                    View Details
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-
-                <div className="h-[210px] flex items-center justify-center">
-                  <Image
-                    src={item.image}
-                    alt={`${item.title} ${item.subtitle}`}
-                    width={430}
-                    height={260}
-                    className="max-h-[210px] w-auto object-contain"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section data-cms-section="bulk" className="mt-10">
-          <SectionHeading
-            title="Bulk Salt Packaging"
-            subtitle="Ideal for industrial use, food processing and large scale supply."
-          />
-
-          <div className="space-y-5 mt-6">
-            <BulkRow title="Fine Grain" subtitle="(Powder Form)" />
-            <BulkRow title="Coarse Grain" subtitle="" />
-          </div>
-        </section>
-
-        <section data-cms-section="private_label" className="mt-10">
-          <SectionHeading
-            title="Private Label Solutions"
-            subtitle="We help brands create their identity with custom packaging and branding."
-          />
-
-          <div className="grid md:grid-cols-3 gap-0 bg-white border border-[#EFE3E5] rounded-[24px] overflow-hidden shadow-[0_12px_30px_rgba(194,59,74,0.05)] mt-6">
-            <FeatureCard
-              icon={<Tag className="w-14 h-14 text-[#C23B4A]" />}
-              title="Custom Labels"
-              text="Custom label design to match your brand identity."
-            />
-            <FeatureCard
-              icon={<Package className="w-14 h-14 text-[#C23B4A]" />}
-              title="Custom Packaging"
-              text="Flexible packaging options tailored to your requirements."
-            />
-            <FeatureCard
-              icon={<Globe2 className="w-14 h-14 text-[#C23B4A]" />}
-              title="Global Export"
-              text="Reliable export support and timely worldwide delivery."
-            />
-          </div>
-        </section>
-
-        <section data-cms-section="comparison" className="mt-10">
-          <SectionHeading
-            title="Product Comparison"
-            subtitle="Explore our product range at a glance."
-          />
-
-          <div className="overflow-hidden rounded-[16px] border border-[#EFE3E5] bg-white mt-6 shadow-[0_12px_30px_rgba(194,59,74,0.05)]">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead className="bg-[#C23B4A] text-white">
-                  <tr>
-                    {[
-                      "Product Type",
-                      "Grain Type",
-                      "Available Sizes",
-                      "Packaging Type",
-                      "Best For",
-                    ].map((head) => (
-                      <th key={head} className="px-5 py-4 text-left font-black">
-                        {head}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {comparisonRows.map((row) => (
-                    <tr key={row[0]} className="border-b border-[#EFE3E5] last:border-b-0">
-                      {row.map((cell) => (
-                        <td key={cell} className="px-5 py-4 text-slate-700">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section data-cms-section="cta" className="mt-10 bg-[#C23B4A] rounded-[24px] p-8 lg:p-10 text-white grid lg:grid-cols-[1fr_auto] gap-8 items-center">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <ShoppingBag className="w-10 h-10" />
-            </div>
-
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-black">
-                Need Custom Packaging Or Bulk Supply?
-              </h2>
-
-              <p className="text-white/85 mt-3">
-                Get in touch with us for the best quotes and long-term partnerships.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/contact"
-              className="bg-white text-[#C23B4A] px-8 py-4 rounded-xl font-black"
-            >
-              Get A Free Quote
-            </Link>
-
-            <Link
-              href="https://wa.me/923462771693"
-              target="_blank"
-              className="border border-white px-8 py-4 rounded-xl font-black"
-            >
-              WhatsApp Us
-            </Link>
-          </div>
-        </section>
-      </div>
+          ) : productGrid(edibleProducts)}
+        </div>
+      </section>
     </main>
-  );
-}
-
-function SectionHeading({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="text-center">
-      <div className="flex items-center justify-center gap-4">
-        <span className="w-12 h-[2px] bg-[#C23B4A]" />
-        <h2 className="uppercase tracking-[4px] text-[#C23B4A] font-black text-xl">
-          {title}
-        </h2>
-        <span className="w-12 h-[2px] bg-[#C23B4A]" />
-      </div>
-
-      <p className="text-slate-600 mt-2 text-sm">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function BulkRow({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="bg-white border border-[#EFE3E5] rounded-[24px] p-5 grid lg:grid-cols-[210px_1fr_170px] gap-5 items-center shadow-[0_12px_30px_rgba(194,59,74,0.05)]">
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-[#FFF4F5] flex items-center justify-center">
-          <Boxes className="w-8 h-8 text-[#C23B4A]" />
-        </div>
-
-        <div>
-          <h3 className="text-xl font-black text-[#07142B]">
-            {title}
-          </h3>
-          {subtitle && (
-            <p className="text-sm text-[#07142B]">
-              {subtitle}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-        {bulkSizes.map((size) => (
-          <div key={`${title}-${size}`} className="text-center">
-            <Image
-              src="/white-sack.png"
-              alt={`${title} ${size}`}
-              width={90}
-              height={110}
-              className="h-[72px] w-auto object-contain mx-auto"
-            />
-            <p className="text-xs font-black text-[#07142B] mt-2">
-              {size}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 lg:justify-end">
-        <div className="w-16 h-16 rounded-full bg-[#FFF4F5] flex items-center justify-center">
-          <Package className="w-8 h-8 text-[#C23B4A]" />
-        </div>
-
-        <div>
-          <p className="font-black text-[#07142B]">Packaging</p>
-          <p className="text-sm text-slate-600">PP Woven Bags</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  text,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="p-8 border-b md:border-b-0 md:border-r last:border-r-0 border-[#EFE3E5]">
-      <div>{icon}</div>
-
-      <h3 className="font-black text-xl text-[#07142B] mt-5">
-        {title}
-      </h3>
-
-      <p className="text-slate-600 text-sm mt-3 leading-relaxed">
-        {text}
-      </p>
-    </div>
   );
 }

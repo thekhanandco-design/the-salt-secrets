@@ -37,7 +37,9 @@ const navGroups: NavGroup[] = [
     { href: "/admin/website-editor", label: "Website Visual Editor", icon: MonitorSmartphone },
     { href: "/admin/text", label: "Website Text Manager", icon: FileText },
     { href: "/admin/pages", label: "Pages", icon: GalleryVerticalEnd },
-    { href: "/admin/products", label: "Products & Detail Pages", icon: Boxes },
+    { href: "/admin/products", label: "Products", icon: Boxes },
+    { href: "/admin/private-label-catalog", label: "Private Label Catalog", icon: PackageCheck },
+    { href: "/admin/product-pages", label: "Product Pages", icon: GalleryVerticalEnd },
     { href: "/admin/categories", label: "Categories", icon: Tags },
     { href: "/admin/images", label: "Images Manager", icon: ImageIcon },
     { href: "/admin/media", label: "Media Library", icon: FolderOpen },
@@ -75,6 +77,7 @@ const navGroups: NavGroup[] = [
     { href: "/admin/activity-logs", label: "Activity Logs", icon: Activity },
     { href: "/admin/ai-agents", label: "AI Agents", icon: Bot },
     { href: "/admin/integrations", label: "Integrations", icon: Cable },
+    { href: "/admin/access-roles", label: "Access & Roles", icon: UsersRound },
     { href: "/admin/settings", label: "Settings", icon: Settings },
     { href: "/admin/help", label: "Help & Guide", icon: LifeBuoy },
   ] },
@@ -86,7 +89,8 @@ const quickActions = [
   { label: "Generate Blog", href: "/admin/blog-center?action=generate", icon: WandSparkles, description: "Research and create a review draft" },
   { label: "Create Social Post", href: "/admin/social-studio?action=create", icon: Share2, description: "Prepare platform-specific drafts" },
   { label: "Manage Social Links", href: "/admin/social-links", icon: Link2, description: "Add website footer profile links" },
-  { label: "Edit Product Page", href: "/admin/products", icon: Boxes, description: "Edit product text, images, specifications and SEO" },
+  { label: "Manage Products", href: "/admin/products", icon: Boxes, description: "Add, edit and organize storefront products" },
+  { label: "Edit Product Page", href: "/admin/product-pages", icon: GalleryVerticalEnd, description: "Create or edit a product detail page" },
   { label: "Replace Website Image", href: "/admin/images?action=replace", icon: ImageIcon, description: "Update a website asset" },
   { label: "Edit Website Hero", href: "/admin/website-editor?section=hero", icon: MonitorSmartphone, description: "Open the live visual editor" },
   { label: "Research FAQs", href: "/admin/faq-intelligence?action=research", icon: MessageSquareText, description: "Research buyer questions for review" },
@@ -132,6 +136,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchMode, setSearchMode] = useState<"search" | "command">("search");
   const [query, setQuery] = useState("");
+  const [navQuery, setNavQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [records, setRecords] = useState<SearchRecord[]>([]);
@@ -241,12 +246,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const currentLabel = labelForPath(pathname);
   const unreadCount = notices.filter(notice => notice.unread).length;
+  const filteredNavGroups = navQuery.trim()
+    ? navGroups.map((group) => ({ ...group, items: group.items.filter((item) => `${group.label} ${item.label}`.toLowerCase().includes(navQuery.toLowerCase())) })).filter((group) => group.items.length)
+    : navGroups;
 
   return <main className="admin-os" data-theme={dark ? "dark" : "light"}>
     <div className={`os-layout ${collapsed ? "collapsed" : ""}`}>
       <aside className={`os-sidebar ${mobileOpen ? "mobile-open" : ""}`}>
         <div className="os-brand"><Link href="/admin" aria-label="The Salt Origin dashboard"><img src="/salt-origin-logo.png" alt="The Salt Origin" /></Link><div className="os-brand-copy"><strong>The Salt Origin</strong><span>Enterprise B2B Export OS</span></div><button onClick={toggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>{collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}</button></div>
-        <div className="os-nav-scroll">{navGroups.map(group => <div className="os-nav-group" key={group.label}><button className="os-nav-group-title" onClick={() => setOpenGroups(previous => ({ ...previous, [group.label]: !previous[group.label] }))} aria-expanded={openGroups[group.label]}><span>{group.label}</span><ChevronDown style={{ transform: openGroups[group.label] ? "rotate(0deg)" : "rotate(-90deg)" }} /></button>{openGroups[group.label] && <div className="os-nav-items">{group.items.map(item => { const Icon = item.icon; const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)); const badge = badges[item.href] || 0; return <Link key={item.href} href={item.href} className={`os-nav-link ${active ? "active" : ""}`} title={item.label} onClick={() => setMobileOpen(false)}><Icon /><span>{item.label}</span>{badge > 0 && <b className="os-nav-badge">{badge > 99 ? "99+" : badge}</b>}</Link>; })}</div>}</div>)}</div>
+        {!collapsed && <div className="os-side-search"><Search/><input value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Search modules…" aria-label="Search CMS modules"/></div>}
+        <div className="os-nav-scroll">{filteredNavGroups.map(group => <div className="os-nav-group" key={group.label}><button className="os-nav-group-title" onClick={() => setOpenGroups(previous => ({ ...previous, [group.label]: !previous[group.label] }))} aria-expanded={openGroups[group.label]}><span>{group.label}</span><ChevronDown style={{ transform: openGroups[group.label] ? "rotate(0deg)" : "rotate(-90deg)" }} /></button>{openGroups[group.label] && <div className="os-nav-items">{group.items.map(item => { const Icon = item.icon; const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)); const badge = badges[item.href] || 0; return <Link key={item.href} href={item.href} className={`os-nav-link ${active ? "active" : ""}`} title={item.label} onClick={() => setMobileOpen(false)}><Icon /><span>{item.label}</span>{badge > 0 && <b className="os-nav-badge">{badge > 99 ? "99+" : badge}</b>}</Link>; })}</div>}</div>)}</div>
         <div className="os-sidebar-foot"><Link className="os-site-button" href="/" target="_blank"><ExternalLink /><span>Open Website</span></Link><button className="os-create-button" onClick={() => setCreateOpen(true)}><Plus /><span>Create</span></button></div>
       </aside>
       {mobileOpen && <button className="os-mobile-overlay" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}

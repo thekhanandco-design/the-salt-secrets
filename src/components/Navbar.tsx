@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Menu, Moon, Sun, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ChevronDown, Menu, Moon, Search, Sun, X } from "lucide-react";
 import {
   loadCmsImages,
   loadCmsTextWithStyles,
@@ -15,11 +16,11 @@ import { styleToReact } from "@/lib/text-style";
 
 const defaults = {
   home: "Home",
-  about: "About Us",
   products: "Products",
   private_label: "Private Label",
   certifications: "Certifications",
   blog: "Blog",
+  about: "About",
   faq: "FAQ",
   contact: "Contact",
   quote: "Get Quote",
@@ -28,278 +29,136 @@ const defaults = {
 type LabelKey = keyof typeof defaults;
 
 export default function Navbar() {
+  const pathname = usePathname();
   const { dark, toggle } = useSiteTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("en");
   const [languages, setLanguages] = useState<CmsLanguage[]>([]);
   const [labels, setLabels] = useState(defaults);
   const [richText, setRichText] = useState<Record<string, CmsTextPayload>>({});
-  const [logo, setLogo] = useState("/logo.png");
+  const [logo, setLogo] = useState("/salt-origin-logo.png");
   const [logoAlt, setLogoAlt] = useState("The Salt Origin");
-  const [dynamicLinks, setDynamicLinks] = useState<Array<[string, string]>>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("salt-language") || "en";
     setLanguage(saved);
-    document.documentElement.lang = saved;
-    document.documentElement.dir = ["ar", "ur"].includes(saved) ? "rtl" : "ltr";
-    document.documentElement.dataset.siteLanguage = saved;
     void load(saved);
-
-    const refresh = () => {
-      void load(localStorage.getItem("salt-language") || "en");
-    };
-
+    const refresh = () => void load(localStorage.getItem("salt-language") || "en");
     window.addEventListener("salt-cms-updated", refresh);
     return () => window.removeEventListener("salt-cms-updated", refresh);
   }, []);
 
   async function load(lang: string) {
-    const [{ data: langs }, texts, images, { data: pages }] = await Promise.all([
-      supabase
-        .from("cms_languages")
-        .select("*")
-        .eq("enabled", true)
-        .order("display_order"),
+    const [{ data: langs }, texts, images] = await Promise.all([
+      supabase.from("cms_languages").select("*").eq("enabled", true).order("display_order"),
       loadCmsTextWithStyles("global", lang),
       loadCmsImages("global"),
-      supabase
-        .from("page_content")
-        .select("page_slug,content")
-        .order("updated_at", { ascending: false }),
     ]);
-
     setLanguages((langs as CmsLanguage[]) || []);
     setRichText(texts);
-
-    const text = (key: string, fallback: string) =>
-      texts[`global.navbar.${key}`]?.value || fallback;
-
+    const text = (key: string, fallback: string) => texts[`global.navbar.${key}`]?.value || fallback;
     setLabels({
       home: text("home", defaults.home),
-      about: text("about", defaults.about),
       products: text("products", defaults.products),
       private_label: text("private_label", defaults.private_label),
       certifications: text("certifications", defaults.certifications),
       blog: text("blog", defaults.blog),
+      about: text("about", defaults.about),
       faq: text("faq", defaults.faq),
       contact: text("contact", defaults.contact),
       quote: text("quote", defaults.quote),
     });
-
-    setLogo(
-      images["global.branding.header_logo"]?.url ||
-        images["global.branding.logo"]?.url ||
-        "/logo.png",
-    );
-    setLogoAlt(
-      texts["global.branding.logo_alt"]?.value || "The Salt Origin",
-    );
-
-    const reserved = new Set([
-      "home",
-      "about",
-      "products",
-      "private-label",
-      "certifications",
-      "blog",
-      "contact",
-      "faqs",
-      "privacy-policy",
-      "terms-and-conditions",
-      "articles",
-    ]);
-
-    setDynamicLinks(
-      (
-        (pages as Array<{
-          page_slug: string;
-          content?: Record<string, unknown>;
-        }> | null) || []
-      )
-        .filter(
-          (item) =>
-            !reserved.has(item.page_slug) &&
-            String(item.content?.status || "").toLowerCase() === "published",
-        )
-        .map(
-          (item) =>
-            [
-              `/${item.page_slug}`,
-              String(item.content?.title || item.page_slug.replaceAll("-", " ")),
-            ] as [string, string],
-        ),
-    );
+    setLogo(images["global.branding.header_logo"]?.url || images["global.branding.logo"]?.url || "/salt-origin-logo.png");
+    setLogoAlt(texts["global.branding.logo_alt"]?.value || "The Salt Origin");
   }
 
   async function changeLanguage(code: string) {
     setLanguage(code);
     localStorage.setItem("salt-language", code);
     const selected = languages.find((item) => item.code === code);
-    document.documentElement.dir =
-      selected?.direction || (["ar", "ur"].includes(code) ? "rtl" : "ltr");
+    document.documentElement.dir = selected?.direction || (["ar", "ur"].includes(code) ? "rtl" : "ltr");
     document.documentElement.lang = code;
-    document.documentElement.dataset.siteLanguage = code;
-
     if (code !== "en") {
       try {
-        await fetch("/api/translate/site", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language: code }),
-        });
-      } catch {
-        // The website still falls back to English when translation is unavailable.
-      }
+        await fetch("/api/translate/site", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language: code }) });
+      } catch {}
     }
-
     await load(code);
-    window.dispatchEvent(
-      new CustomEvent("salt-language-change", { detail: code }),
-    );
+    window.dispatchEvent(new CustomEvent("salt-language-change", { detail: code }));
     window.setTimeout(() => window.location.reload(), 120);
   }
 
-  const navStyle = (key: LabelKey) =>
-    styleToReact(richText[`global.navbar.${key}`]?.style);
-
-  const links: Array<[string, string, LabelKey | null]> = [
+  const navStyle = (key: LabelKey) => styleToReact(richText[`global.navbar.${key}`]?.style);
+  const brandName = richText["global.branding.header_brand_name"]?.value || "The Salt Origin";
+  const brandSubtitle = richText["global.branding.header_brand_subtitle"]?.value || "PINK SALT · PAKISTAN";
+  const links: Array<[string, string, LabelKey]> = [
     ["/", labels.home, "home"],
-    ["/about", labels.about, "about"],
     ["/products", labels.products, "products"],
     ["/private-label", labels.private_label, "private_label"],
     ["/certifications", labels.certifications, "certifications"],
     ["/blog", labels.blog, "blog"],
+    ["/about", labels.about, "about"],
     ["/faqs", labels.faq, "faq"],
-    ...dynamicLinks.map(
-      ([href, label]) => [href, label, null] as [string, string, LabelKey | null],
-    ),
     ["/contact", labels.contact, "contact"],
   ];
 
+  const results = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return needle ? links.filter(([, label]) => label.toLowerCase().includes(needle)) : links;
+  }, [query, labels]);
+
   return (
     <>
-      <header className="premium-public-header sticky top-0 z-[999] bg-white border-b border-[#F1E2E5] shadow-[0_2px_20px_rgba(0,0,0,0.03)]">
-        <div className="max-w-[1500px] mx-auto px-5 lg:px-10 h-[72px] flex items-center justify-between">
-          <Link href="/" className="flex items-center" aria-label="Go to homepage">
-            <img
-              src={logo}
-              alt={logoAlt}
-              className="h-[48px] lg:h-[54px] w-auto object-contain"
-            />
+      <div className="tso-top-strip">
+        <div className="tso-header-container">
+          <span>THE SALT ORIGIN · PREMIUM HIMALAYAN PINK SALT</span>
+          <div><span>●</span><Link href="/private-label">PRIVATE LABEL</Link><Link href="/contact">B2B EXPORT</Link><Link href="/products">GLOBAL SUPPLY</Link></div>
+        </div>
+      </div>
+      <header className="tso-main-header">
+        <div className="tso-header-container tso-main-header__row">
+          <Link href="/" className="tso-brand-lockup" aria-label="The Salt Origin homepage">
+            <img src={logo} alt={logoAlt} />
+            <span><strong>{brandName}</strong><small>{brandSubtitle}</small></span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-bold text-[#2f2b30]">
+          <nav className="tso-desktop-nav">
             {links.map(([href, label, key]) => (
-              <Link
-                key={href}
-                href={href}
-                style={key ? navStyle(key) : undefined}
-                className="hover:text-[#C54B5B] transition"
-              >
-                {label}
-              </Link>
+              <Link key={href} href={href} style={navStyle(key)} className={pathname === href ? "active" : ""}>{label}</Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggle}
-              aria-label="Toggle website theme"
-              className="hidden md:inline-flex items-center justify-center w-11 h-11 rounded-xl border border-[#EFE3E5] bg-white text-[#081325] site-theme-button"
-            >
-              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <div className="hidden md:flex relative items-center">
-              <select
-                aria-label="Website language"
-                value={language}
-                onChange={(event) => changeLanguage(event.target.value)}
-                className="appearance-none border border-[#EFE3E5] rounded-xl pl-4 pr-9 py-3 text-sm font-bold bg-white text-[#081325]"
-              >
-                {languages.length ? (
-                  languages.map((item) => (
-                    <option key={item.code} value={item.code}>
-                      {item.native_name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="en">English</option>
-                )}
-              </select>
-              <ChevronDown className="absolute right-3 w-4 h-4 pointer-events-none text-slate-500" />
-            </div>
-
-            <Link
-              href="/contact"
-              style={navStyle("quote")}
-              className="site-gradient-button hidden md:flex items-center justify-center text-white px-6 py-2.5 rounded-full font-bold transition"
-            >
-              {labels.quote}
-            </Link>
-
-            <button
-              onClick={() => setIsOpen(true)}
-              className="lg:hidden p-2"
-              aria-label="Open menu"
-            >
-              <Menu className="w-7 h-7" />
-            </button>
+          <div className="tso-header-actions">
+            <button className="tso-search-circle" onClick={() => setSearchOpen(true)} aria-label="Search website"><Search /></button>
+            <Link href="/contact" style={navStyle("quote")} className="tso-get-quote">{labels.quote}</Link>
+            <button className="tso-mobile-menu-button" onClick={() => setIsOpen(true)} aria-label="Open menu"><Menu /></button>
           </div>
         </div>
       </header>
 
+      {searchOpen && (
+        <div className="tso-search-overlay" role="dialog" aria-modal="true">
+          <button className="tso-search-backdrop" onClick={() => setSearchOpen(false)} aria-label="Close search" />
+          <div className="tso-search-panel">
+            <div className="tso-search-panel__top"><Search /><input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products, private label, certifications…"/><button onClick={() => setSearchOpen(false)}><X /></button></div>
+            <div className="tso-search-results">{results.map(([href, label]) => <Link key={href} href={href} onClick={() => setSearchOpen(false)}>{label}<span>→</span></Link>)}</div>
+          </div>
+        </div>
+      )}
+
       {isOpen && (
         <>
-          <button
-            className="fixed inset-0 bg-black/50 z-[990]"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close menu overlay"
-          />
-          <aside className="fixed top-0 right-0 h-screen w-[84%] max-w-[380px] bg-white z-[1000] shadow-2xl p-6">
-            <div className="flex justify-between items-center">
-              <img src={logo} alt={logoAlt} className="h-14 w-auto" />
-              <button onClick={() => setIsOpen(false)} aria-label="Close menu">
-                <X className="w-7 h-7" />
-              </button>
+          <button className="tso-mobile-backdrop" onClick={() => setIsOpen(false)} aria-label="Close menu overlay" />
+          <aside className="tso-mobile-drawer">
+            <div className="tso-mobile-drawer__head"><div className="tso-brand-lockup"><img src={logo} alt={logoAlt}/><span><strong>{brandName}</strong><small>{brandSubtitle}</small></span></div><button onClick={() => setIsOpen(false)}><X /></button></div>
+            <nav>{links.map(([href, label]) => <Link key={href} href={href} onClick={() => setIsOpen(false)}>{label}</Link>)}</nav>
+            <div className="tso-mobile-tools">
+              <button onClick={toggle}>{dark ? <Sun/> : <Moon/>}<span>{dark ? "Light Mode" : "Dark Mode"}</span></button>
+              <label><span>Language</span><select value={language} onChange={(event) => changeLanguage(event.target.value)}>{languages.length ? languages.map((item) => <option key={item.code} value={item.code}>{item.native_name}</option>) : <option value="en">English</option>}</select><ChevronDown/></label>
             </div>
-
-            <div className="mt-8">
-              <select
-                value={language}
-                onChange={(event) => changeLanguage(event.target.value)}
-                className="w-full border rounded-xl p-4 bg-white"
-              >
-                {languages.map((item) => (
-                  <option key={item.code} value={item.code}>
-                    {item.native_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <nav className="mt-5 flex flex-col gap-2">
-              {links.map(([href, label, key]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  style={key ? navStyle(key) : undefined}
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-3 rounded-xl hover:bg-[#FFF4F5] font-bold"
-                >
-                  {label}
-                </Link>
-              ))}
-              <Link
-                href="/contact"
-                style={navStyle("quote")}
-                onClick={() => setIsOpen(false)}
-                className="site-gradient-button mt-3 text-white text-center py-4 rounded-xl font-bold"
-              >
-                {labels.quote}
-              </Link>
-            </nav>
+            <Link href="/contact" className="tso-get-quote full" onClick={() => setIsOpen(false)}>{labels.quote}</Link>
           </aside>
         </>
       )}

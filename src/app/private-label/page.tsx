@@ -1,288 +1,194 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Award,
-  Box,
-  CheckCircle2,
-  Clock3,
-  Factory,
-  Globe,
-  Leaf,
-  MessageCircle,
-  Package,
-  PencilRuler,
-  ShieldCheck,
-  Tag,
-  TrendingUp,
-  Truck,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BadgeCheck, Box, Boxes, Globe2, Package, Palette, ShoppingBag } from "lucide-react";
+import { supabase } from "@/lib/supabase-client";
+import { PRIVATE_LABEL_PRODUCTS, type PrivateLabelProductSeed } from "@/lib/private-label-catalog";
+import styles from "./PrivateLabel.module.css";
 
-const packagingOptions = [
-  { image: "/pet-bottles.png", title: "PET BOTTLES", sizes: "100g, 200g, 250g, 500g, 1kg, 2kg" },
-  { image: "/pet-jars.png", title: "PET JARS", sizes: "250g, 500g, 1kg, 2kg, 3kg, 5kg" },
-  { image: "/grinder-bottles1.png", title: "GRINDER BOTTLES", sizes: "100g, 200g, 250g, 400g" },
-  { image: "/ceramic-grinders.png", title: "CERAMIC GRINDERS", sizes: "150g, 250g, 400g" },
-  { image: "/shaker-bottles.png", title: "SHAKER BOTTLES", sizes: "100g, 200g, 250g, 500g" },
-  { image: "/standup-pouch.png", title: "STAND-UP POUCHES", sizes: "250g, 500g, 1kg, 2kg, 5kg" },
-];
+type Product = Omit<PrivateLabelProductSeed, "status"> & { id?: number; status?: string | null };
+type Grain = "Extra Fine Powder" | "Coarse (2–5mm)";
 
-const receiveItemsLeft = [
-  "Private Label Manufacturing",
-  "Custom Label Design",
-  "Custom Packaging",
-  "Export Documentation",
-];
+const formatCards = [
+  [ShoppingBag, "pouches", "Pouches", "Stand-up & gusseted pouches"],
+  [Package, "jars", "Jars", "Round & square jars with spoon"],
+  [Boxes, "bottles", "Bottles", "Shakers & PET bottles"],
+  [Box, "grinders", "Grinders", "Plastic, ceramic & glass grinders"],
+  [Package, "bulk", "Bulk", "Commercial & export formats"],
+] as const;
 
-const receiveItemsRight = [
-  "Quality Control",
-  "Worldwide Delivery",
-  "Dedicated Account Support",
-];
+const workflow = [
+  ["01", "Brief", "Market, product, pack size, target volume and deadline."],
+  ["02", "Specification", "Grain, packaging materials and quality requirements."],
+  ["03", "Artwork", "Brand files, label panel structure and approvals."],
+  ["04", "Production", "Final commercial approval, packing and dispatch."],
+] as const;
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <span className="hidden sm:block w-14 h-[2px] bg-[#D9909A]" />
-      <h2
-        className="text-center text-[#081325] font-black uppercase leading-tight"
-        style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.8rem,2.8vw,3rem)" }}
-      >
-        {children}
-      </h2>
-      <span className="hidden sm:block w-14 h-[2px] bg-[#D9909A]" />
-    </div>
-  );
-}
+const workspace = [
+  ["artwork", "Artwork Upload", "Share logo, dieline and brand guidelines."],
+  ["moq", "MOQ Planning", "Match packaging format with commercial volume."],
+  ["sample", "Sample Request", "Request product or packaging samples before production."],
+  ["quote", "Quote Portal", "Review quotations, revisions and approved documents."],
+] as const;
 
-function WhyCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return (
-    <div className="bg-white border border-[#F1D9DD] rounded-[22px] p-7 text-center shadow-[0_15px_35px_rgba(194,59,74,0.06)]">
-      <div className="w-20 h-20 mx-auto rounded-full bg-[#FFF0F2] flex items-center justify-center">{icon}</div>
-      <h3 className="font-black text-[#081325] text-base mt-5 uppercase leading-tight">{title}</h3>
-      <p className="text-slate-600 text-sm mt-4 leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function CustomizeCard({ image, title, text }: { image: string; title: string; text: string }) {
-  return (
-    <div className="bg-white border border-[#F1C8CF] rounded-[14px] overflow-hidden">
-      <div className="h-[270px] flex items-center justify-center bg-[#FFF8F5] p-5">
-        <Image src={image} alt={title} width={520} height={360} className="max-h-[245px] w-auto object-contain" />
-      </div>
-      <div className="border-t border-[#F1C8CF] p-6 text-center">
-        <h3 className="font-black text-[#081325] uppercase">{title}</h3>
-        <p className="text-slate-600 mt-3 leading-relaxed">{text}</p>
-      </div>
-    </div>
-  );
-}
-
-function ProcessStep({
-  number,
-  icon,
-  title,
-  text,
-}: {
-  number: string;
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="relative text-center">
-      <div className="relative mx-auto w-24 h-24 rounded-full border-2 border-[#C23B4A] bg-white flex items-center justify-center">
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#C23B4A] text-white text-sm font-black flex items-center justify-center">
-          {number}
-        </span>
-        {icon}
-      </div>
-      <h3 className="font-black text-[#081325] text-sm uppercase mt-6">{title}</h3>
-      <p className="text-slate-600 text-sm mt-3 max-w-[180px] mx-auto leading-relaxed">{text}</p>
-    </div>
-  );
+function cmsKey(section: string, field: string) {
+  return `private-label.${section}.${field}`;
 }
 
 export default function PrivateLabelPage() {
+  const [products, setProducts] = useState<Product[]>(PRIVATE_LABEL_PRODUCTS);
+
+  useEffect(() => {
+    let active = true;
+    void supabase
+      .from("products")
+      .select("id,title,slug,subtitle,category,description,short_description,image,moq,packaging,status,grain_type,sizes,packaging_type,best_for,features,applications,specifications,featured,display_order,seo_title,seo_description")
+      .eq("category", "private-label-packaging")
+      .order("display_order")
+      .then(({ data, error }) => {
+        if (!active || error || !data?.length) return;
+        setProducts((data as Product[]).filter((item) => item.status === "active" || item.status === "published"));
+      });
+    return () => { active = false; };
+  }, []);
+
+  const groups = useMemo(
+    () => (["Extra Fine Powder", "Coarse (2–5mm)"] as Grain[]).map((grain) => ({
+      grain,
+      title: grain === "Extra Fine Powder" ? "Extra Fine Powder" : "Coarse",
+      products: products.filter((item) => item.grain_type === grain),
+    })),
+    [products],
+  );
+
   return (
-    <main className="bg-white text-[#081325]">
-      <section data-cms-section="hero" className="bg-gradient-to-b from-[#FFF0F2] via-[#FFF7F8] to-white">
-        <div className="max-w-[1400px] mx-auto px-6 pt-20 pb-10 text-center">
-          <div className="flex items-center justify-center gap-4">
-            <span className="hidden sm:block w-16 h-[2px] bg-[#D9909A]" />
-            <span className="uppercase tracking-[6px] text-[#C23B4A] font-black text-lg lg:text-xl">Private Label Manufacturer</span>
-            <span className="hidden sm:block w-16 h-[2px] bg-[#D9909A]" />
-          </div>
+    <main className={styles.page}>
+      <section className={styles.hero} data-cms-section="hero">
+        <div className={`${styles.container} ${styles.heroGrid}`}>
+          <div className={styles.heroCopy}>
+            <div className={styles.crumbs} data-cms-key={cmsKey("hero", "crumbs")}>HOME / PRIVATE LABEL</div>
+            <h1>
+              <span data-cms-key={cmsKey("hero", "title_main")}>Your brand. Our </span>
+              <em data-cms-key={cmsKey("hero", "title_accent")}>origin.</em>
+            </h1>
+            <p className={styles.lead} data-cms-key={cmsKey("hero", "description_current")}>Premium private-label Himalayan pink salt solutions crafted to reflect your brand and meet your market needs.</p>
 
-          <h1
-            className="mt-6 text-[#081325] font-black leading-[0.95]"
-            style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.4rem,4.2vw,4.8rem)" }}
-          >
-            Launch Your Own
-            <br />
-            Himalayan Pink Salt Brand
-          </h1>
-
-          <p className="max-w-3xl mx-auto text-slate-600 text-lg mt-7 leading-relaxed">
-            From custom labels and packaging to complete private label manufacturing, we help brands create retail-ready
-            Himalayan Pink Salt products for global markets.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-5 mt-9">
-            <Link href="/contact" className="inline-flex items-center justify-center gap-3 bg-[#C23B4A] text-white px-8 py-4 rounded-md font-black uppercase text-sm hover:opacity-90 transition">
-              <Package className="w-5 h-5" />
-              Request Private Label Quote
-            </Link>
-            <Link href="/contact" className="inline-flex items-center justify-center gap-3 bg-white border-2 border-[#C23B4A] text-[#C23B4A] px-8 py-4 rounded-md font-black uppercase text-sm hover:bg-[#FFF4F5] transition">
-              <Tag className="w-5 h-5" />
-              Download Catalog
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto mt-14">
-            <div className="flex items-center justify-center gap-3 text-sm font-black uppercase">
-              <Leaf className="w-8 h-8 text-[#C23B4A]" />
-              100% Natural
-            </div>
-            <div className="flex items-center justify-center gap-3 text-sm font-black uppercase">
-              <Award className="w-8 h-8 text-[#C23B4A]" />
-              Premium Quality
-            </div>
-            <div className="flex items-center justify-center gap-3 text-sm font-black uppercase">
-              <Tag className="w-8 h-8 text-[#C23B4A]" />
-              Custom Branding
-            </div>
-            <div className="flex items-center justify-center gap-3 text-sm font-black uppercase">
-              <Globe className="w-8 h-8 text-[#C23B4A]" />
-              Global Shipping
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section data-cms-section="benefits" className="max-w-[1200px] mx-auto px-6 py-12">
-        <SectionTitle>Why Private Label?</SectionTitle>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-7 mt-10">
-          <WhyCard icon={<TrendingUp className="w-12 h-12 text-[#C23B4A]" />} title="Higher Profit Margins" text="Sell under your own brand and maximize your profits." />
-          <WhyCard icon={<ShieldCheck className="w-12 h-12 text-[#C23B4A]" />} title="Brand Ownership" text="Build long-term brand value and customer loyalty." />
-          <WhyCard icon={<Package className="w-12 h-12 text-[#C23B4A]" />} title="Custom Packaging" text="Unique packaging that represents your brand identity." />
-          <WhyCard icon={<Globe className="w-12 h-12 text-[#C23B4A]" />} title="Global Market Reach" text="Retail and wholesale ready for international markets." />
-        </div>
-      </section>
-
-      <section data-cms-section="packaging" className="max-w-[1300px] mx-auto px-6 py-8">
-        <SectionTitle>What We Customize</SectionTitle>
-        <div className="grid lg:grid-cols-3 gap-7 mt-10">
-          <CustomizeCard image="/custom-logo-design.png" title="Logo Design" text="Create a unique logo that represents your brand." />
-          <CustomizeCard image="/custom-labels.png" title="Product Labels" text="Custom labels with your brand name, design, and details." />
-          <CustomizeCard image="/custom-packaging.png" title="Packaging Design" text="Custom packaging that stands out on the shelves." />
-        </div>
-      </section>
-
-      <section data-cms-section="process" className="max-w-[1400px] mx-auto px-6 py-10">
-        <SectionTitle>Packaging Options</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5 mt-10">
-          {packagingOptions.map((item) => (
-            <div key={item.title} className="bg-white border border-[#F1C8CF] rounded-[12px] p-4 text-center">
-              <div className="h-[180px] flex items-center justify-center">
-                <Image src={item.image} alt={item.title} width={260} height={260} className="max-h-[165px] w-auto object-contain" />
+            <div className={styles.benefits}>
+              <div className={styles.benefit}>
+                <div className={styles.benefitTitle}><Palette/><strong data-cms-key={cmsKey("hero", "feature_1_title")}>Custom Branding</strong></div>
+                <span data-cms-key={cmsKey("hero", "feature_1_text")}>Your logo, identity and label direction.</span>
               </div>
-              <h3 className="font-black text-[#081325] text-sm uppercase mt-3">{item.title}</h3>
-              <p className="text-slate-600 text-sm mt-2 leading-relaxed">{item.sizes}</p>
+              <div className={styles.benefit}>
+                <div className={styles.benefitTitle}><Package/><strong data-cms-key={cmsKey("hero", "feature_2_title")}>Wide Packaging Range</strong></div>
+                <span data-cms-key={cmsKey("hero", "feature_2_text")}>Pouches, jars, bottles and grinders.</span>
+              </div>
+              <div className={styles.benefit}>
+                <div className={styles.benefitTitle}><BadgeCheck/><strong data-cms-key={cmsKey("hero", "feature_3_title")}>Market-Ready Quality</strong></div>
+                <span data-cms-key={cmsKey("hero", "feature_3_text")}>Food-grade, consistent and reliable.</span>
+              </div>
+              <div className={styles.benefit}>
+                <div className={styles.benefitTitle}><Globe2/><strong data-cms-key={cmsKey("hero", "feature_4_title")}>Global Supply</strong></div>
+                <span data-cms-key={cmsKey("hero", "feature_4_text")}>Export planning for international markets.</span>
+              </div>
+            </div>
+
+            <Link className={`${styles.button} ${styles.primary}`} href="/contact" data-cms-key={cmsKey("hero", "quote_button")}>Start Your Private Label Quote</Link>
+          </div>
+
+          <div className={styles.heroBannerWrap}>
+            <Image className={styles.heroBanner} src="/hero-banner.png" alt="Himalayan pink salt private label banner" width={1600} height={900} priority unoptimized />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.studio} data-cms-section="studio">
+        <div className={`${styles.container} ${styles.studioGrid}`}>
+          <div className={styles.studioVisual}>
+            <span className={styles.visualBadge}>Interactive Packaging</span>
+            <Image src="/custom-packaging.png" alt="Private label packaging formats" width={1100} height={900} unoptimized />
+          </div>
+          <div className={styles.studioCopy}>
+            <div className={styles.eyebrow} data-cms-key={cmsKey("studio", "eyebrow")}>Packaging Studio</div>
+            <h2><span data-cms-key={cmsKey("studio", "title_main")}>Choose the format your market </span><em data-cms-key={cmsKey("studio", "title_accent")}>expects.</em></h2>
+            <p data-cms-key={cmsKey("studio", "description")}>Select from a focused range of private-label packaging formats designed for retail, distribution and export programs.</p>
+            <div className={styles.formatGrid}>
+              {formatCards.map(([Icon, key, title, copy]) => (
+                <article className={styles.formatCard} key={key}>
+                  <Icon/>
+                  <b data-cms-key={cmsKey("studio", `${key}_title`)}>{title}</b>
+                  <span data-cms-key={cmsKey("studio", `${key}_text`)}>{copy}</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.range} data-cms-section="range">
+        <div className={styles.container}>
+          <div className={styles.rangeHead}>
+            <div className={styles.eyebrow} data-cms-key={cmsKey("range", "eyebrow")}>Our Private Label Range</div>
+            <h2><span data-cms-key={cmsKey("range", "title_main")}>Packaging options for </span><em data-cms-key={cmsKey("range", "title_accent")}>every market.</em></h2>
+            <p data-cms-key={cmsKey("range", "description")}>Choose the salt form and packaging format that best fits your retail, distributor or private-label program.</p>
+          </div>
+
+          {groups.map((group) => (
+            <div className={styles.productGroup} key={group.grain}>
+              <div className={styles.productGroupHeading}>
+                <span>{group.grain === "Extra Fine Powder" ? "Fine Grain Collection" : "Coarse Grain Collection"}</span>
+                <h3>{group.title}</h3>
+              </div>
+              <div className={styles.productGrid}>
+                {group.products.length ? group.products.map((product, index) => {
+                  const sizes = String(product.sizes || "").split(/[·,]/).map((item) => item.trim()).filter(Boolean);
+                  return (
+                    <article className={styles.productCard} key={product.slug}>
+                      <div className={styles.productImage}><Image src={product.image || "/white-sack.png"} alt={product.title} width={700} height={700}/></div>
+                      <div className={styles.productBody}>
+                        <span className={styles.productIndex}>{String(index + 1).padStart(2, "0")}</span>
+                        <h3>{product.title}</h3>
+                        <div className={styles.sizes}>{sizes.map((size) => <span key={size}>{size}</span>)}</div>
+                        <div className={styles.productMeta}>{product.packaging_type || product.packaging}</div>
+                        <Link className={styles.productLink} href={`/products/${product.slug}`}>View Details →</Link>
+                      </div>
+                    </article>
+                  );
+                }) : <div className={styles.empty}>No visible private-label formats in this group.</div>}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section data-cms-section="quality" className="relative overflow-hidden bg-[#FFF0F2] py-14">
-        <Image src="/mountains-bg.png" alt="" width={900} height={400} className="absolute left-0 bottom-0 w-[360px] lg:w-[520px] opacity-20" />
-        <Image src="/mountains-bg.png" alt="" width={900} height={400} className="absolute right-0 bottom-0 w-[360px] lg:w-[520px] opacity-20 scale-x-[-1]" />
-        <div className="relative z-10 max-w-[1300px] mx-auto px-6">
-          <SectionTitle>Our Private Label Process</SectionTitle>
-          <div className="grid md:grid-cols-4 gap-9 mt-12">
-            <ProcessStep number="01" icon={<MessageCircle className="w-10 h-10 text-[#C23B4A]" />} title="Consultation" text="Share your requirements and ideas with our team." />
-            <ProcessStep number="02" icon={<PencilRuler className="w-10 h-10 text-[#C23B4A]" />} title="Design Approval" text="We create designs and send for your approval." />
-            <ProcessStep number="03" icon={<Factory className="w-10 h-10 text-[#C23B4A]" />} title="Production" text="High-quality manufacturing with strict quality control." />
-            <ProcessStep number="04" icon={<Truck className="w-10 h-10 text-[#C23B4A]" />} title="Worldwide Delivery" text="Safe packaging and on-time delivery to your destination." />
+      <section className={styles.workflow} data-cms-section="workflow">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <div className={styles.eyebrow} data-cms-key={cmsKey("workflow", "eyebrow")}>Private Label Workflow</div>
+            <h2><span data-cms-key={cmsKey("workflow", "title_main")}>From concept to </span><em data-cms-key={cmsKey("workflow", "title_accent")}>production-ready.</em></h2>
+            <p data-cms-key={cmsKey("workflow", "description")}>A clear commercial path keeps packaging, specification and approvals moving efficiently.</p>
           </div>
+          <div className={styles.steps}>{workflow.map(([number, title, copy], index) => <article className={styles.step} key={number}><span>{number}</span><h3 data-cms-key={cmsKey("workflow", ["brief_title","spec_title","artwork_title","production_title"][index])}>{title}</h3><p data-cms-key={cmsKey("workflow", ["brief_text","spec_text","artwork_text","production_text"][index])}>{copy}</p></article>)}</div>
         </div>
       </section>
 
-      <section data-cms-section="capabilities" className="max-w-[1300px] mx-auto px-6 py-14">
-        <div className="grid lg:grid-cols-2 gap-10 items-start">
-          <div>
-            <h2 className="font-black text-[#081325] mb-8" style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2rem,3vw,3rem)" }}>
-              MOQ & LEAD TIME
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-5 max-w-[520px]">
-              <div className="bg-white border border-[#F1D9DD] rounded-[18px] p-7 text-center shadow-sm">
-                <Box className="w-10 h-10 text-[#C23B4A] mx-auto" />
-                <p className="font-black uppercase text-sm mt-3">MOQ</p>
-                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>6000</div>
-                <p className="font-black">PCS</p>
-                <p className="text-slate-600 text-sm mt-2">Minimum order quantity for private label.</p>
-              </div>
-              <div className="bg-white border border-[#F1D9DD] rounded-[18px] p-7 text-center shadow-sm">
-                <Clock3 className="w-10 h-10 text-[#C23B4A] mx-auto" />
-                <p className="font-black uppercase text-sm mt-3">Lead Time</p>
-                <div className="font-black text-[#C23B4A] mt-2" style={{ fontFamily: "Georgia, serif", fontSize: "3.2rem" }}>45-60</div>
-                <p className="font-black">DAYS</p>
-                <p className="text-slate-600 text-sm mt-2">Production time after design approval.</p>
-              </div>
-            </div>
+      <section className={styles.workspace} data-cms-section="workspace">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <div className={styles.eyebrow} data-cms-key={cmsKey("workspace", "eyebrow")}>Buyer Workspace</div>
+            <h2><span data-cms-key={cmsKey("workspace", "title_main")}>Build a complete </span><em data-cms-key={cmsKey("workspace", "title_accent")}>private-label brief.</em></h2>
+            <p data-cms-key={cmsKey("workspace", "description")}>Prepare the inputs your sales and production teams need before commercial approval.</p>
           </div>
-
-          <div>
-            <SectionTitle>What You Receive</SectionTitle>
-            <div className="grid sm:grid-cols-2 gap-4 mt-8">
-              <div className="space-y-4">
-                {receiveItemsLeft.map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#C23B4A]" />
-                    <span className="font-semibold">{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-4">
-                {receiveItemsRight.map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-[#C23B4A]" />
-                    <span className="font-semibold">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <div className={styles.workspaceGrid}>{workspace.map(([key, title, copy]) => <article className={styles.workspaceCard} key={key}><h3 data-cms-key={cmsKey("workspace", `${key}_title`)}>{title}</h3><p data-cms-key={cmsKey("workspace", `${key}_text`)}>{copy}</p><Link href="/contact" data-cms-key={cmsKey("workspace", "link_label")}>Start request →</Link></article>)}</div>
         </div>
       </section>
 
-      <section data-cms-section="cta" className="brand-gradient-section private-label-final-cta text-white">
-        <div className="private-label-final-cta__mountains" aria-hidden="true" />
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 py-14 lg:py-16">
-          <div className="grid lg:grid-cols-[240px_1fr_240px] gap-8 items-center">
-            <div className="hidden lg:flex justify-center">
-              <Image src="/pet-bottles.png" alt="Private Label Bottles" width={300} height={260} className="max-h-[180px] w-auto object-contain drop-shadow-2xl" />
-            </div>
-            <div className="text-center">
-              <p className="uppercase tracking-[5px] text-xs font-black text-white/70">Private Label Partnership</p>
-              <h2 className="site-heading-font mt-3 font-black leading-tight" style={{ fontSize: "clamp(2.2rem,4vw,3.8rem)" }}>
-                Ready To Launch Your Own Salt Brand?
-              </h2>
-              <p className="text-white/88 text-lg mt-4 max-w-3xl mx-auto">Partner with a trusted Himalayan Pink Salt supplier for product planning, packaging and export-ready private label support.</p>
-              <div className="flex flex-wrap justify-center gap-4 mt-8">
-                <Link href="/contact" className="brand-light-button">
-                  Get Free Quote
-                  <span className="text-xl">→</span>
-                </Link>
-                <Link href="https://wa.me/923462771693" target="_blank" className="brand-glass-button">
-                  WhatsApp Us
-                  <MessageCircle className="w-5 h-5" />
-                </Link>
-              </div>
-            </div>
-            <div className="hidden lg:flex justify-center">
-              <Image src="/standup-pouch.png" alt="Private Label Pouch" width={300} height={260} className="max-h-[180px] w-auto object-contain drop-shadow-2xl" />
-            </div>
+      <section className={styles.cta} data-cms-section="cta">
+        <div className={styles.container}>
+          <div className={styles.ctaBox}>
+            <div><h2 data-cms-key={cmsKey("cta", "title_current")}>Ready to build your private-label salt range?</h2><p data-cms-key={cmsKey("cta", "description_current")}>Share your target market, packaging format and expected volume.</p></div>
+            <Link href="/contact" className={`${styles.button} ${styles.secondary}`} data-cms-key={cmsKey("cta", "button")}>Start Private Label Quote</Link>
           </div>
         </div>
       </section>
