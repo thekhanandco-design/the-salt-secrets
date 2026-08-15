@@ -1980,3 +1980,88 @@ html.site-dark .tso-main-header,html.site-dark .tso-mobile-drawer,html.site-dark
   .tso-contact-info-grid .tso-contact-block--full{grid-column:auto}
   .tso-cert-grid-public--logos{grid-template-columns:1fr!important}
 }
+
+/* ========================================================================== */
+/* V7.5.4 PRODUCTION TYPOGRAPHY NORMALIZATION                                 */
+/* Keeps the live website visually identical to the approved local typography. */
+/* CMS/admin remains untouched because every rule is scoped to .site-shell.    */
+/* ========================================================================== */
+.site-shell,
+.site-shell * {
+  font-synthesis: none;
+}
+
+.site-shell {
+  font-family: var(--site-font-body) !important;
+  font-weight: 400;
+}
+
+/* All public editorial headings use the same thin approved serif weight. */
+.site-shell main :where(h1,h2,h3,h4,h5,h6) {
+  font-family: var(--site-font-heading) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  font-synthesis: none !important;
+}
+
+/* Do not let saved CMS spans/strong tags make a heading heavier in production. */
+.site-shell main :where(h1,h2,h3,h4,h5,h6) :where(span,strong,b) {
+  font-family: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* Wine/red accent words stay the same serif face in italic. */
+.site-shell main :where(h1,h2,h3,h4,h5,h6) :where(em,i,.tso-cms-accent-heading) {
+  font-family: var(--site-font-heading) !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+  color: var(--tso-deep,#9f1738) !important;
+}
+
+/* Normal public copy stays regular, not browser-synthesized bold. */
+.site-shell main :where(p,li,dd,dt) {
+  font-family: var(--site-font-body) !important;
+  font-weight: 400;
+}
+
+/* Product-family/category titles were the most visible production mismatch. */
+.site-shell .tso-product-family-nav__grid strong,
+.site-shell .tso-product-family-nav__grid button strong,
+.site-shell .tso-category-public-body h2,
+.site-shell .tso-showcase-product-card__body h3,
+.site-shell .tso-journal-card-body h2,
+.site-shell .tso-workspace-grid h3,
+.site-shell .tso-cert-grid-public h3,
+.site-shell .tso-pdp-benefit-strip h3,
+.site-shell .tso-pdp-process h3,
+.site-shell .tso-pdp-why-grid h3,
+.site-shell .tso-pdp-page h3 {
+  font-family: var(--site-font-heading) !important;
+  font-weight: 500 !important;
+  font-synthesis: none !important;
+}
+
+/* Public navigation should not jump to a heavier synthesized weight on Vercel. */
+.site-shell header nav a,
+.site-shell .tso-desktop-nav a {
+  font-family: var(--site-font-body) !important;
+  font-weight: 500 !important;
+  font-synthesis: none !important;
+}
+
+/* Keep buttons readable without using extra-black weights. */
+.site-shell main button,
+.site-shell main a[class*="button"],
+.site-shell main a[class*="btn"],
+.site-shell .tso-btn,
+.site-shell .tso-button {
+  font-weight: 600 !important;
+  font-synthesis: none !important;
+}
+
+/* Footer headings remain clear but not visually over-bold. */
+.site-shell footer h4,
+.site-shell footer strong {
+  font-weight: 600 !important;
+  font-synthesis: none !important;
+}
