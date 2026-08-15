@@ -86,7 +86,7 @@ const navGroups: NavGroup[] = [
 const quickActions = [
   { label: "Create Lead", href: "/admin/leads?action=create", icon: Inbox, description: "Add a B2B inquiry to the live CRM" },
   { label: "Create Quotation", href: "/admin/quotations?action=create", icon: FileSpreadsheet, description: "Build and save an export document" },
-  { label: "Generate Blog", href: "/admin/blog-center?action=generate", icon: WandSparkles, description: "Research and create a review draft" },
+  { label: "Generate Content Package", href: "/admin/content-studio", icon: WandSparkles, description: "Add a topic and generate a blog + social pack on demand" },
   { label: "Create Social Post", href: "/admin/social-studio?action=create", icon: Share2, description: "Prepare platform-specific drafts" },
   { label: "Manage Social Links", href: "/admin/social-links", icon: Link2, description: "Add website footer profile links" },
   { label: "Manage Products", href: "/admin/products", icon: Boxes, description: "Add, edit and organize storefront products" },

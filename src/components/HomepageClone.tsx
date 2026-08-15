@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
+  BadgeCheck,
+  Box,
   Boxes,
   Building2,
   CheckCircle2,
@@ -11,9 +14,13 @@ import {
   FileCheck2,
   Globe2,
   Headphones,
+  Package,
   PackageCheck,
+  Palette,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
+  Tags,
   Truck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
@@ -258,115 +265,66 @@ export default function HomepageClone() {
     }
 
     if (slug === "private_label") {
-      const privateFormats = [
-        {
-          key: "pouch",
-          label: cmsText["home.private_label.pouch_title"] || "POUCH",
-          sublabel: cmsText["home.private_label.pouch_text"] || "Stand-up & Ziplock",
-          image: cmsImages["home.private_label.pouch"]?.url || "/pouches.png",
-          alt: cmsImages["home.private_label.pouch"]?.alt || "Private label Himalayan pink salt pouch",
-        },
-        {
-          key: "jar",
-          label: cmsText["home.private_label.jar_title"] || "JAR",
-          sublabel: cmsText["home.private_label.jar_text"] || "Plastic / Glass",
-          image: cmsImages["home.private_label.jar"]?.url || "/pet-jars.png",
-          alt: cmsImages["home.private_label.jar"]?.alt || "Private label Himalayan pink salt jar",
-        },
-        {
-          key: "grinder",
-          label: cmsText["home.private_label.grinder_title"] || "GRINDER",
-          sublabel: cmsText["home.private_label.grinder_text"] || "Plastic / Glass",
-          image: cmsImages["home.private_label.grinder"]?.url || "/grinder-bottles.png",
-          alt: cmsImages["home.private_label.grinder"]?.alt || "Private label Himalayan pink salt grinder",
-        },
-        {
-          key: "bulk",
-          label: cmsText["home.private_label.bulk_title"] || "BULK",
-          sublabel: cmsText["home.private_label.bulk_text"] || "5kg to 25kg+",
-          image: cmsImages["home.private_label.bulk"]?.url || "/white-sack.png",
-          alt: cmsImages["home.private_label.bulk"]?.alt || "Private label Himalayan pink salt bulk bag",
-        },
+      const benefits = [
+        { icon: BadgeCheck, title: cmsText["home.private_program.benefit_1_title"] || "PURE & NATURAL", text: cmsText["home.private_program.benefit_1_text"] || "100% pure Himalayan pink salt. No additives, no compromises." },
+        { icon: ShieldCheck, title: cmsText["home.private_program.benefit_2_title"] || "CERTIFIED QUALITY", text: cmsText["home.private_program.benefit_2_text"] || "International quality standards with strict food safety control." },
+        { icon: Globe2, title: cmsText["home.private_program.benefit_3_title"] || "GLOBAL REACH", text: cmsText["home.private_program.benefit_3_text"] || "Reliable production and on-time delivery to international markets." },
+        { icon: PackageCheck, title: cmsText["home.private_program.benefit_4_title"] || "YOUR BRAND IDENTITY", text: cmsText["home.private_program.benefit_4_text"] || "Your logo, your label, your packaging — built around your brand." },
       ];
 
-      const privateBenefits = [
-        [PackageCheck, cmsText["home.private_label.feature_one_title"] || "MULTIPLE FORMATS", cmsText["home.private_label.feature_one_text"] || "Pouch, Jar, Grinder or Bulk — we’ve got you covered."],
-        [Sparkles, cmsText["home.private_label.feature_two_title"] || "FULLY CUSTOMIZABLE", cmsText["home.private_label.feature_two_text"] || "Your logo, colors, labels & design — 100% yours."],
-        [ShieldCheck, cmsText["home.private_label.feature_three_title"] || "PREMIUM QUALITY", cmsText["home.private_label.feature_three_text"] || "100% natural Himalayan pink salt, processed with care."],
-        [Globe2, cmsText["home.private_label.feature_four_title"] || "GLOBAL SUPPLY", cmsText["home.private_label.feature_four_text"] || "Reliable export, on-time delivery, worldwide."],
-      ] as const;
+      const solutions = [
+        { icon: ShoppingBag, key: "pouch", title: "POUCH", text: "Stand-up & ziplock pouches", note: "Multiple sizes available", image: cmsImages["home.private_program.pouch"]?.url || cmsImages["home.private_label.pouch"]?.url || "/pouches.png" },
+        { icon: Package, key: "jar", title: "JAR", text: "Plastic or glass jars", note: "Custom sizes & labels", image: cmsImages["home.private_program.jar"]?.url || cmsImages["home.private_label.jar"]?.url || "/pet-jars.png" },
+        { icon: Box, key: "grinder", title: "GRINDER", text: "Grinder bottles (plastic/glass)", note: "Refillable & retail ready", image: cmsImages["home.private_program.grinder"]?.url || cmsImages["home.private_label.grinder"]?.url || "/grinder-bottles.png" },
+        { icon: Boxes, key: "bulk_packaging", title: "BULK PACKAGING", text: "5kg, 10kg, 25kg+ options", note: "For brands & distributors", image: cmsImages["home.private_program.bulk_packaging"]?.url || cmsImages["home.private_label.bulk"]?.url || "/white-sack.png" },
+        { icon: ShoppingBag, key: "bulk_bags", title: "BULK BAGS", text: "25kg+ HDPE / PP bags", note: "Custom printing available", image: cmsImages["home.private_program.bulk_bags"]?.url || "/white-sack.png" },
+      ];
 
       return (
-        <section className="tso-section tso-private-label tso-private-program" data-cms-section="private_label" key={slug} style={sectionStyle(slug)}>
-          <div className="tso-public-container">
-            <div className="tso-private-program-shell">
-              <div className="tso-private-program-watermark" aria-hidden="true" />
-              <div className="tso-private-program-main">
-                <div className="tso-private-program-copy">
-                  <div className="tso-private-program-eyebrow">
-                    <span />
-                    {cmsText["home.private_label.eyebrow"] || "PRIVATE LABEL PROGRAM"}
-                  </div>
-                  <h2 className="tso-private-program-title">
-                    <span>{cmsText["home.private_label.title_main"] || "Private Label."}</span>
-                    <em>{cmsText["home.private_label.title_accent"] || "Built Around Your Brand."}</em>
-                  </h2>
-                  <div className="tso-private-program-rule"><span /></div>
-                  <p className="tso-private-program-description">
-                    {cmsText["home.private_label.description_v2"] || "From concept to shelf, we create fully customized Himalayan pink salt packaging that reflects your identity and connects with your customers. You imagine it, we make it real."}
-                  </p>
+        <section className="home-private-program-v756" data-cms-section="private_label" key={slug} style={sectionStyle(slug)}>
+          <div className="home-private-program-v756__inner">
+            <div className="home-private-program-v756__intro">
+              <div className="home-section-eyebrow-v756"><span />{cmsText["home.private_program.eyebrow"] || "PRIVATE LABEL PROGRAM"}</div>
+              <h2 className="home-private-program-v756__title">
+                <span>{cmsText["home.private_program.title_black"] || "We Build It."}</span>
+                <em>{cmsText["home.private_program.title_accent"] || "You Brand It. We Deliver."}</em>
+              </h2>
+              <div className="home-private-program-v756__rule" />
+              <p>{cmsText["home.private_program.description"] || "From concept to customer, we create premium Himalayan pink salt products in packaging that represents your brand and values."}</p>
+            </div>
 
-                  <div className="tso-private-program-benefits">
-                    {privateBenefits.map(([Icon, title, text]) => (
-                      <article key={title}>
-                        <Icon aria-hidden="true" />
-                        <strong>{title}</strong>
-                        <p>{text}</p>
-                      </article>
-                    ))}
-                  </div>
+            <div className="home-private-program-v756__benefits">
+              {benefits.map((item) => {
+                const Icon = item.icon;
+                return <article key={item.title}><span className="home-private-program-v756__benefit-icon"><Icon /></span><strong>{item.title}</strong><p>{item.text}</p></article>;
+              })}
+            </div>
+          </div>
 
-                  <div className="tso-public-actions tso-private-program-actions">
-                    <Link href="/private-label" className="tso-button primary">
-                      {cmsText["home.private_label.button"] || "Explore Solutions"}<ArrowRight />
-                    </Link>
-                    <Link href="/contact" className="tso-button light">
-                      {cmsText["home.private_label.quote_button"] || "Request Private Label Quote"}<ArrowRight />
-                    </Link>
-                  </div>
-                </div>
+          <div className="home-private-program-v756__solutions">
+            <aside className="home-private-program-v756__solutions-copy">
+              <div className="home-section-eyebrow-v756"><span />{cmsText["home.private_program.solutions_eyebrow"] || "WHAT WE OFFER"}</div>
+              <h3>{cmsText["home.private_program.solutions_title"] || "Packaging Solutions"}</h3>
+              <em>{cmsText["home.private_program.solutions_accent"] || "Designed Around Your Brand"}</em>
+              <div className="home-private-program-v756__mountain-mark" aria-hidden="true">⌁</div>
+            </aside>
 
-                <div className="tso-private-program-collection">
-                  <div className="tso-private-program-collection-title">
-                    <span />
-                    <strong>{cmsText["home.private_label.collection_title"] || "TAILORED PACKAGING COLLECTION"}</strong>
-                    <span />
-                  </div>
-                  <div className="tso-private-program-format-grid">
-                    {privateFormats.map((format) => (
-                      <article key={format.key}>
-                        <div className="tso-private-program-format-icon"><PackageCheck aria-hidden="true" /></div>
-                        <h3>{format.label}</h3>
-                        <p>{format.sublabel}</p>
-                        <div className="tso-private-program-product-image">
-                          <img src={format.image} alt={format.alt} />
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="tso-private-program-footer">
-                <article>
-                  <Headphones aria-hidden="true" />
-                  <div><strong>{cmsText["home.private_label.support_title"] || "DEDICATED SUPPORT"}</strong><p>{cmsText["home.private_label.support_text"] || "Our team is with you at every step — from design approval to final delivery."}</p></div>
-                </article>
-                <article>
-                  <ShieldCheck aria-hidden="true" />
-                  <div><strong>{cmsText["home.private_label.compliance_title"] || "QUALITY & COMPLIANCE"}</strong><p>{cmsText["home.private_label.compliance_text"] || "Manufactured in certified facilities with strict quality control and international food safety standards."}</p></div>
-                </article>
-              </div>
+            <div className="home-private-program-v756__solution-grid">
+              {solutions.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <article className="home-private-program-v756__solution-card" key={item.key}>
+                    <span className="home-private-program-v756__solution-icon"><Icon /></span>
+                    <div className="home-private-program-v756__solution-image">
+                      {item.image.startsWith("http") ? <img src={item.image} alt={item.title} /> : <Image src={item.image} alt={item.title} width={520} height={520} />}
+                    </div>
+                    <h4>{cmsText[`home.private_program.${item.key}_title`] || item.title}</h4>
+                    <p>{cmsText[`home.private_program.${item.key}_text`] || item.text}</p>
+                    <small>{cmsText[`home.private_program.${item.key}_note`] || item.note}</small>
+                    <Link href="/private-label">{cmsText["home.private_program.view_options"] || "VIEW OPTIONS"}<ArrowRight /></Link>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -374,18 +332,42 @@ export default function HomepageClone() {
     }
 
     if (slug === "collections") {
+      const families = [
+        { key: "edible", title: "Edible Salt", text: "Pure, natural and additive-free Himalayan pink salt for food & culinary use.", image: cmsImages["home.product_families.edible"]?.url || "/hero-banner.png", href: "/products?category=edible-salt", icon: ShieldCheck },
+        { key: "grinders", title: "Grinders & Shakers", text: "Convenient formats with consistent grain sizes and premium presentation.", image: cmsImages["home.product_families.grinders"]?.url || "/grinder-bottles.png", href: "/products?category=edible-salt", icon: PackageCheck },
+        { key: "bulk", title: "Bulk Supply", text: "High-volume supply in bulk bags or cartons for industrial & food manufacturing.", image: cmsImages["home.product_families.bulk"]?.url || "/white-sack.png", href: "/products?category=bulk-raw-salt", icon: Boxes },
+        { key: "animal", title: "Animal Lick Salt", text: "Naturally rich in minerals for livestock and animal well-being.", image: cmsImages["home.product_families.animal"]?.url || "/product-2.png", href: "/products?category=animal-lick-salt", icon: Globe2 },
+        { key: "lamps", title: "Salt Lamps & Décor", text: "Handcrafted salt lamps and décor pieces for wellness and ambient living.", image: cmsImages["home.product_families.lamps"]?.url || "/product-5.png", href: "/products?category=salt-lamps", icon: Sparkles },
+        { key: "tiles", title: "Salt Tiles & Bricks", text: "Himalayan salt tiles and bricks for construction, spa and interior design.", image: cmsImages["home.product_families.tiles"]?.url || "/product-4.png", href: "/products?category=salt-tiles-bricks", icon: Building2 },
+      ];
+
       return (
-        <section className="tso-section" data-cms-section="collections" key={slug} style={sectionStyle(slug)}>
-          <div className="tso-public-container">
-            <div className="tso-section-head"><div><div className="tso-eyebrow">Signature Collections</div><h2>{cmsText["home.collections.title"] || "Product families for international buyers."}</h2><p>{cmsText["home.collections.description"] || "A refined collection architecture covering retail, private label, bulk, livestock, foodservice and premium market formats."}</p></div><Link href="/products" className="tso-button secondary">View Full Catalog<ArrowRight /></Link></div>
-            <div className="tso-collection-grid">
-              {collectionCards.map((item) => (
-                <article className="tso-collection-card" key={item.key}>
-                  <div className="tso-collection-media"><img src={item.image} alt={item.alt} /><span>{item.number}</span></div>
-                  <div className="tso-collection-body"><div className="tso-collection-kicker">{item.eyebrow}</div><h3>{item.title}</h3><p>{item.text}</p><div className="tso-chip-row">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><Link href={item.key === "private_label" ? "/private-label" : "/products"}>Explore Collection<ArrowRight /></Link></div>
-                </article>
-              ))}
+        <section className="home-product-families-v756" data-cms-section="collections" key={slug} style={sectionStyle(slug)}>
+          <div className="home-product-families-v756__head">
+            <div>
+              <div className="home-section-eyebrow-v756"><span />{cmsText["home.product_families.eyebrow"] || "PRODUCT FAMILIES"}</div>
+              <h2>{cmsText["home.product_families.title"] || "Product Families for International Buyers."}</h2>
             </div>
+            <Link href="/products">{cmsText["home.product_families.view_all"] || "View All Products"}<ArrowRight /></Link>
+          </div>
+
+          <div className="home-product-families-v756__grid">
+            {families.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article className="home-product-families-v756__card" key={item.key}>
+                  <div className="home-product-families-v756__media">
+                    <span><Icon /></span>
+                    {item.image.startsWith("http") ? <img src={item.image} alt={item.title} /> : <Image src={item.image} alt={item.title} width={720} height={420} />}
+                  </div>
+                  <div className="home-product-families-v756__copy">
+                    <h3>{cmsText[`home.product_families.${item.key}_title`] || item.title}</h3>
+                    <p>{cmsText[`home.product_families.${item.key}_text`] || item.text}</p>
+                    <Link href={item.href}>{cmsText["home.product_families.explore"] || "Explore"}<ArrowRight /></Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       );

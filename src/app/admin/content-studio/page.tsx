@@ -5,388 +5,461 @@ import AdminShell from "@/components/admin/AdminShell";
 import { adminFetch } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
 import { calculateGeoScore, calculateSeoScore, normalizeKeywordList } from "@/lib/content-quality";
-import { SOCIAL_PLATFORM_KEYS, SOCIAL_PLATFORM_META, type SocialPlatformKey, clampPlatformText } from "@/lib/social-platforms";
+import { SOCIAL_PLATFORM_KEYS, SOCIAL_PLATFORM_META, clampPlatformText, type SocialPlatformKey } from "@/lib/social-platforms";
 import {
-  CheckCircle2, Clock3, Eye, FileText, Image as ImageIcon, RefreshCw, Save, Send,
-  Sparkles, Square, RectangleVertical, RectangleHorizontal, UploadCloud, XCircle,
+  CalendarDays, CheckCircle2, CircleDollarSign, Clock3, FileText, Image as ImageIcon,
+  Lightbulb, Plus, RefreshCw, Save, Search, Send, Sparkles, Trash2, UploadCloud,
 } from "lucide-react";
 
-type SocialDraft = { title: string; text: string; hashtags: string; image_prompt: string; status?: string };
-type BlogDraft = {
-  title: string; slug: string; excerpt: string; content: string; seoTitle: string; seoDescription: string;
-  primaryKeyword: string; secondaryKeywords: string[]; imagePrompt: string; status: string;
+type TopicRow = {
+  id: string;
+  topic: string;
+  primary_keyword: string | null;
+  secondary_keywords: string[] | null;
+  target_market: string;
+  buyer_type: string;
+  notes: string | null;
+  cta: string;
+  status: string;
+  draft_package: ContentPackage | null;
+  campaign_id: string | null;
+  blog_post_id: number | null;
+  social_post_id: string | null;
+  scheduled_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
-type ImageShape = "square" | "portrait" | "landscape";
-type ContentTab = "blog" | SocialPlatformKey;
-type TodayContentState = { hasBlog: boolean; hasSocial: boolean };
 
-const blankBlog: BlogDraft = { title: "", slug: "", excerpt: "", content: "", seoTitle: "", seoDescription: "", primaryKeyword: "", secondaryKeywords: [], imagePrompt: "", status: "Draft" };
-const blankSocial = () => Object.fromEntries(SOCIAL_PLATFORM_KEYS.map((platform) => [platform, { title: "", text: "", hashtags: "", image_prompt: "", status: "Draft" }])) as Record<SocialPlatformKey, SocialDraft>;
+type BlogDraft = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  seo_title: string;
+  seo_description: string;
+  primary_keyword: string;
+  secondary_keywords: string[];
+  image_prompt: string;
+  seo_score?: number;
+  geo_score?: number;
+};
 
-function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
-function todayRange() { const start = new Date(); start.setHours(0, 0, 0, 0); const end = new Date(start); end.setDate(end.getDate() + 1); return [start.toISOString(), end.toISOString()] as const; }
-async function withClientTimeout<T>(promise: PromiseLike<T>, timeoutMs = 8_000, label = "CMS request") {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      Promise.resolve(promise),
-      new Promise<T>((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} timed out.`)), timeoutMs); }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+type SocialDraft = { title: string; text: string; hashtags: string; image_prompt: string };
+type ContentPackage = {
+  blog: BlogDraft;
+  social: Partial<Record<SocialPlatformKey, SocialDraft>>;
+  model?: string;
+  research_mode?: string;
+  image_url?: string;
+};
+
+type SaveMode = "draft" | "review" | "scheduled";
+type ActiveTab = "blog" | SocialPlatformKey;
+
+const DEFAULT_SOCIAL_PLATFORMS: SocialPlatformKey[] = ["facebook", "linkedin", "instagram", "threads", "x", "youtube", "pinterest", "tiktok"];
+
+const blankBlog: BlogDraft = {
+  title: "", slug: "", excerpt: "", content: "", seo_title: "", seo_description: "",
+  primary_keyword: "", secondary_keywords: [], image_prompt: "",
+};
+
+function toLocalDateTime(value?: string | null) {
+  const date = value ? new Date(value) : new Date(Date.now() + 86400000);
+  if (Number.isNaN(date.getTime())) return "";
+  const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return adjusted.toISOString().slice(0, 16);
 }
-function cleanPlatformDraft(platform: SocialPlatformKey, item: any, fallbackPrompt: string): SocialDraft {
-  return {
-    title: String(item?.title || ""),
-    text: clampPlatformText(platform, String(item?.text || item?.caption || "")),
-    hashtags: String(item?.hashtags || ""),
-    image_prompt: String(item?.image_prompt || item?.imagePrompt || fallbackPrompt || ""),
-    status: String(item?.status || "Draft"),
-  };
+
+function statusLabel(value: unknown) {
+  return String(value || "idea").replaceAll("_", " ").replace(/\b\w/g, character => character.toUpperCase());
+}
+
+function tone(value: unknown) {
+  const normal = String(value || "").toLowerCase();
+  if (normal.includes("publish") || normal.includes("scheduled")) return "green";
+  if (normal.includes("review")) return "amber";
+  if (normal.includes("generated")) return "blue";
+  return "pink";
 }
 
 export default function ContentStudioPage() {
-  const [topic, setTopic] = useState("");
-  const [country, setCountry] = useState("Global");
-  const [audience, setAudience] = useState("Importers, distributors and private-label buyers");
-  const [keyword, setKeyword] = useState("");
+  const [topics, setTopics] = useState<TopicRow[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [packageData, setPackageData] = useState<ContentPackage>({ blog: blankBlog, social: {} });
+  const [bulkTopics, setBulkTopics] = useState("");
+  const [primaryKeyword, setPrimaryKeyword] = useState("");
+  const [targetMarket, setTargetMarket] = useState("Global");
+  const [buyerType, setBuyerType] = useState("Importers, distributors and private-label buyers");
+  const [notes, setNotes] = useState("");
   const [cta, setCta] = useState("Request a quotation");
-  const [blog, setBlog] = useState<BlogDraft>(blankBlog);
-  const [social, setSocial] = useState<Record<SocialPlatformKey, SocialDraft>>(blankSocial());
-  const [activePlatform, setActivePlatform] = useState<ContentTab>("blog");
-  const [sharedImage, setSharedImage] = useState("");
-  const [blogId, setBlogId] = useState<string | number | null>(null);
-  const [socialId, setSocialId] = useState<string | null>(null);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatformKey[]>([...SOCIAL_PLATFORM_KEYS]);
-  const [publishWebsite, setPublishWebsite] = useState(true);
-  const [imageShape, setImageShape] = useState<ImageShape>("square");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatformKey[]>([...DEFAULT_SOCIAL_PLATFORMS]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("blog");
+  const [scheduleAt, setScheduleAt] = useState(toLocalDateTime());
   const [working, setWorking] = useState("");
-  const [booting, setBooting] = useState(true);
-  const [reviewOpen, setReviewOpen] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [filter, setFilter] = useState("all");
   const fileInput = useRef<HTMLInputElement>(null);
-  const dailyBootRef = useRef(false);
+
+  const selected = useMemo(() => topics.find(row => row.id === selectedId) || null, [topics, selectedId]);
+  const blog = packageData.blog || blankBlog;
+  const imageUrl = String(packageData.image_url || "");
 
   const scores = useMemo(() => {
-    const keywords = normalizeKeywordList(blog.primaryKeyword || keyword, blog.secondaryKeywords, blog.title || topic);
-    const primaryKeyword = blog.primaryKeyword || keyword || keywords[0] || "";
+    const keywords = normalizeKeywordList(blog.primary_keyword || selected?.primary_keyword || "", blog.secondary_keywords, blog.title || selected?.topic || "");
+    const primary = blog.primary_keyword || selected?.primary_keyword || keywords[0] || "";
     return {
-      seo: calculateSeoScore({ title: blog.title, slug: blog.slug, excerpt: blog.excerpt, content: blog.content, seoTitle: blog.seoTitle, seoDescription: blog.seoDescription, primaryKeyword, secondaryKeywords: keywords, featuredImage: sharedImage }),
-      geo: calculateGeoScore({ title: blog.title, excerpt: blog.excerpt, content: blog.content, primaryKeyword, targetCountry: country }),
       keywords,
+      seo: calculateSeoScore({
+        title: blog.title || "", slug: blog.slug || "", excerpt: blog.excerpt || "", content: blog.content || "",
+        seoTitle: blog.seo_title || blog.title || "", seoDescription: blog.seo_description || blog.excerpt || "",
+        primaryKeyword: primary, secondaryKeywords: keywords, featuredImage: imageUrl,
+      }),
+      geo: calculateGeoScore({
+        title: blog.title || "", excerpt: blog.excerpt || "", content: blog.content || "", primaryKeyword: primary,
+        targetCountry: selected?.target_market || targetMarket,
+      }),
     };
-  }, [blog, keyword, country, sharedImage, topic]);
+  }, [blog, imageUrl, selected, targetMarket]);
 
-  const flash = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2800); };
+  const filteredTopics = useMemo(() => filter === "all" ? topics : topics.filter(row => row.status === filter), [topics, filter]);
+  const qualityReady = scores.seo >= 70 && scores.geo >= 70 && Boolean(blog.title && blog.content);
 
-  const loadToday = useCallback(async (): Promise<TodayContentState> => {
+  const loadTopics = useCallback(async () => {
     setError("");
-    const [start, end] = todayRange();
-    const [blogResult, socialResult] = await Promise.all([
-      withClientTimeout(
-        supabase.from("blog_posts").select("*").gte("created_at", start).lt("created_at", end).eq("content_type", "blog").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        8_000,
-        "Today’s blog queue",
-      ),
-      withClientTimeout(
-        supabase.from("social_scheduled_posts").select("*").gte("created_at", start).lt("created_at", end).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        8_000,
-        "Today’s social queue",
-      ),
-    ]);
-
-    if (blogResult.error) setError(blogResult.error.message);
-    if (socialResult.error) setError((current) => current || socialResult.error!.message);
-
-    const b: any = blogResult.data;
-    if (b) {
-      const secondary = Array.isArray(b.keywords) ? b.keywords.map(String).filter((value: string) => value !== String(b.primary_keyword || "")) : [];
-      setBlog({
-        title: String(b.title || ""), slug: String(b.slug || ""), excerpt: String(b.excerpt || ""), content: String(b.content || ""),
-        seoTitle: String(b.seo_title || b.title || ""), seoDescription: String(b.seo_description || b.excerpt || ""),
-        primaryKeyword: String(b.primary_keyword || ""), secondaryKeywords: secondary, imagePrompt: String(b.image_prompt || ""),
-        status: String(b.approval_status || b.status || "Draft"),
-      });
-      setBlogId(b.id);
-      setTopic(String(b.title || ""));
-      setKeyword(String(b.primary_keyword || ""));
-      setCountry(String(b.target_country || "Global"));
-      if (b.featured_image) setSharedImage(String(b.featured_image));
-    }
-
-    const socialRow: any = socialResult.data;
-    if (socialRow) {
-      setSocialId(String(socialRow.id));
-      const platformContent = socialRow.platform_content && typeof socialRow.platform_content === "object" ? socialRow.platform_content : {};
-      const next = blankSocial();
-      SOCIAL_PLATFORM_KEYS.forEach((platform) => {
-        next[platform] = cleanPlatformDraft(platform, platformContent[platform], b?.image_prompt || "");
-      });
-      setSocial(next);
-      const selected = Array.isArray(socialRow.platforms)
-        ? socialRow.platforms.filter((platform: string) => SOCIAL_PLATFORM_KEYS.includes(platform as SocialPlatformKey)) as SocialPlatformKey[]
-        : [];
-      if (selected.length) setSelectedPlatforms(selected);
-      if (!b && socialRow.title) setTopic(String(socialRow.title));
-      if (socialRow.image_url) setSharedImage(String(socialRow.image_url));
-    }
-
-    return { hasBlog: Boolean(b), hasSocial: Boolean(socialRow) };
-  }, []);
-
-  async function runDailyAutomation(showSuccess = true) {
-    if (working) return;
-    setWorking("daily");
-    setError("");
-    try {
-      let current = await loadToday();
-
-      if (!current.hasBlog) {
-        const response = await adminFetch("/api/blog/daily-draft", { method: "POST", timeoutMs: 75_000 });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok && !payload?.skipped) throw new Error(payload.error || "Daily blog research failed.");
-        current = await loadToday();
-      }
-
-      if (!current.hasSocial) {
-        const response = await adminFetch("/api/social/daily-draft", { method: "POST", timeoutMs: 75_000 });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok && !payload?.skipped) throw new Error(payload.error || "Daily social campaign generation failed.");
-        current = await loadToday();
-      }
-
-      if (showSuccess) {
-        flash(current.hasBlog && current.hasSocial
-          ? "Today’s researched blog and platform drafts are ready for review."
-          : "Today’s content queue was refreshed.");
-      }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Daily content automation failed.");
-    } finally {
-      setWorking("");
-    }
-  }
-
-  useEffect(() => {
-    if (dailyBootRef.current) return;
-    dailyBootRef.current = true;
-    let cancelled = false;
-    const bootGuard = window.setTimeout(() => {
-      if (!cancelled) {
-        setBooting(false);
-        setError((current) => current || "The daily queue is taking longer than expected. The studio is available; use Generate Today's Draft to retry.");
-      }
-    }, 9_000);
-
-    void (async () => {
-      try {
-        const current = await loadToday();
-        if (cancelled) return;
-        setBooting(false);
-        if (!current.hasBlog) void runDailyAutomation(false);
-      } catch (reason) {
-        if (cancelled) return;
-        setBooting(false);
-        setError(reason instanceof Error ? reason.message : "Unable to load today’s content workspace.");
-      } finally {
-        window.clearTimeout(bootGuard);
-      }
-    })();
-
-    return () => { cancelled = true; window.clearTimeout(bootGuard); };
-  }, [loadToday]);
-
-  async function uploadGeneratedImage(source: string) {
-    if (!source) return "";
-    if (!source.startsWith("data:")) return source;
-    const blob = await fetch(source).then((response) => response.blob());
-    const path = `content-studio/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.png`;
-    const result = await supabase.storage.from("cms-media").upload(path, blob, { contentType: blob.type || "image/png", upsert: false });
-    if (result.error) throw new Error(result.error.message);
-    return supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
-  }
-
-  async function generatePackage() {
-    if (!topic.trim()) { await runDailyAutomation(true); return; }
-    setError("");
-    setBlogId(null);
-    setSocialId(null);
-
-    let nextBlog: BlogDraft | null = null;
-    try {
-      setWorking("research");
-      const blogResponse = await adminFetch("/api/admin/ai-content", {
-        method: "POST",
-        timeoutMs: 70_000,
-        body: JSON.stringify({
-          tool: "Blog Generator",
-          topic,
-          country,
-          audience,
-          buyerType: "International B2B buyer",
-          searchIntent: "Commercial research",
-          keyword,
-          tone: "Premium, factual and professional",
-          language: "English",
-          length: "Concise blog",
-          cta,
-          brandVoice: "Premium, factual, clear and export-focused",
-          research: true,
-        }),
-      });
-      const blogPayload = await blogResponse.json().catch(() => ({}));
-      if (!blogResponse.ok) throw new Error(blogPayload.error || "Blog research and generation failed.");
-
-      const secondaryKeywords = Array.isArray(blogPayload.secondary_keywords)
-        ? blogPayload.secondary_keywords.map(String)
-        : [];
-      nextBlog = {
-        title: String(blogPayload.title || topic),
-        slug: String(blogPayload.slug || slugify(blogPayload.title || topic)),
-        excerpt: String(blogPayload.excerpt || ""),
-        content: String(blogPayload.content || ""),
-        seoTitle: String(blogPayload.meta_title || blogPayload.seo_title || blogPayload.title || topic),
-        seoDescription: String(blogPayload.meta_description || blogPayload.seo_description || blogPayload.excerpt || ""),
-        primaryKeyword: String(blogPayload.primary_keyword || keyword || ""),
-        secondaryKeywords,
-        imagePrompt: String(blogPayload.image_prompt || `${topic}, premium Himalayan pink salt B2B editorial photography`),
-        status: "Draft",
-      };
-      setBlog(nextBlog);
-      setTopic(nextBlog.title || topic);
-      if (nextBlog.primaryKeyword) setKeyword(nextBlog.primaryKeyword);
-      setReviewOpen(true);
-      flash("Researched blog is ready. Preparing platform versions…");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Blog research failed.");
-      setWorking("");
+    const result = await supabase.from("content_topic_queue").select("*").order("created_at", { ascending: false }).limit(250);
+    if (result.error) {
+      setError(result.error.message.includes("content_topic_queue")
+        ? "Content Topic Inbox needs the V7.5.8 Supabase migration. Run npx supabase db push once."
+        : result.error.message);
       return;
     }
+    const rows = (result.data || []) as TopicRow[];
+    setTopics(rows);
+    if (!selectedId && rows.length) setSelectedId(rows[0].id);
+  }, [selectedId]);
 
-    if (!nextBlog) { setWorking(""); return; }
-    const researchedBlog = nextBlog;
+  useEffect(() => { void loadTopics(); }, [loadTopics]);
+  useEffect(() => {
+    if (!selected) return;
+    const draft = selected.draft_package && typeof selected.draft_package === "object" ? selected.draft_package : null;
+    setPackageData(draft?.blog ? draft : { blog: blankBlog, social: {} });
+    setPrimaryKeyword(selected.primary_keyword || "");
+    setTargetMarket(selected.target_market || "Global");
+    setBuyerType(selected.buyer_type || "Importers, distributors and private-label buyers");
+    setNotes(selected.notes || "");
+    setCta(selected.cta || "Request a quotation");
+    setScheduleAt(toLocalDateTime(selected.scheduled_at));
+  }, [selected]);
+  useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 3000); return () => window.clearTimeout(timer); }, [toast]);
 
-    try {
-      setWorking("social");
-      const socialResponse = await adminFetch("/api/admin/social-content", {
-        method: "POST",
-        timeoutMs: 65_000,
-        body: JSON.stringify({
-          topic: researchedBlog.title || topic,
-          targetCountry: country,
-          targetAudience: audience,
-          objective: "Adapt the researched website blog into platform-native buyer education",
-          product: "Himalayan pink salt",
-          tone: "Premium professional B2B",
-          cta,
-          platforms: SOCIAL_PLATFORM_KEYS,
-          primaryKeyword: researchedBlog.primaryKeyword,
-          sourceExcerpt: researchedBlog.excerpt,
-        }),
-      });
-      const socialPayload = await socialResponse.json().catch(() => ({}));
-      if (!socialResponse.ok) throw new Error(socialPayload.error || "Platform-specific social generation failed.");
-
-      const nextSocial = blankSocial();
-      SOCIAL_PLATFORM_KEYS.forEach((platform) => {
-        nextSocial[platform] = cleanPlatformDraft(platform, socialPayload.platforms?.[platform] || {}, researchedBlog.imagePrompt);
-      });
-      setSocial(nextSocial);
-      flash("Blog and platform-specific campaign are ready for review.");
-    } catch (reason) {
-      setError(`Blog is ready. Social versions need a retry: ${reason instanceof Error ? reason.message : "generation failed."}`);
-    } finally {
-      setWorking("");
-    }
+  async function addTopics() {
+    const lines = bulkTopics.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (!lines.length) { setError("Enter at least one topic. You can paste 10 topics, one per line."); return; }
+    setWorking("add"); setError("");
+    const { data: auth } = await supabase.auth.getSession();
+    const rows = lines.map((topic, index) => ({
+      topic,
+      primary_keyword: lines.length === 1 ? primaryKeyword.trim() || null : null,
+      secondary_keywords: [],
+      target_market: targetMarket.trim() || "Global",
+      buyer_type: buyerType.trim() || "Importers, distributors and private-label buyers",
+      notes: notes.trim() || null,
+      cta: cta.trim() || "Request a quotation",
+      status: "idea",
+      created_by: auth.session?.user.id || null,
+      updated_at: new Date().toISOString(),
+      display_order: index,
+    }));
+    // display_order is intentionally removed for databases that do not have it.
+    const payload = rows.map(({ display_order: _displayOrder, ...row }) => row);
+    const result = await supabase.from("content_topic_queue").insert(payload).select("*");
+    setWorking("");
+    if (result.error) { setError(result.error.message); return; }
+    setBulkTopics("");
+    setToast(`${result.data?.length || lines.length} topic${lines.length === 1 ? "" : "s"} added to the inbox.`);
+    await loadTopics();
+    const first = result.data?.[0] as TopicRow | undefined;
+    if (first) setSelectedId(first.id);
   }
 
-  async function generateSharedImage() {
-    const prompt = blog.imagePrompt || (activePlatform === "blog" ? "" : social[activePlatform].image_prompt) || topic;
-    if (!prompt.trim()) { setError("Generate the content package or enter a topic first."); return; }
-    setWorking("image"); setError("");
-    const size = imageShape === "portrait" ? "1024x1536" : imageShape === "landscape" ? "1536x1024" : "1024x1024";
+  async function aiTopicSuggestions() {
+    if (!window.confirm("This optional action uses OpenAI API credit for web research. Continue?")) return;
+    setWorking("research"); setError("");
     try {
-      const response = await adminFetch("/api/ai/image", { method: "POST", body: JSON.stringify({ prompt: `${prompt}. Premium commercial editorial image for The Salt Origin, Himalayan pink salt, refined pink and charcoal brand mood, no medical claims, no third-party logos, no readable text.`, size }) });
-      const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "AI image generation failed.");
-      const url = await uploadGeneratedImage(String(payload.image || "")); setSharedImage(url); flash("Campaign image generated and saved.");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Image generation failed."); }
+      const focus = primaryKeyword || bulkTopics.split(/\r?\n/)[0] || "Himalayan pink salt Pakistan Punjab Salt Range sourcing, packaging and B2B buyer questions";
+      const response = await adminFetch("/api/blog/topics", { method: "POST", body: JSON.stringify({ focus }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Topic research failed.");
+      const suggestions = Array.isArray(payload.topics) ? payload.topics.map(String).filter(Boolean) : [];
+      setBulkTopics(current => [current.trim(), ...suggestions].filter(Boolean).join("\n"));
+      setToast("AI topic suggestions added to the input box. Review them before saving.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Topic research failed."); }
+    finally { setWorking(""); }
+  }
+
+  async function updateSelectedContext() {
+    if (!selected) return;
+    const patch = {
+      primary_keyword: primaryKeyword.trim() || null,
+      target_market: targetMarket.trim() || "Global",
+      buyer_type: buyerType.trim() || "Importers, distributors and private-label buyers",
+      notes: notes.trim() || null,
+      cta: cta.trim() || "Request a quotation",
+      updated_at: new Date().toISOString(),
+    };
+    const result = await supabase.from("content_topic_queue").update(patch).eq("id", selected.id);
+    if (result.error) throw result.error;
+    setTopics(current => current.map(row => row.id === selected.id ? { ...row, ...patch } as TopicRow : row));
+  }
+
+  async function generatePackage(researchWithAI: boolean) {
+    if (!selected) { setError("Select a topic first."); return; }
+    if (researchWithAI && !window.confirm("AI Web Research uses extra API credit. Continue?")) return;
+    setWorking(researchWithAI ? "generate-research" : "generate"); setError("");
+    try {
+      await updateSelectedContext();
+      const response = await adminFetch("/api/content/generate-package", {
+        method: "POST",
+        timeoutMs: 110_000,
+        body: JSON.stringify({
+          topic: selected.topic,
+          primaryKeyword,
+          targetMarket,
+          buyerType,
+          notes,
+          cta,
+          researchWithAI,
+          platforms: selectedPlatforms,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Content generation failed.");
+      const next: ContentPackage = {
+        blog: payload.blog || blankBlog,
+        social: payload.social || {},
+        model: payload.model,
+        research_mode: payload.research_mode,
+        image_url: imageUrl,
+      };
+      setPackageData(next);
+      const result = await supabase.from("content_topic_queue").update({ draft_package: next, status: "generated", updated_at: new Date().toISOString() }).eq("id", selected.id).select("*").single();
+      if (result.error) throw result.error;
+      setTopics(current => current.map(row => row.id === selected.id ? result.data as TopicRow : row));
+      setToast(`One content package generated with ${payload.model || "the configured AI model"}. No daily automation was used.`);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Content generation failed."); }
     finally { setWorking(""); }
   }
 
   async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]; if (!file) return;
+    const file = event.target.files?.[0]; if (!file || !selected) return;
     setWorking("upload"); setError("");
-    const path = `content-studio/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type, upsert: false });
-    if (result.error) setError(result.error.message); else { setSharedImage(supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl); flash("Image uploaded and attached."); }
-    setWorking(""); event.target.value = "";
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const path = `content-studio/${selected.id}/${crypto.randomUUID()}-${safeName}`;
+      const upload = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type, upsert: false });
+      if (upload.error) throw upload.error;
+      const url = supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
+      const next = { ...packageData, image_url: url };
+      setPackageData(next);
+      const result = await supabase.from("content_topic_queue").update({ draft_package: next, updated_at: new Date().toISOString() }).eq("id", selected.id);
+      if (result.error) throw result.error;
+      setToast("Shared campaign image uploaded. Blog and social drafts can reuse it.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Image upload failed."); }
+    finally { setWorking(""); event.target.value = ""; }
   }
 
-  async function saveBlog(status: "draft" | "review" | "published" | "archived") {
-    if (!blog.title.trim()) { setError("Generate or enter the blog before saving."); return; }
-    setWorking(`blog-${status}`); setError("");
-    const keywords = normalizeKeywordList(blog.primaryKeyword || keyword, blog.secondaryKeywords, blog.title);
-    const payload = { title: blog.title.trim(), slug: blog.slug.trim() || slugify(blog.title), excerpt: blog.excerpt, content: blog.content, featured_image: sharedImage || null,
-      status, approval_status: status === "published" ? "Published" : status === "review" ? "Needs Review" : status === "archived" ? "Rejected" : "Draft",
-      seo_title: blog.seoTitle, seo_description: blog.seoDescription, content_type: "blog", keywords, primary_keyword: blog.primaryKeyword || keyword || keywords[0] || null,
-      target_country: country, image_prompt: blog.imagePrompt, seo_score: scores.seo, geo_score: scores.geo, published_at: status === "published" ? new Date().toISOString() : null, updated_at: new Date().toISOString() };
-    const result = blogId ? await supabase.from("blog_posts").update(payload).eq("id", blogId).select().single() : await supabase.from("blog_posts").insert(payload).select().single();
-    setWorking(""); if (result.error) { setError(result.error.message); return; }
-    setBlogId(result.data.id); setBlog((current) => ({ ...current, status: payload.approval_status })); window.dispatchEvent(new Event("salt-cms-updated"));
-    flash(status === "published" ? "Blog approved and published to the website." : status === "review" ? "Blog sent to review." : status === "archived" ? "Blog rejected." : "Blog saved as draft.");
+  function patchBlog(patch: Partial<BlogDraft>) {
+    setPackageData(current => ({ ...current, blog: { ...(current.blog || blankBlog), ...patch } }));
   }
 
-  async function saveSocial(status: "Draft" | "Needs Review" | "Approved" | "Rejected") {
-    if (!topic.trim()) { setError("Topic is required."); return; }
-    if (!selectedPlatforms.length) { setError("Select at least one social platform."); return; }
-    setWorking(`social-${status}`); setError("");
-    const primaryPlatform = selectedPlatforms[0]; const primary = social[primaryPlatform];
-    const payload = { title: topic.trim(), caption: primary.text, hashtags: primary.hashtags, keywords: blog.primaryKeyword || keyword || "", image_url: sharedImage,
-      platforms: selectedPlatforms, scheduled_at: new Date().toISOString(), status: status === "Approved" ? "scheduled" : status.toLowerCase().replaceAll(" ", "_"), approval_status: status,
-      platform_content: Object.fromEntries(SOCIAL_PLATFORM_KEYS.map((platform) => [platform, { ...social[platform], text: clampPlatformText(platform, social[platform].text), status }])),
-      platform_images: Object.fromEntries(selectedPlatforms.map((platform) => [platform, sharedImage]).filter(([, image]) => Boolean(image))), platform_results: {}, last_error: null,
-      brief: { topic, targetCountry: country, targetAudience: audience, objective: "Commercial awareness and buyer education", cta, source: "AI Content Studio" }, updated_at: new Date().toISOString(), approved_at: status === "Approved" ? new Date().toISOString() : null };
-    const result = socialId ? await supabase.from("social_scheduled_posts").update(payload).eq("id", socialId).select().single() : await supabase.from("social_scheduled_posts").insert(payload).select().single();
-    setWorking(""); if (result.error) { setError(result.error.message); return; } setSocialId(result.data.id); flash(status === "Approved" ? "Selected social channels approved and queued for publishing." : `Selected social channels saved as ${status}.`);
+  function patchSocial(platform: SocialPlatformKey, patch: Partial<SocialDraft>) {
+    setPackageData(current => ({
+      ...current,
+      social: {
+        ...(current.social || {}),
+        [platform]: { title: "", text: "", hashtags: "", image_prompt: current.blog?.image_prompt || "", ...(current.social?.[platform] || {}), ...patch },
+      },
+    }));
   }
 
-  async function approveSelected() {
-    if (publishWebsite) await saveBlog("published");
-    if (selectedPlatforms.length) await saveSocial("Approved");
-    setReviewOpen(false);
+  function togglePlatform(platform: SocialPlatformKey) {
+    setSelectedPlatforms(current => current.includes(platform) ? current.filter(item => item !== platform) : [...current, platform]);
   }
 
-  const socialPlatform: SocialPlatformKey | null = activePlatform === "blog" ? null : activePlatform;
-  const activeSocial = socialPlatform ? social[socialPlatform] : null;
-  const platformMeta = socialPlatform ? SOCIAL_PLATFORM_META[socialPlatform] : null;
-  const overLimit = Boolean(activeSocial && platformMeta && activeSocial.text.length > platformMeta.maxChars);
+  async function persistPackage(mode: SaveMode) {
+    if (!selected || !blog.title.trim() || !blog.content.trim()) { setError("Generate or complete the blog first."); return; }
+    if (mode === "scheduled" && !scheduleAt) { setError("Choose a schedule date and time."); return; }
+    if (mode === "scheduled" && !qualityReady) { setError(`Quality gate not passed. SEO ${scores.seo}% / GEO ${scores.geo}%. Both must reach at least 70 before scheduling.`); return; }
+    setWorking(`save-${mode}`); setError("");
+    try {
+      await updateSelectedContext();
+      const scheduleIso = mode === "scheduled" ? new Date(scheduleAt).toISOString() : null;
+      const campaignStatus = mode === "scheduled" ? "scheduled" : mode === "review" ? "review" : "draft";
+      const campaignPayload = {
+        name: selected.topic,
+        campaign_type: "Seasonal Content Campaign",
+        subject: blog.primary_keyword || primaryKeyword || selected.topic,
+        content: blog.excerpt || "",
+        audience_filter: { target_market: targetMarket, buyer_type: buyerType, source: "AI Content Studio" },
+        status: campaignStatus,
+        scheduled_at: scheduleIso,
+        updated_at: new Date().toISOString(),
+      };
+      let campaignId = selected.campaign_id;
+      if (campaignId) {
+        const campaignUpdate = await supabase.from("marketing_campaigns").update(campaignPayload).eq("id", campaignId);
+        if (campaignUpdate.error) throw campaignUpdate.error;
+      } else {
+        const campaignInsert = await supabase.from("marketing_campaigns").insert(campaignPayload).select("id").single();
+        if (campaignInsert.error) throw campaignInsert.error;
+        campaignId = String(campaignInsert.data.id);
+      }
 
-  return <AdminShell><div className="os-page content-ops-studio content-studio-v2">
-    <header className="os-page-header"><div><div className="os-page-eyebrow">AI & Content Operations</div><h1 className="os-page-title">AI Content Studio</h1><p className="os-page-subtitle">Every morning the automation researches a buyer-intent topic and prepares a blog plus platform-native social drafts. Everything stays under human review before publishing.</p></div><div className="os-page-actions"><button className="os-btn soft" onClick={() => void runDailyAutomation(true)} disabled={Boolean(working)}><Clock3/>{working === "daily" ? "Generating Today’s Draft…" : "Generate / Refresh Today’s Draft"}</button><button className="os-btn primary" onClick={() => void generatePackage()} disabled={Boolean(working)}><Sparkles/>{working === "research" ? "Researching Blog…" : working === "social" ? "Preparing Social Versions…" : "Generate Content Package"}</button></div></header>
+      const keywords = normalizeKeywordList(blog.primary_keyword || primaryKeyword, blog.secondary_keywords, blog.title);
+      const blogStatus = mode === "scheduled" ? "scheduled" : mode === "review" ? "review" : "draft";
+      const approval = mode === "scheduled" ? "Scheduled" : mode === "review" ? "Needs Review" : "Draft";
+      const blogPayload = {
+        campaign_id: campaignId,
+        source_topic_id: selected.id,
+        title: blog.title.trim(), slug: blog.slug.trim(), excerpt: blog.excerpt, content: blog.content,
+        featured_image: imageUrl || null,
+        status: blogStatus, approval_status: approval, content_type: "blog",
+        seo_title: blog.seo_title || blog.title, seo_description: blog.seo_description || blog.excerpt,
+        keywords, primary_keyword: blog.primary_keyword || primaryKeyword || keywords[0] || null,
+        target_country: targetMarket, image_prompt: blog.image_prompt, seo_score: scores.seo, geo_score: scores.geo,
+        scheduled_at: scheduleIso, published_at: null, updated_at: new Date().toISOString(),
+      };
+      let blogPostId = selected.blog_post_id;
+      if (blogPostId) {
+        const blogUpdate = await supabase.from("blog_posts").update(blogPayload).eq("id", blogPostId);
+        if (blogUpdate.error) throw blogUpdate.error;
+      } else {
+        const blogInsert = await supabase.from("blog_posts").insert(blogPayload).select("id").single();
+        if (blogInsert.error) throw blogInsert.error;
+        blogPostId = Number(blogInsert.data.id);
+      }
 
-    <div className="content-stepper">{["Topic & buyer intent","Blog draft","Shared image","Platform versions","Human approval","Publish / queue"].map((label, index) => <span key={label}><b>{index + 1}</b>{label}</span>)}</div>
-    {error && <section className="os-card content-alert"><strong>Content operation needs attention</strong><p>{error}</p></section>}
-    {booting && <section className="os-card"><div className="os-empty"><RefreshCw className="animate-spin"/><h3>Preparing today’s content workspace</h3><p>Checking the daily blog and social draft queue.</p></div></section>}
+      const chosen = selectedPlatforms.filter(platform => packageData.social?.[platform]);
+      let socialPostId = selected.social_post_id;
+      if (chosen.length) {
+        const primaryPlatform = chosen[0];
+        const primarySocial = packageData.social?.[primaryPlatform] || { title: "", text: "", hashtags: "", image_prompt: "" };
+        const platformContent = Object.fromEntries(chosen.map(platform => {
+          const draft = packageData.social?.[platform] || { title: "", text: "", hashtags: "", image_prompt: blog.image_prompt };
+          return [platform, { ...draft, text: clampPlatformText(platform, draft.text), status: approval }];
+        }));
+        const socialPayload = {
+          campaign_id: campaignId,
+          source_topic_id: selected.id,
+          title: selected.topic,
+          caption: primarySocial.text,
+          hashtags: primarySocial.hashtags,
+          keywords: keywords.join(", "),
+          image_url: imageUrl,
+          platforms: chosen,
+          scheduled_at: scheduleIso,
+          status: blogStatus,
+          approval_status: approval,
+          platform_content: platformContent,
+          platform_images: Object.fromEntries(chosen.map(platform => [platform, imageUrl]).filter(([, url]) => Boolean(url))),
+          platform_results: {},
+          brief: { topic: selected.topic, targetCountry: targetMarket, targetAudience: buyerType, cta, source: "AI Content Studio", campaignId },
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        };
+        if (socialPostId) {
+          const socialUpdate = await supabase.from("social_scheduled_posts").update(socialPayload).eq("id", socialPostId);
+          if (socialUpdate.error) throw socialUpdate.error;
+        } else {
+          const socialInsert = await supabase.from("social_scheduled_posts").insert(socialPayload).select("id").single();
+          if (socialInsert.error) throw socialInsert.error;
+          socialPostId = String(socialInsert.data.id);
+        }
+      }
 
-    {!booting && <div className="content-studio-workspace">
-      <aside className="os-card content-brief-card"><div className="os-card-header"><div><h2>Content Brief</h2><p>One topic powers the complete campaign.</p></div><span className="os-badge pink">AI RESEARCH</span></div><div className="os-card-body"><div className="os-form-grid"><label className="os-label full"><span>Topic / Product — optional override</span><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Leave blank — AI researches today’s buyer-intent topic automatically"/></label><label className="os-label"><span>Target Market</span><input value={country} onChange={(event) => setCountry(event.target.value)}/></label><label className="os-label"><span>Primary Keyword</span><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="AI can research this"/></label><label className="os-label full"><span>Buyer Type</span><input value={audience} onChange={(event) => setAudience(event.target.value)}/></label><label className="os-label full"><span>Lead CTA</span><input value={cta} onChange={(event) => setCta(event.target.value)}/></label></div><button className="os-btn primary content-main-generate" onClick={() => void generatePackage()} disabled={Boolean(working)}><Sparkles/>{working === "research" ? "Researching Blog…" : working === "social" ? "Preparing Social Versions…" : "Generate Blog + Social Versions"}</button><div className="content-active-campaign"><span>Today’s active topic</span><strong>{topic || (working === "daily" ? "AI is researching today’s buyer-intent topic…" : "Daily topic will be researched automatically")}</strong><small>{working === "daily" ? "Daily AI research is running…" : `${country} · SEO ${scores.seo}% · GEO ${scores.geo}%`}</small></div></div></aside>
+      const nextPackage = { ...packageData, blog: { ...blog, seo_score: scores.seo, geo_score: scores.geo } };
+      const topicUpdate = await supabase.from("content_topic_queue").update({
+        status: mode === "scheduled" ? "scheduled" : mode === "review" ? "review" : "generated",
+        draft_package: nextPackage,
+        campaign_id: campaignId,
+        blog_post_id: blogPostId,
+        social_post_id: socialPostId,
+        scheduled_at: scheduleIso,
+        updated_at: new Date().toISOString(),
+      }).eq("id", selected.id).select("*").single();
+      if (topicUpdate.error) throw topicUpdate.error;
+      setTopics(current => current.map(row => row.id === selected.id ? topicUpdate.data as TopicRow : row));
+      setToast(mode === "scheduled" ? "Approved package scheduled. Blog Center and Social Media Studio now share the same campaign." : mode === "review" ? "Package sent to review queues." : "Package saved as draft without another AI call.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to save the content package."); }
+    finally { setWorking(""); }
+  }
 
-      <main className="os-card content-package-card"><div className="os-card-header"><div><h2>Generated Content Package</h2><p>Edit, image, review and approve each output.</p></div><span className="os-badge green">SHARED CAMPAIGN</span></div><div className="os-card-body">
-        <div className="content-shared-creative-stage" data-shape={imageShape}>{sharedImage ? <img src={sharedImage} alt="Shared campaign creative"/> : <div className="content-creative-placeholder"><span>THE SALT ORIGIN</span><strong>{blog.title || topic || "Campaign image preview"}</strong><small>Generate or upload the shared creative</small></div>}</div>
-        <div className="content-image-toolbar"><div className="os-segmented"><button className={imageShape === "square" ? "active" : ""} onClick={() => setImageShape("square")} title="Square"><Square/></button><button className={imageShape === "portrait" ? "active" : ""} onClick={() => setImageShape("portrait")} title="Portrait"><RectangleVertical/></button><button className={imageShape === "landscape" ? "active" : ""} onClick={() => setImageShape("landscape")} title="Landscape"><RectangleHorizontal/></button></div><button className="os-btn soft" onClick={() => void generateSharedImage()} disabled={Boolean(working)}><Sparkles/>{working === "image" ? "Generating…" : "Create Image with AI"}</button><button className="os-btn soft" onClick={() => fileInput.current?.click()} disabled={Boolean(working)}><UploadCloud/>{working === "upload" ? "Uploading…" : "Upload Image"}</button><span>Image is shown uncropped so you can review the full creative.</span><input ref={fileInput} type="file" accept="image/*" hidden onChange={uploadImage}/></div>
+  async function deleteTopic(row: TopicRow) {
+    if (!window.confirm(`Delete topic "${row.topic}" from the inbox? Linked blog/social records will not be deleted.`)) return;
+    const result = await supabase.from("content_topic_queue").delete().eq("id", row.id);
+    if (result.error) { setError(result.error.message); return; }
+    setTopics(current => current.filter(item => item.id !== row.id));
+    if (selectedId === row.id) setSelectedId(null);
+  }
 
-        <div className="os-tabs content-platform-tabs"><button className={`os-tab ${activePlatform === "blog" ? "active" : ""}`} onClick={() => setActivePlatform("blog")}>Blog</button>{SOCIAL_PLATFORM_KEYS.map((platform) => <button key={platform} className={`os-tab ${activePlatform === platform ? "active" : ""}`} onClick={() => setActivePlatform(platform)}>{SOCIAL_PLATFORM_META[platform].label}</button>)}</div>
+  const activeSocial = activeTab === "blog" ? null : packageData.social?.[activeTab] || { title: "", text: "", hashtags: "", image_prompt: blog.image_prompt || "" };
+  const activeMeta = activeTab === "blog" ? null : SOCIAL_PLATFORM_META[activeTab];
 
-        {activePlatform === "blog" ? <div className="content-editor-panel"><div className="content-editor-heading"><div><span>Concise website blog</span><strong>Blog Draft</strong></div><span>SEO {scores.seo}% · GEO {scores.geo}%</span></div><label className="os-label"><span>Blog Title</span><input value={blog.title} onChange={(event) => setBlog((current) => ({ ...current, title: event.target.value }))}/></label><label className="os-label"><span>Excerpt</span><textarea rows={3} value={blog.excerpt} onChange={(event) => setBlog((current) => ({ ...current, excerpt: event.target.value }))}/></label><label className="os-label"><span>Blog Content</span><textarea className="content-social-copy content-studio-article" value={blog.content} onChange={(event) => setBlog((current) => ({ ...current, content: event.target.value }))}/></label></div> : activeSocial && platformMeta ? <div className="content-editor-panel"><div className="content-editor-heading"><div><span>{platformMeta.copyLabel}</span><strong>{platformMeta.label} Version</strong></div><span className={overLimit ? "limit-bad" : ""}>{activeSocial.text.length.toLocaleString()} / {platformMeta.maxChars.toLocaleString()} max · target ~{platformMeta.recommendedChars}</span></div><label className="os-label"><span>{platformMeta.titleLabel || "Title / Hook"}</span><input value={activeSocial.title} onChange={(event) => setSocial((current) => ({ ...current, [socialPlatform!]: { ...current[socialPlatform!], title: event.target.value } }))}/></label><label className="os-label"><span>{platformMeta.copyLabel}</span><textarea className="content-social-copy" value={activeSocial.text} onChange={(event) => setSocial((current) => ({ ...current, [socialPlatform!]: { ...current[socialPlatform!], text: event.target.value } }))}/></label><label className="os-label"><span>Hashtags / Search Terms</span><textarea rows={2} value={activeSocial.hashtags} onChange={(event) => setSocial((current) => ({ ...current, [socialPlatform!]: { ...current[socialPlatform!], hashtags: event.target.value } }))}/></label></div> : null}
+  return <AdminShell><div className="os-page content-ops-studio">
+    <header className="os-page-header"><div><div className="os-page-eyebrow">Cost-Controlled Content Operations</div><h1 className="os-page-title">AI Content Studio</h1><p className="os-page-subtitle">Add your own topics in bulk, generate only when you choose, review SEO/GEO quality, then schedule one linked blog + social campaign.</p></div><div className="os-page-actions"><button className="os-btn soft" onClick={() => void loadTopics()}><RefreshCw/>Refresh</button><a className="os-btn soft" href="/admin/blog-center"><FileText/>Blog Center</a><a className="os-btn soft" href="/admin/social-studio"><Send/>Social Studio</a></div></header>
 
-        <div className="content-review-actions"><button className="os-btn soft" onClick={() => void saveBlog("draft")}><Save/>Draft</button><button className="os-btn soft" onClick={() => setReviewOpen(true)}><Eye/>Full Review</button><button className="os-btn primary" onClick={() => setReviewOpen(true)}><CheckCircle2/>Review & Approve</button></div>
-      </div></main>
-    </div>}
+    <section className="os-card" style={{ marginBottom: 16 }}><div className="os-card-body"><div className="os-list-row"><span className="os-list-icon"><CircleDollarSign/></span><div className="os-list-main"><strong>Cost Control is ON</strong><span>No AI call runs on page load and no daily AI content cron is required. API credit is used only when you press Generate or optional AI Research.</span></div><span className="os-badge green">MANUAL AI</span></div></div></section>
 
-    {reviewOpen && <div className="os-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setReviewOpen(false); }}><section className="os-modal content-review-modal"><div className="os-modal-header"><div><div className="os-page-eyebrow">Human Approval</div><h2>Review Complete Content Package</h2><p>Confirm research direction, quality scores, keywords, blog copy, creative and publishing destinations.</p></div><button className="os-icon-button" onClick={() => setReviewOpen(false)}><XCircle/></button></div><div className="os-modal-body content-review-body"><div className="content-review-kpis"><div><span>SEO Score</span><strong>{scores.seo}%</strong></div><div><span>GEO Score</span><strong>{scores.geo}%</strong></div><div><span>Primary Keyword</span><strong>{blog.primaryKeyword || keyword || "—"}</strong></div><div><span>Creative</span><strong>{sharedImage ? "Attached" : "Missing"}</strong></div></div><section className="content-review-section"><h3>Topic & Keywords</h3><p>{topic}</p><div className="content-keyword-chips">{scores.keywords.map((item) => <span key={item}>{item}</span>)}</div></section><section className="content-review-section"><h3>Blog</h3><label className="os-label"><span>Title</span><input value={blog.title} onChange={(event) => setBlog((current) => ({ ...current, title: event.target.value }))}/></label><label className="os-label"><span>Excerpt</span><textarea rows={3} value={blog.excerpt} onChange={(event) => setBlog((current) => ({ ...current, excerpt: event.target.value }))}/></label><label className="os-label"><span>Blog Content</span><textarea className="content-studio-article" value={blog.content} onChange={(event) => setBlog((current) => ({ ...current, content: event.target.value }))}/></label></section><section className="content-review-section"><h3>Publishing Destinations</h3><label className="content-destination"><input type="checkbox" checked={publishWebsite} onChange={(event) => setPublishWebsite(event.target.checked)}/><span><FileText/>Website Blog</span></label><div className="content-destination-grid">{SOCIAL_PLATFORM_KEYS.map((platform) => <label className="content-destination" key={platform}><input type="checkbox" checked={selectedPlatforms.includes(platform)} onChange={(event) => setSelectedPlatforms((current) => event.target.checked ? [...new Set([...current, platform])] : current.filter((item) => item !== platform))}/><span>{SOCIAL_PLATFORM_META[platform].label}</span></label>)}</div></section></div><div className="os-modal-footer"><button className="os-btn danger" onClick={async () => { await saveBlog("archived"); await saveSocial("Rejected"); setReviewOpen(false); }}><XCircle/>Reject</button><button className="os-btn soft" onClick={async () => { await saveBlog("draft"); await saveSocial("Draft"); setReviewOpen(false); }}><Save/>Keep Draft</button><button className="os-btn primary" onClick={() => void approveSelected()} disabled={Boolean(working)}><Send/>Approve Selected</button></div></section></div>}
+    {error && <section className="os-card content-alert" style={{ marginBottom: 16 }}><strong>Action could not be completed</strong><p>{error}</p></section>}
 
-    {toast && <div className="os-toast-stack"><div className="os-toast"><span className="os-toast-icon"><CheckCircle2/></span><div><strong>{toast}</strong><span>Connected CMS records were updated.</span></div></div></div>}
+    <div className="content-ops-layout">
+      <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <section className="os-card"><div className="os-card-header"><div><h2>Topic Inbox</h2><p>Paste one topic per line. Add 10 today and schedule them across the next 10 days.</p></div><Lightbulb/></div><div className="os-card-body">
+          <label className="os-label"><span>Topics — one per line</span><textarea rows={7} value={bulkTopics} onChange={event => setBulkTopics(event.target.value)} placeholder={"How to verify Himalayan pink salt origin\nPrivate-label pouch packaging for importers\nCoarse vs extra fine pink salt for foodservice"}/></label>
+          <div className="os-grid two" style={{ marginTop: 12 }}><label className="os-label"><span>Primary Keyword (single topic)</span><input value={primaryKeyword} onChange={event => setPrimaryKeyword(event.target.value)} placeholder="Himalayan pink salt supplier"/></label><label className="os-label"><span>Target Market</span><input value={targetMarket} onChange={event => setTargetMarket(event.target.value)}/></label></div>
+          <label className="os-label" style={{ marginTop: 12 }}><span>Buyer Type</span><input value={buyerType} onChange={event => setBuyerType(event.target.value)}/></label>
+          <label className="os-label" style={{ marginTop: 12 }}><span>Your Input / Verified Facts</span><textarea rows={4} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Add product facts, Pakistan/Punjab/Salt Range context, packaging facts, wording to preserve, or anything AI must not invent."/></label>
+          <label className="os-label" style={{ marginTop: 12 }}><span>CTA</span><input value={cta} onChange={event => setCta(event.target.value)}/></label>
+          <div className="os-row-actions" style={{ marginTop: 14 }}><button className="os-btn primary" onClick={() => void addTopics()} disabled={Boolean(working)}><Plus/>{working === "add" ? "Adding…" : "Add to Topic Inbox"}</button><button className="os-btn soft" onClick={() => void aiTopicSuggestions()} disabled={Boolean(working)}><Search/>{working === "research" ? "Researching…" : "AI Topic Research (Optional)"}</button></div>
+        </div></section>
+
+        <section className="os-card"><div className="os-card-header"><div><h2>Saved Topics</h2><p>{topics.length} total topic records</p></div></div><div className="os-card-body">
+          <div className="os-tabs" style={{ marginBottom: 10 }}>{["all", "idea", "generated", "review", "scheduled"].map(value => <button key={value} className={`os-tab ${filter === value ? "active" : ""}`} onClick={() => setFilter(value)}>{statusLabel(value)}</button>)}</div>
+          <div className="os-list" style={{ maxHeight: 520, overflowY: "auto" }}>{filteredTopics.map(row => <button key={row.id} className="os-list-row" style={{ textAlign: "left", border: selectedId === row.id ? "1px solid var(--os-pink)" : undefined }} onClick={() => setSelectedId(row.id)}><span className="os-list-icon"><FileText/></span><div className="os-list-main"><strong>{row.topic}</strong><span>{row.target_market} · {row.scheduled_at ? new Date(row.scheduled_at).toLocaleString() : "Not scheduled"}</span></div><span className={`os-badge ${tone(row.status)}`}>{statusLabel(row.status)}</span><span onClick={event => { event.stopPropagation(); void deleteTopic(row); }} title="Delete topic"><Trash2 size={15}/></span></button>)}</div>
+          {!filteredTopics.length && <div className="os-empty"><Lightbulb/><h3>No topics in this view</h3><p>Add your first topic above.</p></div>}
+        </div></section>
+      </aside>
+
+      <main style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {!selected ? <section className="os-card"><div className="os-empty" style={{ minHeight: 520 }}><Lightbulb/><h3>Select a topic</h3><p>Choose a topic from the inbox to generate, edit, review and schedule it.</p></div></section> : <>
+          <section className="os-card"><div className="os-card-header"><div><span className="os-page-eyebrow">Selected Topic</span><h2>{selected.topic}</h2><p>Generation is on-demand. Manual mode does not use web research; optional research mode does.</p></div><span className={`os-badge ${tone(selected.status)}`}>{statusLabel(selected.status)}</span></div><div className="os-card-body">
+            <div className="os-grid three"><label className="os-label"><span>Primary Keyword</span><input value={primaryKeyword} onChange={event => setPrimaryKeyword(event.target.value)}/></label><label className="os-label"><span>Target Market</span><input value={targetMarket} onChange={event => setTargetMarket(event.target.value)}/></label><label className="os-label"><span>Lead CTA</span><input value={cta} onChange={event => setCta(event.target.value)}/></label></div>
+            <label className="os-label" style={{ marginTop: 12 }}><span>Your Input / Facts to Preserve</span><textarea rows={3} value={notes} onChange={event => setNotes(event.target.value)}/></label>
+            <div className="os-row-actions" style={{ marginTop: 14 }}><button className="os-btn primary" onClick={() => void generatePackage(false)} disabled={Boolean(working)}><Sparkles/>{working === "generate" ? "Generating One Package…" : "Generate from My Topic"}</button><button className="os-btn soft" onClick={() => void generatePackage(true)} disabled={Boolean(working)}><Search/>{working === "generate-research" ? "Researching + Generating…" : "Research + Generate (Optional Cost)"}</button></div>
+          </div></section>
+
+          <section className="os-card"><div className="os-card-header"><div><h2>SEO / GEO Quality Gate</h2><p>Scheduling is blocked until both internal quality scores reach 70.</p></div><span className={`os-badge ${qualityReady ? "green" : "amber"}`}>{qualityReady ? "READY TO SCHEDULE" : "NEEDS WORK"}</span></div><div className="os-card-body"><div className="os-grid four"><article className="os-metric"><span className="os-metric-label">SEO Score</span><div className="os-metric-value">{scores.seo}%</div></article><article className="os-metric"><span className="os-metric-label">GEO Score</span><div className="os-metric-value">{scores.geo}%</div></article><article className="os-metric"><span className="os-metric-label">Keywords</span><div className="os-metric-value">{scores.keywords.length}</div></article><article className="os-metric"><span className="os-metric-label">AI Calls on Load</span><div className="os-metric-value">0</div></article></div><div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>{scores.keywords.map(keyword => <span className="os-badge" key={keyword}>{keyword}</span>)}</div></div></section>
+
+          <section className="os-card"><div className="os-card-header"><div><h2>Shared Campaign Creative</h2><p>Upload one approved image and reuse it across the blog and selected social channels.</p></div><ImageIcon/></div><div className="os-card-body">{imageUrl ? <img src={imageUrl} alt="Campaign" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, background: "var(--os-surface-2)" }}/> : <div className="os-empty" style={{ minHeight: 180 }}><ImageIcon/><h3>No image uploaded</h3><p>Upload your manually prepared image when the copy is ready.</p></div>}<button className="os-btn soft" style={{ marginTop: 12 }} onClick={() => fileInput.current?.click()} disabled={working === "upload"}><UploadCloud/>{working === "upload" ? "Uploading…" : "Upload / Replace Image"}</button><input ref={fileInput} hidden type="file" accept="image/*" onChange={uploadImage}/></div></section>
+
+          <section className="os-card"><div className="os-card-header"><div><h2>Blog + Social Package</h2><p>The same campaign appears in Blog Center and Social Media Studio after you save or schedule it. You can also paste and edit your own blog here without making another AI call.</p></div><span className="os-badge blue">{packageData.model || "NO AI PACKAGE YET"}</span></div><div className="os-card-body">
+            <div className="os-tabs" style={{ overflowX: "auto" }}><button className={`os-tab ${activeTab === "blog" ? "active" : ""}`} onClick={() => setActiveTab("blog")}>Blog</button>{SOCIAL_PLATFORM_KEYS.map(platform => <button key={platform} className={`os-tab ${activeTab === platform ? "active" : ""}`} onClick={() => setActiveTab(platform)}>{SOCIAL_PLATFORM_META[platform].label}</button>)}</div>
+            {activeTab === "blog" ? <div style={{ marginTop: 14 }}><div className="os-grid two"><label className="os-label"><span>Blog Title</span><input value={blog.title} onChange={event => patchBlog({ title: event.target.value })}/></label><label className="os-label"><span>Slug</span><input value={blog.slug} onChange={event => patchBlog({ slug: event.target.value })}/></label></div><label className="os-label" style={{ marginTop: 12 }}><span>Excerpt</span><textarea rows={3} value={blog.excerpt} onChange={event => patchBlog({ excerpt: event.target.value })}/></label><label className="os-label" style={{ marginTop: 12 }}><span>Blog Content — clean HTML, no # headings or raw links</span><textarea rows={18} value={blog.content} onChange={event => patchBlog({ content: event.target.value })}/></label><div className="os-grid two" style={{ marginTop: 12 }}><label className="os-label"><span>SEO Title</span><input value={blog.seo_title} onChange={event => patchBlog({ seo_title: event.target.value })}/></label><label className="os-label"><span>SEO Description</span><textarea rows={3} value={blog.seo_description} onChange={event => patchBlog({ seo_description: event.target.value })}/></label></div></div> : activeSocial && activeMeta ? <div style={{ marginTop: 14 }}><div className="os-list-row"><span className="os-list-icon"><Send/></span><div className="os-list-main"><strong>{activeMeta.label}</strong><span>Target ~{activeMeta.recommendedChars} · hard max {activeMeta.maxChars} characters</span></div><span className={`os-badge ${activeSocial.text.length <= activeMeta.maxChars ? "green" : "red"}`}>{activeSocial.text.length}/{activeMeta.maxChars}</span></div><label className="os-label" style={{ marginTop: 12 }}><span>{activeMeta.titleLabel || "Title / Hook"}</span><input value={activeSocial.title} onChange={event => patchSocial(activeTab, { title: event.target.value })}/></label><label className="os-label" style={{ marginTop: 12 }}><span>{activeMeta.copyLabel}</span><textarea rows={10} value={activeSocial.text} onChange={event => patchSocial(activeTab, { text: event.target.value })}/></label><label className="os-label" style={{ marginTop: 12 }}><span>Hashtags / Search Terms</span><textarea rows={3} value={activeSocial.hashtags} onChange={event => patchSocial(activeTab, { hashtags: event.target.value })}/></label></div> : <div className="os-empty"><Sparkles/><h3>Generate the package first</h3><p>Your blog and platform versions will appear here.</p></div>}
+          </div></section>
+
+          <section className="os-card"><div className="os-card-header"><div><h2>Approval & Content Calendar</h2><p>Choose the channels, set one schedule time, then save the linked campaign.</p></div><CalendarDays/></div><div className="os-card-body"><div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>{SOCIAL_PLATFORM_KEYS.map(platform => <label key={platform} className="content-destination"><input type="checkbox" checked={selectedPlatforms.includes(platform)} onChange={() => togglePlatform(platform)}/><span>{SOCIAL_PLATFORM_META[platform].label}</span></label>)}</div><div className="os-grid two"><label className="os-label"><span>Schedule Date & Time</span><input type="datetime-local" value={scheduleAt} onChange={event => setScheduleAt(event.target.value)}/></label><div className="os-list-row"><span className="os-list-icon"><Clock3/></span><div className="os-list-main"><strong>Daily Publishing Queue</strong><span>Website blogs publish automatically when due. Social records move to the platform publishing queue when due.</span></div></div></div><div className="os-row-actions" style={{ marginTop: 14 }}><button className="os-btn soft" onClick={() => void persistPackage("draft")} disabled={Boolean(working)}><Save/>Save Draft</button><button className="os-btn soft" onClick={() => void persistPackage("review")} disabled={Boolean(working)}><CheckCircle2/>Send for Review</button><button className="os-btn primary" onClick={() => void persistPackage("scheduled")} disabled={Boolean(working) || !qualityReady}><CalendarDays/>{qualityReady ? "Approve & Schedule" : "SEO/GEO 70 Required"}</button></div></div></section>
+        </>}
+      </main>
+    </div>
+
+    {toast && <div className="os-toast-stack"><div className="os-toast"><span className="os-toast-icon"><CheckCircle2/></span><div><strong>{toast}</strong><span>Supabase content records are synchronized.</span></div></div></div>}
+    <style jsx>{`
+      .content-ops-layout { display:grid; grid-template-columns:minmax(300px,.75fr) minmax(0,1.75fr); gap:16px; align-items:start; }
+      .content-destination { display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border:1px solid var(--os-border); border-radius:999px; background:var(--os-surface); cursor:pointer; font-size:12px; }
+      .content-destination input { accent-color:var(--os-pink); }
+      @media (max-width:1050px) { .content-ops-layout { grid-template-columns:1fr; } }
+      @media (max-width:640px) { .content-ops-layout { gap:12px; } .content-destination { flex:1 1 calc(50% - 8px); justify-content:center; } }
+    `}</style>
   </div></AdminShell>;
 }

@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const { focus } = await request.json();
     const { text, model } = await runOpenAI({
-      model: process.env.OPENAI_BLOG_MODEL,
+      model: process.env.OPENAI_CONTENT_MODEL || "gpt-4o-mini",
       tools: [{ type: "web_search", search_context_size: "medium" }],
       input: `Research current international B2B demand around ${focus || "Himalayan pink salt"}. Return only valid JSON: {"topics":[10 concise factual non-medical blog titles]}. Audience: importers, retailers, food manufacturers and private-label brands.`,
     });

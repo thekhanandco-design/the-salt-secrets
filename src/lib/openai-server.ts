@@ -51,10 +51,11 @@ export async function runOpenAI(options: OpenAIRequestOptions) {
     new Set(
       [
         options.model,
+        process.env.OPENAI_CONTENT_MODEL,
         process.env.OPENAI_MODEL,
-        "gpt-5-mini",
-        "gpt-4.1-mini",
+        process.env.OPENAI_FALLBACK_MODEL,
         "gpt-4o-mini",
+        "gpt-4.1-mini",
       ].filter(Boolean) as string[],
     ),
   );
@@ -63,7 +64,9 @@ export async function runOpenAI(options: OpenAIRequestOptions) {
   const totalTimeoutMs = Math.max(timeoutMs, Number(options.totalTimeoutMs || process.env.OPENAI_TOTAL_TIMEOUT_MS || 110_000));
   const deadline = Date.now() + totalTimeoutMs;
   let lastError = "OpenAI request failed.";
-  const attempts = models.flatMap((model) => (options.tools?.length ? [{ model, withTools: true }, { model, withTools: false }] : [{ model, withTools: false }])).slice(0, Math.max(1, options.maxAttempts || 4));
+  const attempts = models
+    .flatMap((model) => (options.tools?.length ? [{ model, withTools: true }, { model, withTools: false }] : [{ model, withTools: false }]))
+    .slice(0, Math.max(1, options.maxAttempts || 6));
 
   for (const attempt of attempts) {
     const remaining = deadline - Date.now();

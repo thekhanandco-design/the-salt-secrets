@@ -19,8 +19,24 @@ export function normalizeGeneratedArticle(value: unknown) {
     .trim();
 }
 
+function semanticText(value: string) {
+  return normalizeGeneratedArticle(value)
+    .replace(/<\/(?:h2|h3|p|li)>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "• ")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function words(value: string) {
-  return value.trim().split(/\s+/).filter(Boolean);
+  return semanticText(value).trim().split(/\s+/).filter(Boolean);
 }
 
 function includesKeyword(text: string, keyword: string) {
@@ -39,8 +55,9 @@ export function calculateSeoScore(input: {
   featuredImage?: string;
 }) {
   const content = normalizeGeneratedArticle(input.content);
-  const wordCount = words(content).length;
-  const lines = content.split(/\n+/).map(line => line.trim()).filter(Boolean);
+  const readable = semanticText(content);
+  const wordCount = words(readable).length;
+  const lines = readable.split(/\n+/).map(line => line.trim()).filter(Boolean);
   const questionCount = lines.filter(line => line.endsWith("?")).length;
   const listCount = lines.filter(line => /^[-*•]|^\d+[.)]\s/.test(line)).length;
   let score = 0;
@@ -72,14 +89,16 @@ export function calculateGeoScore(input: {
   targetCountry: string;
 }) {
   const content = normalizeGeneratedArticle(input.content);
-  const lines = content.split(/\n+/).map(line => line.trim()).filter(Boolean);
-  const wordCount = words(content).length;
+  const readable = semanticText(content);
+  const lines = readable.split(/\n+/).map(line => line.trim()).filter(Boolean);
+  const wordCount = words(readable).length;
   const questions = lines.filter(line => line.endsWith("?")).length;
   const conciseAnswers = lines.filter(line => {
     const count = words(line).length;
     return count >= 12 && count <= 55;
   }).length;
-  const factualSignals = (content.match(/\b(MOQ|Incoterm|FOB|CIF|COA|MSDS|HACCP|Halal|packaging|lead time|granulation|mesh|origin|export)\b/gi) || []).length;
+  const factualSignals = (readable.match(/\b(MOQ|Incoterm|FOB|CIF|COA|MSDS|HACCP|Halal|packaging|lead time|granulation|mesh|origin|export)\b/gi) || []).length;
+  const provenanceSignals = (readable.match(/\b(Pakistan|Punjab|Salt Range|Khewra|provenance|traceability|origin|mine)\b/gi) || []).length;
   const structureSignals = lines.filter(line => /^[-*•]|^\d+[.)]\s/.test(line)).length;
   let score = 0;
   if (input.excerpt.length >= 90 && input.excerpt.length <= 260) score += 12;
@@ -92,9 +111,11 @@ export function calculateGeoScore(input: {
   if (factualSignals >= 8) score += 16;
   else if (factualSignals >= 4) score += 10;
   if (structureSignals >= 4) score += 10;
-  if (/\b(importer|distributor|wholesaler|private label|food manufacturer|buyer)\b/i.test(content)) score += 10;
-  if (wordCount >= 800) score += 10;
-  if (/\b(contact|quotation|request a quote|inquiry)\b/i.test(content)) score += 6;
+  if (/\b(importer|distributor|wholesaler|private label|food manufacturer|buyer)\b/i.test(readable)) score += 10;
+  if (provenanceSignals >= 3) score += 8;
+  else if (provenanceSignals >= 1) score += 4;
+  if (wordCount >= 800) score += 8;
+  if (/\b(contact|quotation|request a quote|inquiry)\b/i.test(readable)) score += 4;
   return Math.min(100, Math.max(0, Math.round(score)));
 }
 
