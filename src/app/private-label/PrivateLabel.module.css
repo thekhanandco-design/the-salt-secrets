@@ -114,3 +114,42 @@
 .workflow{background:linear-gradient(90deg,#fff5f8 0%,#fff9fa 50%,#fff5f8 100%)!important;border-top:1px solid #f4e4e9;border-bottom:1px solid #f4e4e9;padding:72px 0!important}
 @media(max-width:1100px){.heroGrid{grid-template-columns:1fr!important}.heroBannerWrap{aspect-ratio:16/8!important}}
 @media(max-width:700px){.heroBannerWrap{aspect-ratio:16/10!important}}
+
+/* V7.5.5 — Private Label hero image should behave like the homepage hero visual.
+   Remove the card/box treatment completely and let the uploaded banner image
+   sit as a standalone responsive visual. */
+.heroBannerWrap{
+  position:relative!important;
+  min-height:0!important;
+  aspect-ratio:auto!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.heroBanner{
+  position:relative!important;
+  inset:auto!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:520px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transition:transform .35s ease!important;
+}
+.heroBannerWrap:hover .heroBanner{
+  transform:scale(1.012)!important;
+}
+@media(max-width:1100px){
+  .heroBanner{max-height:480px!important}
+}
+@media(max-width:700px){
+  .heroBanner{max-height:none!important;width:100%!important}
+}
