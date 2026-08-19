@@ -37,14 +37,14 @@ export default async function LegalPolicyPage({ pageSlug, fallbackTitle }: Legal
 
   return (
     <main className="legal-policy-page">
-      <section className="legal-policy-hero">
+      <section className="legal-policy-hero" data-cms-section="hero">
         <div className="legal-policy-inner">
           <span>THE SALT ORIGIN</span>
           <h1>{title}</h1>
           {introduction ? <p>{introduction}</p> : null}
         </div>
       </section>
-      <section className="legal-policy-content">
+      <section className="legal-policy-content" data-cms-section="content">
         <div className="legal-policy-inner legal-policy-card">
           {paragraphs.length ? (
             paragraphs.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>)

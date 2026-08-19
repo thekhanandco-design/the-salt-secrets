@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminUpload } from "@/lib/admin-client";
 import {
   DEFAULT_PRODUCT_PAGE_SETTINGS,
   PRODUCT_PAGE_DEFAULT_ORDER,
@@ -147,14 +148,12 @@ export default function ProductDetailEditor() {
     if (!file) return;
     setUploading(target);
     setError("");
-    const path = `products/${id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
-    if (result.error) setError(result.error.message);
-    else {
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    try {
+      const result = await adminUpload(file, "product-image", { folder: `products/${id}`, filename: file.name });
+      const url = result.value;
       if (target === "image") patch("image", url);
       else patch("gallery", `${String(form.gallery || "").trim()}${form.gallery ? "\n" : ""}${url}`);
-    }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Image upload failed."); }
     setUploading("");
     event.target.value = "";
   }

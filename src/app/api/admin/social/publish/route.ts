@@ -1,3 +1,4 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
 import {
@@ -6,6 +7,7 @@ import {
   publishMetaSocialPost,
   type SocialPostRow,
 } from "@/lib/meta-publisher";
+import { distributedRateLimit, readJson, validUuid } from "@/lib/security/http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,11 +19,13 @@ function normal(value: unknown) {
 
 export async function POST(request: Request) {
   try {
-    const { client } = await requireAdminUser(request);
-    const body = await request.json().catch(() => ({}));
+    const { client, identity } = await requireAdminUser(request);
+    const limited = await distributedRateLimit(request, { key: `social-publish:${identity.id}`, limit: 20, windowMs: 10 * 60_000 });
+    if (limited) return limited;
+    const body = await readJson(request, 8_000);
     const postId = String(body.postId || "").trim();
 
-    if (!postId) return NextResponse.json({ error: "postId is required." }, { status: 400 });
+    if (!validUuid(postId)) return NextResponse.json({ error: "A valid post id is required." }, { status: 400 });
 
     const { data, error } = await client
       .from("social_scheduled_posts")
@@ -81,7 +85,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) return error;
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Social publishing failed." },
+      { error: publicApiError(error, "Social publishing failed.") },
       { status: 500 },
     );
   }

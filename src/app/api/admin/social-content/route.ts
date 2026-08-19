@@ -3,14 +3,17 @@ import { requireAdminUser } from "@/lib/admin-auth";
 import { parseJsonResponse, runOpenAI } from "@/lib/openai-server";
 import { publicApiError } from "@/lib/api-errors";
 import { SOCIAL_PLATFORM_META, clampPlatformText, type SocialPlatformKey } from "@/lib/social-platforms";
+import { cleanText, distributedRateLimit, readJson } from "@/lib/security/http";
 
 const allowedPlatforms: SocialPlatformKey[] = ["linkedin", "instagram", "facebook", "pinterest", "threads", "x", "tiktok", "youtube", "reddit", "whatsapp", "telegram", "discord", "snapchat", "mastodon", "bluesky"];
 
 export async function POST(request: Request) {
   try {
-    await requireAdminUser(request);
-    const body = await request.json();
-    const topic = String(body.topic || "").trim();
+    const { identity } = await requireAdminUser(request);
+    const limited = await distributedRateLimit(request, { key: `social-content:${identity.id}`, limit: 20, windowMs: 10 * 60_000 });
+    if (limited) return limited;
+    const body = await readJson(request, 32_000);
+    const topic = cleanText(body.topic, 500);
     const requestedPlatforms: unknown[] = Array.isArray(body.platforms) ? body.platforms : [];
     const platforms: SocialPlatformKey[] = requestedPlatforms
       .map((item) => String(item).toLowerCase())
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
       timeoutMs: 24_000,
       totalTimeoutMs: 48_000,
       maxAttempts: 2,
-      input: `Create platform-specific B2B social media drafts for The Salt Origin. Do not invent certifications, quantities, countries served, client names, statistics, prices or product claims. Use only the brief supplied below. Every output remains a draft for human review.\n\nTopic: ${topic}\nTarget countries: ${String(body.targetCountry || "Not specified")}\nTarget audience: ${String(body.targetAudience || "Not specified")}\nObjective: ${String(body.objective || "Not specified")}\nProduct: ${String(body.product || "Not specified")}\nTone: ${String(body.tone || "Professional B2B")}\nCTA: ${String(body.cta || "Not specified")}\nPrimary keyword: ${String(body.primaryKeyword || "Not specified")}\nSource blog excerpt: ${String(body.sourceExcerpt || "Not supplied")}\nDestination link: ${String(body.link || "")}\nPlatforms: ${platforms.join(", ")}
+      input: `Create platform-specific B2B social media drafts for The Salt Origin. Do not invent certifications, quantities, countries served, client names, statistics, prices or product claims. Use only the brief supplied below. Every output remains a draft for human review.\n\nTopic: ${topic}\nTarget countries: ${cleanText(body.targetCountry || "Not specified", 120)}\nTarget audience: ${cleanText(body.targetAudience || "Not specified", 200)}\nObjective: ${cleanText(body.objective || "Not specified", 200)}\nProduct: ${cleanText(body.product || "Not specified", 200)}\nTone: ${cleanText(body.tone || "Professional B2B", 100)}\nCTA: ${cleanText(body.cta || "Not specified", 300)}\nPrimary keyword: ${cleanText(body.primaryKeyword || "Not specified", 250)}\nSource blog excerpt: ${cleanText(body.sourceExcerpt || "Not supplied", 5_000)}\nDestination link: ${cleanText(body.link || "", 1_000)}\nPlatforms: ${platforms.join(", ")}
 Platform limits: ${platforms.map((platform) => `${SOCIAL_PLATFORM_META[platform].label} max ${SOCIAL_PLATFORM_META[platform].maxChars}, target ${SOCIAL_PLATFORM_META[platform].recommendedChars}`).join("; ")}\n\nReturn valid JSON only in this shape: {"platforms":{"linkedin":{"title":"","text":"","hashtags":"","image_prompt":""},"instagram":{"title":"","text":"","hashtags":"","image_prompt":""}}}. Include only requested platforms. LinkedIn must be professional B2B copy. Instagram should be concise with relevant hashtags. Facebook should be conversational business copy. Pinterest must include a pin title and searchable description. Threads must be short and conversational. X must remain within 280 characters including hashtags. TikTok must include a short caption plus a video concept in title. YouTube must include a title, description and thumbnail prompt. Reddit must be useful and community-first. WhatsApp and Telegram must be concise broadcast copy. Discord must include a community discussion prompt. Snapchat must include a vertical story concept. Mastodon and Bluesky must be concise professional posts.`,
     });
     const parsed = parseJsonResponse(text);
@@ -44,6 +47,7 @@ Platform limits: ${platforms.map((platform) => `${SOCIAL_PLATFORM_META[platform]
     return NextResponse.json({ platforms: clean, model });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ error: publicApiError(error, "Social content generation failed.") }, { status: 500 });
+    const status = error instanceof Error && error.message === "PAYLOAD_TOO_LARGE" ? 413 : 500;
+    return NextResponse.json({ error: status === 413 ? "Request is too large." : publicApiError(error, "Social content generation failed.") }, { status });
   }
 }

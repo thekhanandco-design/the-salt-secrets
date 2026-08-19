@@ -1,6 +1,9 @@
+import { publicApiError } from "@/lib/api-errors";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { encryptIntegrationToken } from "@/lib/integration-token-crypto";
+import { verifyYouTubeOAuthState } from "@/lib/youtube-oauth-state";
+import { requireActiveSuperAdminId } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -102,12 +105,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!storedState || !returnedState || storedState !== returnedState) {
-      return integrationRedirect(
-        request,
-        "error",
-        "YouTube authorization state validation failed. Please reconnect.",
-      );
+      return integrationRedirect(request, "error", "YouTube authorization state validation failed. Please reconnect.");
     }
+    const statePayload = verifyYouTubeOAuthState(returnedState);
+    await requireActiveSuperAdminId(statePayload.adminId);
 
     const clientId = process.env.YOUTUBE_CLIENT_ID?.trim();
     const clientSecret = process.env.YOUTUBE_CLIENT_SECRET?.trim();
@@ -266,9 +267,7 @@ export async function GET(request: NextRequest) {
     return integrationRedirect(
       request,
       "error",
-      error instanceof Error
-        ? error.message
-        : "YouTube authorization failed.",
+      publicApiError(error, "YouTube authorization failed."),
     );
   }
 }

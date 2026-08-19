@@ -1,6 +1,8 @@
-import { randomBytes } from "node:crypto";
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
-import { requireAdminUser } from "@/lib/admin-auth";
+import { requireSuperAdmin } from "@/lib/admin-auth";
+import { logAdminSecurityEvent } from "@/lib/security/audit";
+import { createYouTubeOAuthState } from "@/lib/youtube-oauth-state";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,20 +21,16 @@ function redirectUri(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    await requireAdminUser(request);
+    const { client, identity } = await requireSuperAdmin(request);
 
     const clientId = process.env.YOUTUBE_CLIENT_ID?.trim();
 
     if (!clientId) {
-      return NextResponse.json(
-        {
-          error: "YOUTUBE_CLIENT_ID is missing from the server environment.",
-        },
-        { status: 400 },
-      );
+      console.error("[YouTube OAuth] Required server configuration is missing.");
+      return NextResponse.json({ error: "YouTube integration is not fully configured." }, { status: 503 });
     }
 
-    const state = randomBytes(32).toString("base64url");
+    const state = createYouTubeOAuthState(identity.id);
     const authorizationUrl = new URL(
       "https://accounts.google.com/o/oauth2/v2/auth",
     );
@@ -46,9 +44,8 @@ export async function GET(request: Request) {
     authorizationUrl.searchParams.set("prompt", "consent");
     authorizationUrl.searchParams.set("state", state);
 
-    const response = NextResponse.json({
-      authorizationUrl: authorizationUrl.toString(),
-    });
+    await logAdminSecurityEvent(client, identity, "youtube_oauth_started", {});
+    const response = NextResponse.json({ authorizationUrl: authorizationUrl.toString() });
 
     response.cookies.set("youtube_oauth_state", state, {
       httpOnly: true,
@@ -67,9 +64,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Unable to start YouTube authorization.",
+          publicApiError(error, "Unable to start YouTube authorization."),
       },
       { status: 500 },
     );

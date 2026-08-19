@@ -1,3 +1,4 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
 
@@ -209,9 +210,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Unable to read integration status.",
+          publicApiError(error, "Unable to read integration status."),
       },
       { status: 500 },
     );

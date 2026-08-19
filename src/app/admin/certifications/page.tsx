@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
-import { adminFetch } from "@/lib/admin-client";
+import { adminFetch, adminUpload } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
 import { FACILITY_CERTIFICATIONS, certificationMatches, type FacilityCertification } from "@/lib/certification-catalog";
 import { CheckCircle2, ExternalLink, Eye, EyeOff, FileCheck2, Mail, RefreshCw, Send, UploadCloud, X } from "lucide-react";
@@ -86,10 +86,8 @@ export default function CertificationsAdminPage() {
     try {
       const slot = FACILITY_CERTIFICATIONS.find((item) => item.name === uploadSlot);
       if (!slot) throw new Error("Unknown certification slot.");
-      const path = `certifications/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-      const up = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type });
-      if (up.error) throw up.error;
-      const url = supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
+      const uploaded = await adminUpload(file, "certificate", { folder: slot.key, filename: file.name });
+      const url = uploaded.value;
       const existing = await ensureRecord(slot);
       const result = await supabase.from("certifications").update({
         document_name: slot.name,

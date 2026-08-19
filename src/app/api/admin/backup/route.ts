@@ -1,5 +1,7 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
-import { requireAdminUser } from "@/lib/admin-auth";
+import { requireSuperAdmin } from "@/lib/admin-auth";
+import { logAdminSecurityEvent } from "@/lib/security/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +15,12 @@ const tables = [
 
 export async function GET(request: Request) {
   try {
-    const { client, identity } = await requireAdminUser(request);
+    const { client, identity } = await requireSuperAdmin(request);
     const data: Record<string, unknown[]> = {};
     const unavailable: Array<{ table:string; reason:string }> = [];
     for (const table of tables) {
       const result = await client.from(table).select("*").limit(10000);
-      if (result.error) unavailable.push({ table, reason: result.error.message });
+      if (result.error) unavailable.push({ table, reason: "unavailable" });
       else data[table] = result.data || [];
     }
     const payload = {
@@ -29,6 +31,7 @@ export async function GET(request: Request) {
       unavailable,
       data,
     };
+    await logAdminSecurityEvent(client, identity, "cms_backup_exported", { tables: Object.keys(data).length, unavailable: unavailable.length });
     const stamp = new Date().toISOString().replace(/[:.]/g,"-");
     return new NextResponse(JSON.stringify(payload, null, 2), {
       headers: {
@@ -39,6 +42,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Backup export failed." }, { status: 500 });
+    return NextResponse.json({ error: publicApiError(error, "Backup export failed.") }, { status: 500 });
   }
 }

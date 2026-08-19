@@ -1,6 +1,12 @@
 import type { MetadataRoute } from "next";
 
+function isIndexableProduction() {
+  if (process.env.VERCEL_ENV) return process.env.VERCEL_ENV === "production";
+  return process.env.NODE_ENV === "production" && process.env.APP_ENV !== "staging" && process.env.APP_ENV !== "preview";
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
+  if (!isIndexableProduction()) return [];
   const base = "https://www.thesaltorigin.com";
   const now = new Date();
   return [

@@ -38,15 +38,13 @@ export const cmsSectionTemplates: CmsSectionTemplate[] = [
 export const cmsPageSectionRegistry: Record<string, CmsSectionLayout[]> = {
   home: [
     { slug: "hero", label: "Hero", visible: true },
+    { slug: "value_cards", label: "Why The Salt Origin", visible: true },
+    { slug: "who_we_supply", label: "Who We Supply", visible: true },
+    { slug: "products", label: "Himalayan Pink Salt Products", visible: true },
     { slug: "private_label", label: "Private Label", visible: true },
-    { slug: "collections", label: "Signature Collections", visible: true },
-    { slug: "process", label: "Source to Shelf", visible: true },
-    { slug: "quality", label: "Quality & Compliance", visible: true },
-    { slug: "export", label: "Export Program", visible: true },
-    { slug: "story", label: "Brand Story", visible: true },
-    { slug: "journal", label: "Salt Journal", visible: true },
-    { slug: "faq", label: "FAQ", visible: true },
-    { slug: "cta", label: "Final CTA", visible: true },
+    { slug: "origin", label: "Khewra Salt Mine Origin", visible: true },
+    { slug: "quality", label: "Quality You Can Trust", visible: true },
+    { slug: "resources", label: "Helpful Resources for Buyers", visible: true },
   ],
   products: [
     { slug: "hero", label: "Products Hero", visible: true },
@@ -64,28 +62,44 @@ export const cmsPageSectionRegistry: Record<string, CmsSectionLayout[]> = {
   certifications: [
     { slug: "hero", label: "Certifications Hero", visible: true },
     { slug: "documents", label: "Certification Documents", visible: true },
-    { slug: "cta", label: "Certifications CTA", visible: true },
   ],
   about: [
-    { slug: "hero", label: "About Hero", visible: true },
+    { slug: "hero", label: "About Us Hero", visible: true },
+    { slug: "who_we_are", label: "Who We Are", visible: true },
+    { slug: "origin", label: "Our Origin", visible: true },
+    { slug: "what_we_do", label: "What We Do", visible: true },
+    { slug: "who_we_serve", label: "Who We Serve", visible: true },
+    { slug: "quality", label: "Quality & Documentation", visible: true },
+    { slug: "process", label: "From Mine to Market", visible: true },
+    { slug: "purpose", label: "Why We Exist", visible: true },
+  ],
+  "our-story": [
+    { slug: "hero", label: "Our Story Hero", visible: true },
     { slug: "story", label: "Brand Story", visible: true },
     { slug: "founder", label: "Founder Message", visible: true },
     { slug: "quality", label: "Quality Commitment", visible: true },
   ],
   faqs: [
     { slug: "hero", label: "FAQ Hero", visible: true },
-    { slug: "faq", label: "Questions & Answers", visible: true },
-    { slug: "cta", label: "FAQ CTA", visible: true },
+    { slug: "faq", label: "Questions, Answers & B2B Desk", visible: true },
   ],
   contact: [
     { slug: "hero", label: "Contact Hero", visible: true },
     { slug: "form", label: "Inquiry Form", visible: true },
-    { slug: "cta", label: "Contact CTA", visible: true },
+    { slug: "contact-details", label: "Contact Details", visible: true },
   ],
   blog: [
     { slug: "hero", label: "Blog Hero", visible: true },
     { slug: "listing", label: "Blog Listing & Newsletter", visible: true },
     { slug: "cta", label: "Blog CTA", visible: true },
+  ],
+  "privacy-policy": [
+    { slug: "hero", label: "Privacy Policy Hero", visible: true },
+    { slug: "content", label: "Privacy Policy Content", visible: true },
+  ],
+  "terms-and-conditions": [
+    { slug: "hero", label: "Terms Hero", visible: true },
+    { slug: "content", label: "Terms Content", visible: true },
   ],
 };
 

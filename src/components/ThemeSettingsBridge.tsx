@@ -40,7 +40,7 @@ function fontStack(value: unknown, fallback: string) {
 export default function ThemeSettingsBridge() {
   const apply = useCallback(async () => {
     const { data } = await supabase
-      .from("site_settings")
+      .from("public_site_settings")
       .select("brand_json")
       .limit(1)
       .maybeSingle();

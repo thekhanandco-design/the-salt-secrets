@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   try {
     const { data } = await supabase
-      .from("site_settings")
+      .from("public_site_settings")
       .select("favicon_url, app_icon_url")
       .limit(1)
       .maybeSingle();

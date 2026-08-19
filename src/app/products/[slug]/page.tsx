@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { APPROVED_PRODUCT_SHEET } from "@/lib/product-catalog";
 import {
   normalizeProductPageSettings,
   type ProductPageBenefit,
@@ -70,16 +71,62 @@ type Product = {
   specification_sheet_url?: string | null;
 };
 
+function approvedFallbackProduct(slug: string): Product | null {
+  const seed = APPROVED_PRODUCT_SHEET.find((item) => item.slug === slug);
+  if (!seed) return null;
+
+  return {
+    id: -(100000 + Number(seed.display_order || 0)),
+    created_at: "",
+    title: seed.title,
+    slug: seed.slug,
+    category: seed.category,
+    description: seed.description,
+    image: seed.image,
+    moq: seed.moq,
+    packaging: seed.packaging,
+    status: seed.status,
+    subtitle: seed.subtitle,
+    short_description: seed.short_description,
+    grain_type: seed.grain_type,
+    sizes: seed.sizes,
+    packaging_type: seed.packaging_type,
+    best_for: seed.best_for,
+    features: seed.features,
+    applications: seed.applications,
+    specifications: seed.specifications,
+    gallery: [],
+    brochure_url: null,
+    origin: "Pakistan",
+    grade: null,
+    granulation: seed.grain_type,
+    mesh_size: null,
+    purity: null,
+    moisture: null,
+    available_pack_sizes: seed.sizes,
+    bulk_packaging: seed.packaging,
+    private_label_available: true,
+    production_capacity: null,
+    lead_time: null,
+    hs_code: null,
+    incoterms: null,
+    port_of_loading: null,
+    coa_url: null,
+    msds_url: null,
+    specification_sheet_url: null,
+  };
+}
+
 async function getProduct(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("products")
     .select("*")
     .eq("slug", slug)
     .eq("status", "active")
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return null;
-  return data as Product;
+  if (data) return data as Product;
+  return approvedFallbackProduct(slug);
 }
 
 async function getPageSettings(productId: number): Promise<ProductPageSettings> {
@@ -89,6 +136,31 @@ async function getPageSettings(productId: number): Promise<ProductPageSettings> 
     .eq("page_slug", `product:${productId}`)
     .maybeSingle();
   return normalizeProductPageSettings(data?.content);
+}
+
+type ProductDetailImageSlot = {
+  section_slug: string;
+  slot_key: string;
+  current_url: string | null;
+  default_url: string | null;
+};
+
+function productDetailCmsPageKey(product: Pick<Product, "id" | "slug">) {
+  return `product::${product.id}::${product.slug}`;
+}
+
+async function getProductDetailImageSlots(product: Pick<Product, "id" | "slug">): Promise<ProductDetailImageSlot[]> {
+  const { data } = await supabase
+    .from("cms_image_slots")
+    .select("section_slug,slot_key,current_url,default_url")
+    .eq("page_slug", productDetailCmsPageKey(product))
+    .eq("is_active", true)
+    .order("display_order");
+  return (data || []) as ProductDetailImageSlot[];
+}
+
+function slotImageUrl(slot?: ProductDetailImageSlot | null) {
+  return String(slot?.current_url || slot?.default_url || "").trim();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -111,10 +183,24 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   if (!product) notFound();
   const activeProduct: Product = product;
 
-  const settings = await getPageSettings(activeProduct.id);
-  const productImage = activeProduct.image || "/product-2.png";
+  const [settings, detailImageSlots] = await Promise.all([
+    getPageSettings(activeProduct.id),
+    getProductDetailImageSlots(activeProduct),
+  ]);
+  const editorPageKey = productDetailCmsPageKey(activeProduct);
+  const cmsKey = (section: string, field: string) => `${editorPageKey}.${section}.${field}`;
+
+  const mainImageSlot = detailImageSlots.find((slot) => slot.section_slug === "hero" && slot.slot_key === "main_image");
+  const productImage = slotImageUrl(mainImageSlot) || activeProduct.image || "/product-2.png";
+  const cmsGallery = detailImageSlots
+    .filter((slot) => slot.section_slug === "gallery" && /^gallery_\d+$/.test(slot.slot_key))
+    .sort((a, b) => Number(a.slot_key.replace("gallery_", "")) - Number(b.slot_key.replace("gallery_", "")))
+    .map(slotImageUrl)
+    .filter(Boolean);
+  const legacyGallery = (activeProduct.gallery || []).map((value) => String(value || "").trim()).filter(Boolean);
+  const gallery = (cmsGallery.length ? cmsGallery : legacyGallery)
+    .filter((value, index, array) => value !== productImage && array.indexOf(value) === index);
   const description = activeProduct.description || activeProduct.short_description || "Premium Himalayan Pink Salt product available for retail, private-label and global B2B programs.";
-  const gallery = [productImage, ...(activeProduct.gallery || []).filter(Boolean)].filter((value, index, array) => array.indexOf(value) === index);
   const features = (activeProduct.features || []).filter(Boolean);
   const applications = (activeProduct.applications || []).filter(Boolean);
   const documentLinks: Array<[string, string]> = [];
@@ -148,7 +234,14 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     ["Port of Loading", activeProduct.port_of_loading || ""],
     ...Object.entries(activeProduct.specifications || {}).map(([label, value]): [string, string] => [label, String(value)]),
   ];
-  const specifications = rawSpecifications.filter(([, value]) => Boolean(value.trim()));
+  const specificationMap = new Map<string, [string, string]>();
+  rawSpecifications
+    .filter(([, value]) => Boolean(value.trim()))
+    .forEach(([label, value]) => {
+      const key = `${label.trim().toLowerCase()}|${value.trim().toLowerCase()}`;
+      if (!specificationMap.has(key)) specificationMap.set(key, [label, value]);
+    });
+  const specifications = Array.from(specificationMap.values());
 
   const whatsappNumber = String(settings.whatsappNumber || "923462771693").replace(/\D/g, "");
   const whatsappText = encodeURIComponent(`Hello, I would like to inquire about ${activeProduct.title}.`);
@@ -168,8 +261,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   };
 
   const sectionVisible = (key: ProductPageSectionKey) => settings.sectionVisibility[key] !== false;
-  const editorPageKey = `product::${activeProduct.id}::${activeProduct.slug}`;
-  const cmsKey = (section: string, field: string) => `${editorPageKey}.${section}.${field}`;
   const marketplaceLogo = (name: string) => {
     const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const known: Record<string, string> = { amazon: "/marketplaces/amazon.svg", walmart: "/marketplaces/walmart.svg", ebay: "/marketplaces/ebay.svg", etsy: "/marketplaces/etsy.svg", shopify: "/marketplaces/shopify.svg", flipkart: "/marketplaces/flipkart.svg" };
@@ -184,7 +275,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <section className="tso-pdp-hero" data-cms-section="hero" key={key}>
           <div className="tso-pdp-media-card">
             <div className="tso-pdp-media">
-              {productImage.startsWith("http") ? <img src={productImage} alt={activeProduct.title} /> : <Image src={productImage} alt={activeProduct.title} width={900} height={900} priority />}
+              {productImage.startsWith("http")
+                ? <img src={productImage} alt={activeProduct.title} data-cms-image-key={cmsKey("hero", "main_image")} />
+                : <Image src={productImage} alt={activeProduct.title} width={900} height={900} priority data-cms-image-key={cmsKey("hero", "main_image")} />}
             </div>
           </div>
           <div className="tso-pdp-copy">
@@ -231,7 +324,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       return (
         <section className="tso-pdp-panel" data-cms-section="specifications" key={key}>
           <div className="tso-pdp-section-heading"><span>Technical Information</span><h2 data-cms-key={cmsKey("specifications", "title")}>{settings.specificationsTitle}</h2></div>
-          {specifications.length ? <div className="tso-pdp-technical-grid">{specifications.map(([label, value]) => <div key={`${label}-${value}`}><span>{label}</span><strong>{value}</strong></div>)}</div> : <p className="tso-pdp-empty">Detailed specifications are available on request.</p>}
+          {specifications.length ? <div className="tso-pdp-technical-grid">{specifications.map(([label, value], index) => <div key={`${label}-${value}-${index}`}><span>{label}</span><strong>{value}</strong></div>)}</div> : <p className="tso-pdp-empty">Detailed specifications are available on request.</p>}
         </section>
       );
     }
@@ -248,10 +341,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     }
 
     if (key === "gallery") {
-      return gallery.length > 1 ? (
+      return gallery.length ? (
         <section className="tso-pdp-panel" data-cms-section="gallery" key={key}>
           <div className="tso-pdp-section-heading"><span>Product Media</span><h2>Product Gallery</h2></div>
-          <div className="tso-pdp-gallery">{gallery.map((image, index) => <div key={`${image}-${index}`}><img src={image} alt={`${activeProduct.title} ${index + 1}`} /></div>)}</div>
+          <div className="tso-pdp-gallery">{gallery.map((image, index) => <div key={`${image}-${index}`}><img src={image} alt={`${activeProduct.title} ${index + 1}`} data-cms-image-key={cmsKey("gallery", `gallery_${index + 1}`)} /></div>)}</div>
         </section>
       ) : null;
     }

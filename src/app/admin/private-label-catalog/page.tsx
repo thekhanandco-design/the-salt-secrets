@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminUpload } from "@/lib/admin-client";
 import { PRIVATE_LABEL_CATEGORY, PRIVATE_LABEL_PRODUCTS } from "@/lib/private-label-catalog";
 import { Eye, EyeOff, ImagePlus, RefreshCw, Save } from "lucide-react";
 
@@ -88,15 +89,13 @@ export default function PrivateLabelCatalogAdmin() {
     const file = event.target.files?.[0];
     if (!file) return;
     setUploadingId(product.id);
-    const path = `private-label/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
-    if (result.error) alert(result.error.message);
-    else {
-      const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    try {
+      const result = await adminUpload(file, "product-image", { folder: "private-label", filename: file.name });
+      const url = result.value;
       patch(product.id, { image: url });
       await supabase.from("products").update({ image: url, updated_at: new Date().toISOString() }).eq("id", product.id);
       window.dispatchEvent(new Event("salt-cms-updated"));
-    }
+    } catch (reason) { alert(reason instanceof Error ? reason.message : "Image upload failed."); }
     setUploadingId(null);
     event.target.value = "";
   }

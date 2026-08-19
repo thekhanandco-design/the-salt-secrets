@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminUpload } from "@/lib/admin-client";
 import { APPROVED_PRODUCT_CATEGORIES, APPROVED_PRODUCT_SHEET } from "@/lib/product-catalog";
 import { Edit3, Eye, EyeOff, ImagePlus, Layers3, Save, Search, Trash2, X } from "lucide-react";
 
@@ -117,10 +118,10 @@ export default function ProductsAdmin() {
     const file = event.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const path = `products/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
-    if (result.error) alert(result.error.message);
-    else setForm((current) => ({ ...current, image: supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl }));
+    try {
+      const result = await adminUpload(file, "product-image", { folder: "products", filename: file.name });
+      setForm((current) => ({ ...current, image: result.value }));
+    } catch (reason) { alert(reason instanceof Error ? reason.message : "Image upload failed."); }
     setUploading(false);
     event.target.value = "";
   }

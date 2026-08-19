@@ -1,3 +1,4 @@
+import { publicApiError } from "@/lib/api-errors";
 import { GoogleAuth } from "google-auth-library";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
   try {
     await requireAdminUser(request);
     const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
-    if (!siteUrl) return NextResponse.json({ connected: false, reason: "GOOGLE_SEARCH_CONSOLE_SITE_URL is missing from .env.local." });
+    if (!siteUrl) return NextResponse.json({ connected: false, reason: "Google Search Console integration is not configured." });
     const credentials = credentialsFromEnvironment();
     const configuredToken = process.env.GOOGLE_SEARCH_CONSOLE_ACCESS_TOKEN?.trim();
     if (!credentials && !configuredToken) return NextResponse.json({ connected: false, reason: "Google service-account credentials are missing." });
@@ -110,6 +111,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ connected: false, reason: error instanceof Error ? error.message : "Unknown Search Console error." });
+    return NextResponse.json({ connected: false, reason: publicApiError(error, "Unknown Search Console error.") });
   }
 }

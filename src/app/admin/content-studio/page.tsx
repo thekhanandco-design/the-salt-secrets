@@ -2,7 +2,7 @@
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
-import { adminFetch } from "@/lib/admin-client";
+import { adminFetch, adminUpload } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
 import { calculateGeoScore, calculateSeoScore, normalizeKeywordList } from "@/lib/content-quality";
 import { SOCIAL_PLATFORM_KEYS, SOCIAL_PLATFORM_META, clampPlatformText, type SocialPlatformKey } from "@/lib/social-platforms";
@@ -255,12 +255,8 @@ export default function ContentStudioPage() {
     const file = event.target.files?.[0]; if (!file || !selected) return;
     setWorking("upload"); setError("");
     try {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const path = `content-studio/${selected.id}/${crypto.randomUUID()}-${safeName}`;
-      const upload = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type, upsert: false });
-      if (upload.error) throw upload.error;
-      const url = supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
-      const next = { ...packageData, image_url: url };
+      const upload = await adminUpload(file, "cms-image", { folder: `content-studio/${selected.id}`, filename: file.name });
+      const next = { ...packageData, image_url: upload.value };
       setPackageData(next);
       const result = await supabase.from("content_topic_queue").update({ draft_package: next, updated_at: new Date().toISOString() }).eq("id", selected.id);
       if (result.error) throw result.error;

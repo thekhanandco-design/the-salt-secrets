@@ -1,21 +1,25 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { requireAdminUser } from "@/lib/admin-auth";
 import { buildExportDocumentPdf, type ExportDocumentPayload } from "@/lib/export-document-pdf";
+import { distributedRateLimit, readJson, validEmail } from "@/lib/security/http";
 
 function esc(value: unknown) { return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char] || char)); }
 
 export async function POST(request: Request) {
   try {
     const { client, identity } = await requireAdminUser(request);
-    const body = await request.json() as { document: ExportDocumentPayload & { id?: string }; subject?: string; message?: string; attachPdf?: boolean };
+    const limited = await distributedRateLimit(request, { key: `document-email:${identity.id}`, limit: 30, windowMs: 10 * 60_000 });
+    if (limited) return limited;
+    const body = await readJson(request, 180_000) as { document: ExportDocumentPayload & { id?: string }; subject?: string; message?: string; attachPdf?: boolean };
     const document = body.document;
-    if (!document?.buyer_email) return NextResponse.json({ error: "Client email is required." }, { status: 400 });
-    if (!process.env.RESEND_API_KEY) return NextResponse.json({ error: "RESEND_API_KEY is not configured." }, { status: 409 });
+    if (!document?.buyer_email || !validEmail(String(document.buyer_email))) return NextResponse.json({ error: "A valid client email is required." }, { status: 400 });
+    const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM;
-    if (!from) return NextResponse.json({ error: "RESEND_FROM_EMAIL or EMAIL_FROM is not configured." }, { status: 409 });
+    if (!apiKey || !from) return NextResponse.json({ error: "Email service is unavailable." }, { status: 503 });
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(apiKey);
     const filename = `${String(document.document_number || "document").replace(/[^a-zA-Z0-9_-]/g, "-")}.pdf`;
     const pdf = body.attachPdf === false ? null : buildExportDocumentPdf(document);
     const products = (document.items || []).map(item => `${item.product || "Product"} — ${Number(item.quantity || 0)} ${item.unit || ""}`).join("<br>");
@@ -42,13 +46,14 @@ export async function POST(request: Request) {
       html,
       attachments: pdf ? [{ filename, content: pdf.toString("base64") }] : undefined,
     });
-    if (result.error) return NextResponse.json({ error: result.error.message }, { status: 502 });
+    if (result.error) return NextResponse.json({ error: "Email could not be sent." }, { status: 502 });
 
     if (document.id) await client.from("business_documents").update({ status: "Sent", sent_at: new Date().toISOString(), email_message: body.message || defaultMessage }).eq("id", document.id);
     await client.from("b2b_activities").insert({ activity_type: "Email", module: "Quotations", record_id: document.id || document.document_number || null, title: `${document.document_number || "Document"} sent by email`, description: `Sent to ${document.buyer_email}`, actor_id: identity.id, actor_email: identity.email });
     return NextResponse.json({ success: true, id: result.data?.id || null });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to send email." }, { status: 500 });
+    const status = error instanceof Error && error.message === "PAYLOAD_TOO_LARGE" ? 413 : 500;
+    return NextResponse.json({ error: status === 413 ? "Request is too large." : publicApiError(error, "Unable to send email.") }, { status });
   }
 }

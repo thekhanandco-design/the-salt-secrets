@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
+import { adminFetch } from "@/lib/admin-client";
 import { ExternalLink, Globe2, Link2, Search, Target, TrendingUp } from "lucide-react";
 
 type Opportunity = {
@@ -43,7 +44,7 @@ export default function BacklinksPage() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/seo/keyword-research", {
+      const response = await adminFetch("/api/seo/keyword-research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seed, includeCompetitors: true, includeBacklinks: true }),

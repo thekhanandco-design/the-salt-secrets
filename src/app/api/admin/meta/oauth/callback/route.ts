@@ -1,7 +1,9 @@
+import { publicApiError } from "@/lib/api-errors";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { encryptIntegrationToken } from "@/lib/integration-token-crypto";
 import { verifyMetaOAuthState } from "@/lib/meta-oauth-state";
+import { requireActiveSuperAdminId } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -145,6 +147,7 @@ export async function GET(request: NextRequest) {
     const state = verifyMetaOAuthState(
       request.nextUrl.searchParams.get("state"),
     );
+    await requireActiveSuperAdminId(state.adminId);
 
     if (!code) {
       return integrationRedirect(
@@ -327,9 +330,7 @@ export async function GET(request: NextRequest) {
     return integrationRedirect(
       request,
       "error",
-      error instanceof Error
-        ? error.message
-        : "Meta authorization failed.",
+      publicApiError(error, "Meta authorization failed."),
     );
   }
 }

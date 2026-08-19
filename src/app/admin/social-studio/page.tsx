@@ -3,7 +3,7 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminShell from "@/components/admin/AdminShell";
 import { SocialPlatformIcon } from "@/components/SocialPlatformIcon";
-import { adminFetch } from "@/lib/admin-client";
+import { adminFetch, adminUpload } from "@/lib/admin-client";
 import { supabase } from "@/lib/supabase-client";
 import { SOCIAL_PLATFORM_META } from "@/lib/social-platforms";
 import { CalendarDays, Check, CheckCircle2, Clock3, Edit3, Eye, Image as ImageIcon, RefreshCw, Save, Send, Share2, Sparkles, UploadCloud, X, XCircle } from "lucide-react";
@@ -11,6 +11,7 @@ import { CalendarDays, Check, CheckCircle2, Clock3, Edit3, Eye, Image as ImageIc
 const platformKeys = ["linkedin", "instagram", "facebook", "pinterest", "threads", "x", "tiktok", "youtube", "reddit", "whatsapp", "telegram", "discord", "snapchat", "mastodon", "bluesky"] as const;
 type PlatformKey = typeof platformKeys[number];
 type Draft = { title: string; text: string; hashtags: string; imagePrompt: string; image: string; status: string };
+type ManualComposer = { topic: string; body: string; hashtags: string; image: string };
 type SocialRow = Record<string, any>;
 
 const platformMeta = SOCIAL_PLATFORM_META;
@@ -33,6 +34,29 @@ function toLocalDateTime(value?: string) {
   return adjusted.toISOString().slice(0, 16);
 }
 
+function conciseForPlatform(value: string, platform: PlatformKey) {
+  const clean = value.replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  const target = Math.min(platformMeta[platform].recommendedChars, platformMeta[platform].maxChars);
+  if (clean.length <= target) return clean;
+  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+  let result = "";
+  for (const sentence of sentences) {
+    const candidate = `${result}${result ? " " : ""}${sentence.trim()}`.trim();
+    if (candidate.length > target) break;
+    result = candidate;
+  }
+  if (result.length >= Math.min(120, Math.floor(target * 0.45))) return result;
+  const words = clean.split(" ");
+  result = "";
+  for (const word of words) {
+    const candidate = `${result}${result ? " " : ""}${word}`;
+    if (candidate.length > Math.max(1, target - 1)) break;
+    result = candidate;
+  }
+  return result && result.length < clean.length ? `${result.trim()}…` : result || clean.slice(0, target);
+}
+
 export default function SocialStudio() {
   const [activeTab, setActiveTab] = useState("Create Post");
   const [activePlatform, setActivePlatform] = useState<PlatformKey>("linkedin");
@@ -49,6 +73,12 @@ export default function SocialStudio() {
   const [toast, setToast] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [manual, setManual] = useState<ManualComposer>({ topic: "", body: "", hashtags: "", image: "" });
+  const [manualPlatforms, setManualPlatforms] = useState<PlatformKey[]>(["linkedin"]);
+  const [manualActivePlatform, setManualActivePlatform] = useState<PlatformKey>("linkedin");
+  const [manualCopies, setManualCopies] = useState<Partial<Record<PlatformKey, string>>>({});
+  const [manualScheduledAt, setManualScheduledAt] = useState(toLocalDateTime());
+  const manualFileInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -77,6 +107,77 @@ export default function SocialStudio() {
   function patchDraft(patch: Partial<Draft>, platform = activePlatform) { setDrafts(previous => ({ ...previous, [platform]: { ...previous[platform], ...patch } })); }
   function togglePlatform(platform: PlatformKey) { setSelectedPlatforms(previous => previous.includes(platform) ? previous.filter(item => item !== platform) : [...previous, platform]); }
   function resetEditor() { setEditingId(null); setDrafts(blankDrafts()); setBrief({ topic: "", targetCountry: "", targetAudience: "", objective: "", product: "", tone: "Professional B2B", cta: "", link: "", campaignId: "" }); setSelectedPlatforms([...platformKeys]); setActivePlatform("linkedin"); setScheduledAt(toLocalDateTime()); setError(""); }
+
+  function selectManualPlatform(platform: PlatformKey) {
+    setManualActivePlatform(platform);
+    setManualPlatforms((current) => current.includes(platform) ? current : [...current, platform]);
+    setManualCopies((current) => current[platform] !== undefined ? current : { ...current, [platform]: conciseForPlatform(manual.body, platform) });
+  }
+
+
+  function adaptManualCopies() {
+    setManualCopies((current) => ({ ...current, ...Object.fromEntries(manualPlatforms.map((platform) => [platform, conciseForPlatform(manual.body, platform)])) }));
+    setToast("Manual copy adapted to the selected platform profiles without changing the core message.");
+  }
+
+  async function uploadManualImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setWorking("manual-upload"); setError("");
+    try {
+      const upload = await adminUpload(file, "cms-image", { folder: `social/${new Date().toISOString().slice(0, 10)}`, filename: file.name });
+      setManual((current) => ({ ...current, image: upload.value }));
+      setToast("Manual post image uploaded.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Image upload failed."); }
+    finally { setWorking(""); event.target.value = ""; }
+  }
+
+  async function saveManualPost(mode: "draft" | "schedule" | "post") {
+    if (!manual.topic.trim()) { setError("Manual post topic/title is required."); return; }
+    if (!manual.body.trim()) { setError("Manual post copy is required."); return; }
+    if (!manualPlatforms.length) { setError("Select at least one social platform."); return; }
+    if (mode === "schedule" && !manualScheduledAt) { setError("Choose a schedule date and time."); return; }
+    setWorking(`manual-${mode}`); setError("");
+    try {
+      const platformContent = Object.fromEntries(manualPlatforms.map((platform) => [platform, {
+        title: manual.topic.trim(),
+        text: manualCopies[platform] ?? conciseForPlatform(manual.body, platform),
+        hashtags: manual.hashtags.trim(),
+        image_prompt: "",
+      }]));
+      const primaryPlatform = manualPlatforms[0];
+      const primaryCopy = String((platformContent[primaryPlatform] as { text: string }).text || manual.body);
+      const scheduledDate = mode === "schedule" ? new Date(manualScheduledAt) : new Date();
+      const approvalStatus = mode === "draft" ? "Draft" : mode === "schedule" ? "Scheduled" : "Approved";
+      const status = mode === "draft" ? "draft" : mode === "schedule" ? "scheduled" : "approved";
+      const payload = {
+        title: manual.topic.trim(), caption: primaryCopy, hashtags: manual.hashtags.trim(), keywords: "", image_url: manual.image || "",
+        platforms: manualPlatforms, scheduled_at: scheduledDate.toISOString(), status, approval_status: approvalStatus,
+        approved_at: mode === "draft" ? null : new Date().toISOString(),
+        platform_content: platformContent,
+        platform_images: manual.image ? Object.fromEntries(manualPlatforms.map((platform) => [platform, manual.image])) : {},
+        platform_results: {}, last_error: null, updated_at: new Date().toISOString(),
+        brief: { source: "manual-composer", topic: manual.topic.trim() },
+      };
+      const inserted = await supabase.from("social_scheduled_posts").insert(payload).select("id").single();
+      if (inserted.error) throw inserted.error;
+
+      if (mode === "post") {
+        const response = await adminFetch("/api/admin/social/publish", { method: "POST", body: JSON.stringify({ postId: inserted.data.id }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Post was saved but publishing could not start.");
+        const remaining = Array.isArray(result.summary?.remainingPlatforms) ? result.summary.remainingPlatforms : [];
+        setToast(remaining.length ? `Meta publishing processed. ${remaining.join(", ")} saved for their platform adapter/connection.` : "Manual post published to the connected selected platforms.");
+      } else {
+        setToast(mode === "schedule" ? "Manual post scheduled." : "Manual post saved as draft.");
+      }
+      setManual({ topic: "", body: "", hashtags: "", image: "" });
+      setManualCopies({});
+      setManualScheduledAt(toLocalDateTime());
+      await load();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Manual social post could not be saved."); }
+    finally { setWorking(""); }
+  }
 
   async function generateAutomaticDailyDraft() {
     setWorking("automatic-daily"); setError("");
@@ -148,10 +249,8 @@ export default function SocialStudio() {
   async function uploadGeneratedImage(platform: PlatformKey, source: string) {
     if (!source.startsWith("data:")) return source;
     const blob = await fetch(source).then(response => response.blob());
-    const path = `social/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.png`;
-    const result = await supabase.storage.from("cms-media").upload(path, blob, { contentType: blob.type || "image/png", upsert: false });
-    if (result.error) throw new Error(`Image generated but storage upload failed: ${result.error.message}`);
-    return supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl;
+    const result = await adminUpload(blob, "cms-image", { folder: `social/${new Date().toISOString().slice(0, 10)}`, filename: "generated.png" });
+    return result.value;
   }
 
 
@@ -187,9 +286,10 @@ export default function SocialStudio() {
   async function onImageFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!file) return;
     setWorking("upload"); setError("");
-    const path = `social/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("cms-media").upload(path, file, { contentType: file.type, upsert: false });
-    if (result.error) setError(result.error.message); else { const url=supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl; setDrafts(previous=>{const next={...previous};selectedPlatforms.forEach(item=>{next[item]={...next[item],image:url};});return next}); setToast("Image uploaded and applied to all selected platforms."); }
+    try {
+      const result = await adminUpload(file, "cms-image", { folder: `social/${new Date().toISOString().slice(0, 10)}`, filename: file.name });
+      const url=result.value; setDrafts(previous=>{const next={...previous};selectedPlatforms.forEach(item=>{next[item]={...next[item],image:url};});return next}); setToast("Image uploaded and applied to all selected platforms.");
+    } catch(reason) { setError(reason instanceof Error?reason.message:"Image upload failed."); }
     setWorking(""); event.target.value = "";
   }
 
@@ -237,6 +337,7 @@ export default function SocialStudio() {
   return <AdminShell><div className="os-page">
     <header className="os-page-header"><div><div className="os-page-eyebrow">Human-approved B2B publishing</div><h1 className="os-page-title">Social Media Studio</h1><p className="os-page-subtitle">Review, edit and schedule platform-native drafts created from your approved Content Studio topics. No automatic AI research runs on page load.</p></div><div className="os-page-actions"><a className="os-btn primary" href="/admin/content-studio"><Sparkles/>Open AI Content Studio</a><button className="os-btn soft" onClick={resetEditor}><RefreshCw/>New Manual Draft</button><button className="os-btn soft" onClick={() => void savePost("Draft")} disabled={working === "save"}><Save/>Save Draft</button><button className="os-btn primary" onClick={() => void savePost("Needs Review")} disabled={working === "save"}><Send/>Send for Review</button></div></header>
     {error && <section className="os-card" style={{ borderColor: "rgba(239,68,68,.35)" }}><div className="os-card-body"><strong>Action could not be completed</strong><p className="os-page-subtitle">{error}</p></div></section>}
+    <section className="os-card social-manual-composer"><div className="os-card-header"><div><div className="os-page-eyebrow">Manual Publisher</div><h2>Post without AI</h2><p>Write once, choose platforms, review the platform-sized copy, then post now or schedule it.</p></div><span className="os-badge green">HUMAN CONTROLLED</span></div><div className="os-card-body"><div className="social-manual-grid"><div className="social-manual-fields"><label className="os-label"><span>Topic / Title</span><input value={manual.topic} onChange={(event) => setManual((current) => ({ ...current, topic: event.target.value }))} placeholder="Example: Bulk Himalayan Pink Salt for Importers"/></label><label className="os-label"><span>Master Caption / Post Copy</span><textarea value={manual.body} onChange={(event) => { const body = event.target.value; setManual((current) => ({ ...current, body })); setManualCopies({}); }} placeholder="Write the complete message. Platform selection will create a concise version without changing the core meaning."/></label><label className="os-label"><span>Hashtags</span><textarea value={manual.hashtags} onChange={(event) => setManual((current) => ({ ...current, hashtags: event.target.value }))} placeholder="#HimalayanPinkSalt #B2B #PrivateLabel"/></label><div className="social-manual-image">{manual.image ? <img src={manual.image} alt="Manual social post"/> : <div><ImageIcon/><span>No image selected</span></div>}<button className="os-btn soft" type="button" onClick={() => manualFileInput.current?.click()} disabled={working === "manual-upload"}><UploadCloud/>{working === "manual-upload" ? "Uploading…" : manual.image ? "Replace Image" : "Upload Image"}</button><input ref={manualFileInput} type="file" accept="image/*" hidden onChange={uploadManualImage}/></div></div><div className="social-manual-platforms"><div className="social-manual-platform-head"><strong>Platforms</strong><button className="os-btn soft" type="button" onClick={adaptManualCopies}>Adapt Selected Copy</button></div><div className="social-manual-platform-pills">{platformKeys.map((platform) => <button type="button" key={platform} className={`${manualPlatforms.includes(platform) ? "selected" : ""} ${manualActivePlatform === platform ? "active" : ""}`} onClick={() => selectManualPlatform(platform)}><PlatformLogo platform={platform}/><span>{platformMeta[platform].label}</span></button>)}</div><div className="social-manual-platform-tools"><span>{manualPlatforms.length} platform{manualPlatforms.length === 1 ? "" : "s"} selected</span>{manualPlatforms.includes(manualActivePlatform) && manualPlatforms.length > 1 ? <button className="os-btn soft" type="button" onClick={() => { const next = manualPlatforms.filter((platform) => platform !== manualActivePlatform); setManualPlatforms(next); setManualActivePlatform(next[0] || "linkedin"); }}>Remove Active Platform</button> : null}</div><label className="os-label"><span>{platformMeta[manualActivePlatform].label} Copy</span><textarea value={manualCopies[manualActivePlatform] ?? conciseForPlatform(manual.body, manualActivePlatform)} onChange={(event) => setManualCopies((current) => ({ ...current, [manualActivePlatform]: event.target.value }))}/><small className={`social-char-counter ${(manualCopies[manualActivePlatform] ?? conciseForPlatform(manual.body, manualActivePlatform)).length > platformMeta[manualActivePlatform].maxChars ? "over" : ""}`}><span>{(manualCopies[manualActivePlatform] ?? conciseForPlatform(manual.body, manualActivePlatform)).length} / {platformMeta[manualActivePlatform].maxChars} max</span><span>Target ~{platformMeta[manualActivePlatform].recommendedChars} characters</span></small></label><p className="os-page-subtitle">Click a platform to add/select it. Use Remove Active Platform when you do not want that network in this post. The active platform copy remains editable. Facebook/Instagram publish through the existing Meta connection; other platforms remain queued until their direct adapter/connection is available.</p></div></div><div className="social-manual-actions"><label className="os-label"><span>Schedule Date & Time</span><input type="datetime-local" value={manualScheduledAt} onChange={(event) => setManualScheduledAt(event.target.value)}/></label><div><button className="os-btn soft" type="button" onClick={() => void saveManualPost("draft")} disabled={working.startsWith("manual-")}><Save/>Save Draft</button><button className="os-btn soft" type="button" onClick={() => void saveManualPost("schedule")} disabled={working.startsWith("manual-")}><CalendarDays/>Schedule</button><button className="os-btn primary" type="button" onClick={() => void saveManualPost("post")} disabled={working.startsWith("manual-")}><Send/>Post Now</button></div></div></div></section>
     <section className="os-card social-daily-desk"><div className="os-card-header"><div><h2>Content Studio Campaign Queue</h2><p>Scheduled social packs created from the same blog topic appear here after you save or schedule them in AI Content Studio.</p></div><span className="os-badge green">NO DAILY AI CALL</span></div><div className="os-card-body"><div className="os-list-row"><span className="os-list-icon"><CalendarDays/></span><div className="os-list-main"><strong>{rows.filter(row => normal(row.status) === "scheduled").length} scheduled social campaigns</strong><span>Use Content Calendar below to review dates, platform copy and approval status.</span></div><a className="os-btn primary" href="/admin/content-studio"><Sparkles/>Add / Generate Topic</a></div></div></section>
     <section className="os-grid four">{["Draft", "Needs Review", "Approved", "Scheduled"].map((status, index) => <article className="os-metric" key={status}><div className="os-metric-top"><span className="os-metric-label">{status}</span><span className="os-metric-icon">{index === 0 ? <Edit3/> : index === 1 ? <Eye/> : index === 2 ? <CheckCircle2/> : <CalendarDays/>}</span></div><div className="os-metric-value">{counts[status] || 0}</div><div className="os-metric-foot"><b>Live database records</b><span className="os-source-badge">DB</span></div></article>)}</section>
     <div className="os-tabs">{tabs.map(tab => <button className={`os-tab ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)} key={tab}>{tab}</button>)}</div>

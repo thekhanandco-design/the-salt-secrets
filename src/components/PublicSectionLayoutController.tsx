@@ -32,7 +32,7 @@ export default function PublicSectionLayoutController() {
   const applyLayout = useCallback(async () => {
     const pageSlug = pageSlugFromPath(pathname);
     if (!pageSlug) return;
-    const { data } = await supabase.from("site_settings").select("config_json").limit(1).maybeSingle();
+    const { data } = await supabase.from("public_site_settings").select("config_json").limit(1).maybeSingle();
     const config = (data?.config_json && typeof data.config_json === "object" ? data.config_json : {}) as Record<string, unknown>;
     const pages = (config.page_sections && typeof config.page_sections === "object" ? config.page_sections : {}) as Record<string, unknown>;
     const layout = Array.isArray(pages[pageSlug]) ? pages[pageSlug] as LayoutItem[] : [];

@@ -44,6 +44,24 @@ const iconByFamily = {
   "bulk-raw-salt": Boxes,
 } as const;
 
+const cmsFamilyKeyBySlug: Record<string, string> = {
+  "edible-salt": "edible",
+  "salt-lamps": "lamps",
+  "salt-tiles-bricks": "tiles",
+  "cooking-plates-slabs": "slabs",
+  "animal-lick-salt": "lick",
+  "bulk-raw-salt": "bulk",
+};
+
+const defaultFamilyIntroHeadings: Record<string, string> = {
+  "edible-salt": "The Salt That Started This Company.",
+  "salt-lamps": "Natural Himalayan Salt, Shaped for Light & Wellness.",
+  "salt-tiles-bricks": "Natural Salt Architecture for Walls, Wellness & Design.",
+  "cooking-plates-slabs": "Cook, Serve & Present on Natural Himalayan Salt.",
+  "animal-lick-salt": "Natural Mineral Salt for Livestock Programs.",
+  "bulk-raw-salt": "Commercial Himalayan Salt for Global Supply.",
+};
+
 function isVisible(status?: string | null) {
   return !status || status === "active" || status === "published";
 }
@@ -71,11 +89,78 @@ function displayProductName(product: Product) {
 
 const fallbackProducts: Product[] = APPROVED_PRODUCT_SHEET.map((product) => ({ ...product }));
 
+function normalizedSize(product: Product) {
+  const direct = normalize(product.sizes);
+  if (direct) return direct;
+  const text = String(product.title || "").toLowerCase();
+  const match = text.match(/(\d+(?:\.\d+)?\s*(?:kg|g|ton|mm|cm)|\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*\d+(?:\.\d+)?)?)/i);
+  return normalize(match?.[1] || "");
+}
+
+
+function productListingImageSubgroup(product: Product) {
+  const category = normalize(product.category);
+  const signature = normalize(`${product.grain_type || ""} ${product.title || ""} ${product.packaging_type || product.packaging || ""}`);
+  if (category === "edible-salt") return signature.includes("coarse") ? "coarse" : "extra-fine-powder";
+  if (category === "bulk-raw-salt") {
+    if (signature.includes("raw") || signature.includes("lump")) return "raw-salt";
+    if (signature.includes("coarse")) return "coarse";
+    return "fine-powder";
+  }
+  return "products";
+}
+
+function productListingCmsImageKey(product: Product) {
+  return `products.product_family.listing__${normalize(product.category)}__${productListingImageSubgroup(product)}__${product.slug}`;
+}
+
+function semanticProductKey(product: Product) {
+  const category = normalize(product.category);
+  const title = normalize(product.title);
+  const grain = normalize(product.grain_type);
+  const packaging = normalize(product.packaging_type || product.packaging);
+  const size = normalizedSize(product);
+  const signature = `${title}-${grain}-${packaging}`;
+
+  if (category === "edible-salt") {
+    const segment = segmentFor(product);
+    const format = packaging || normalize(displayProductName(product));
+    return `${category}|${segment}|${format}`;
+  }
+
+  if (category === "animal-lick-salt") {
+    if (signature.includes("irregular")) return `${category}|irregular`;
+    if (signature.includes("compressed") || signature.includes("square")) return `${category}|compressed-square`;
+  }
+
+  if (category === "bulk-raw-salt") {
+    if (signature.includes("raw") || signature.includes("lump")) return `${category}|raw|${size || "lumps"}`;
+    if (signature.includes("fine-powder") || signature.includes("fine")) return `${category}|fine-powder|${size}`;
+    if (signature.includes("coarse")) return `${category}|coarse|${size}`;
+  }
+
+  if (category === "salt-tiles-bricks" || category === "cooking-plates-slabs") {
+    return `${category}|${size || title}`;
+  }
+
+  if (category === "salt-lamps") {
+    const shape = grain || title.replace(/(?:natural-)?himalayan-|salt-|lamp/g, "");
+    return `${category}|${shape}`;
+  }
+
+  return `${category}|${normalize(product.slug) || title}`;
+}
+
 export default function ProductsPage() {
   const [rows, setRows] = useState<Product[]>([]);
   const [categoryRows, setCategoryRows] = useState<CategoryRow[]>([]);
   const [activeFamily, setActiveFamily] = useState("edible-salt");
   const [activeSegment, setActiveSegment] = useState<ProductSegment>("powder");
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("family");
+    if (requested && APPROVED_PRODUCT_CATEGORIES.some((item) => item.slug === requested)) setActiveFamily(requested);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -114,22 +199,52 @@ export default function ProductsPage() {
     if (!families.some((family) => family.slug === activeFamily) && families[0]) setActiveFamily(families[0].slug);
   }, [activeFamily, families]);
 
+  useEffect(() => {
+    // The product family changes without changing the URL. Re-apply the CMS
+    // after React renders the selected family so each family's own editable
+    // heading/style/visibility is restored immediately.
+    const timer = window.setTimeout(() => window.dispatchEvent(new Event("salt-cms-updated")), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeFamily]);
+
   const products = useMemo(() => {
     const approvedCategorySlugs = new Set(APPROVED_PRODUCT_CATEGORIES.map((item) => item.slug));
     const legacy = new Set(LEGACY_PRODUCT_SLUGS);
+
     const database = rows
       .filter((row) => isVisible(row.status))
       .filter((row) => approvedCategorySlugs.has(normalize(row.category)))
       .filter((row) => !legacy.has(row.slug))
-      .map((row) => ({ ...row, category: normalize(row.category) }));
-    const databaseSlugs = new Set(database.map((row) => row.slug));
-    return [...database, ...fallbackProducts.filter((row) => !databaseSlugs.has(row.slug))]
-      .filter((row) => !legacy.has(row.slug))
+      .map((row) => ({ ...row, category: normalize(row.category) }))
       .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0));
+
+    // Keep Supabase values whenever that real product exists, but restore only
+    // the approved catalog products that are actually missing from Supabase.
+    // Matching is semantic (family + grain/shape/packaging/size), not just slug,
+    // because older live rows can have different slugs/titles for the same item.
+    // This prevents Animal Lick duplicates while retaining fallback-only cards
+    // such as Bulk & Raw Salt entries and any other approved products not seeded
+    // in the current database yet.
+    const merged = new Map<string, Product>();
+
+    for (const row of database) {
+      const key = semanticProductKey(row);
+      if (!merged.has(key)) merged.set(key, row);
+    }
+
+    for (const fallback of fallbackProducts.filter((row) => !legacy.has(row.slug) && row.slug !== "extra-fine-powder-box-shaker")) {
+      const normalizedFallback = { ...fallback, category: normalize(fallback.category) };
+      const key = semanticProductKey(normalizedFallback);
+      if (!merged.has(key)) merged.set(key, normalizedFallback);
+    }
+
+    return Array.from(merged.values()).sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0));
   }, [rows]);
 
   const currentFamily = families.find((family) => family.slug === activeFamily) || families[0] || APPROVED_PRODUCT_CATEGORIES[0];
   const heroParts = headingParts(currentFamily.name);
+  const currentFamilyCmsKey = cmsFamilyKeyBySlug[currentFamily.slug] || "edible";
+  const familyIntroHeading = defaultFamilyIntroHeadings[currentFamily.slug] || `Premium ${currentFamily.name} for Commercial Buyers.`;
   const familyProducts = products.filter((product) => normalize(product.category) === activeFamily);
   const edibleProducts = activeFamily === "edible-salt" ? familyProducts.filter((product) => segmentFor(product) === activeSegment) : familyProducts;
 
@@ -145,7 +260,7 @@ export default function ProductsPage() {
         {items.map((product, index) => (
           <article className="tso-showcase-product-card" key={`${product.slug}-${index}`}>
             <div className="tso-showcase-product-card__image">
-              <img src={product.image || "/hero-products.png"} alt={displayProductName(product)} />
+              <img data-cms-image-key={productListingCmsImageKey(product)} src={product.image || "/hero-products.png"} alt={displayProductName(product)} />
             </div>
             <div className="tso-showcase-product-card__body">
               <h3>{displayProductName(product)}</h3>
@@ -154,7 +269,7 @@ export default function ProductsPage() {
                 <span><b>Packaging:</b> {product.packaging_type || product.packaging || "Custom"}</span>
                 <span><b>Pack Size:</b> {product.sizes || "On request"}</span>
               </div>
-              {product.id ? <Link href={`/products/${product.slug}`}>View Details <span>→</span></Link> : null}
+              <Link href={`/products/${product.slug}`}>View Details <span>→</span></Link>
             </div>
           </article>
         ))}
@@ -163,16 +278,22 @@ export default function ProductsPage() {
   }
 
   return (
-    <main className="tso-route-page tso-products-showcase-page">
+    <main className="tso-route-page tso-products-showcase-page" data-cms-variant={activeFamily}>
       <section className="tso-products-showcase-hero" data-cms-section="hero">
         <div className="tso-public-container tso-products-showcase-hero__grid">
           <div className="tso-products-showcase-hero__copy">
             <div className="tso-crumbs">PRODUCTS / {currentFamily.name.toUpperCase()}</div>
-            <h1><span>{heroParts.main}</span>{heroParts.accent ? <em>{heroParts.accent}</em> : null}</h1>
-            <p>{currentFamily.description}</p>
+            <h1><span data-cms-key={`products.hero.${currentFamilyCmsKey}_title_main`}>{heroParts.main}</span>{heroParts.accent ? <em data-cms-key={`products.hero.${currentFamilyCmsKey}_title_accent`}>{heroParts.accent}</em> : null}</h1>
+            <h2
+              className="tso-products-showcase-hero__intro-heading"
+              data-cms-key={`products.hero.${currentFamilyCmsKey}_intro_heading`}
+            >
+              {familyIntroHeading}
+            </h2>
+            <p data-cms-key={`products.hero.${currentFamilyCmsKey}_description`}>{currentFamily.description}</p>
           </div>
           <div className="tso-products-showcase-hero__visual">
-            <img src={currentFamily.image || "/hero-banner.png"} alt={`${currentFamily.name} collection`} />
+            <img data-cms-image-key={`products.hero.${currentFamilyCmsKey}_image`} src={currentFamily.image || "/hero-banner.png"} alt={`${currentFamily.name} collection`} />
           </div>
         </div>
       </section>
@@ -188,6 +309,9 @@ export default function ProductsPage() {
                   type="button"
                   onClick={() => {
                     setActiveFamily(family.slug);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("family", family.slug);
+                    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
                     if (family.slug === "edible-salt") setActiveSegment("powder");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
@@ -205,13 +329,13 @@ export default function ProductsPage() {
       <section className="tso-product-family-section" data-cms-section="product_family">
         <div className="tso-public-container">
           <header className="tso-product-family-heading">
-            <span>{currentFamily.name.toUpperCase()}</span>
-            <h2>
+            <span data-cms-key={`products.product_family.${currentFamilyCmsKey}_eyebrow`}>{currentFamily.name.toUpperCase()}</span>
+            <h2 data-cms-key={`products.product_family.${currentFamilyCmsKey}_heading`}>
               {activeFamily === "edible-salt" ? (
                 activeSegment === "powder" ? <><span>Extra Fine </span><em>Powder</em></> : <><span>Coarse </span><em>Salt</em></>
               ) : <><span>{heroParts.main}</span><em>{heroParts.accent}</em></>}
             </h2>
-            <p>{currentFamily.subtitle}</p>
+            <p data-cms-key={`products.product_family.${currentFamilyCmsKey}_subtitle`}>{currentFamily.subtitle}</p>
           </header>
 
           {activeFamily === "edible-salt" ? (

@@ -20,7 +20,8 @@ const defaults = {
   private_label: "Private Label",
   certifications: "Certifications",
   blog: "Blog",
-  about: "About",
+  about: "About Us",
+  our_story: "Our Story",
   faq: "FAQ",
   contact: "Contact",
   quote: "Get Quote",
@@ -66,6 +67,7 @@ export default function Navbar() {
       certifications: text("certifications", defaults.certifications),
       blog: text("blog", defaults.blog),
       about: text("about", defaults.about),
+      our_story: text("our_story", defaults.our_story),
       faq: text("faq", defaults.faq),
       contact: text("contact", defaults.contact),
       quote: text("quote", defaults.quote),
@@ -80,11 +82,6 @@ export default function Navbar() {
     const selected = languages.find((item) => item.code === code);
     document.documentElement.dir = selected?.direction || (["ar", "ur"].includes(code) ? "rtl" : "ltr");
     document.documentElement.lang = code;
-    if (code !== "en") {
-      try {
-        await fetch("/api/translate/site", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language: code }) });
-      } catch {}
-    }
     await load(code);
     window.dispatchEvent(new CustomEvent("salt-language-change", { detail: code }));
     window.setTimeout(() => window.location.reload(), 120);
@@ -100,6 +97,7 @@ export default function Navbar() {
     ["/certifications", labels.certifications, "certifications"],
     ["/blog", labels.blog, "blog"],
     ["/about", labels.about, "about"],
+    ["/our-story", labels.our_story, "our_story"],
     ["/faqs", labels.faq, "faq"],
     ["/contact", labels.contact, "contact"],
   ];
@@ -113,26 +111,26 @@ export default function Navbar() {
     <>
       <div className="tso-top-strip">
         <div className="tso-header-container">
-          <span>THE SALT ORIGIN · PREMIUM HIMALAYAN PINK SALT</span>
-          <div><span>●</span><Link href="/private-label">PRIVATE LABEL</Link><Link href="/contact">B2B EXPORT</Link><Link href="/products">GLOBAL SUPPLY</Link></div>
+          <span data-cms-key="global.announcement.message">{richText["global.announcement.message"]?.value || "THE SALT ORIGIN · PREMIUM HIMALAYAN PINK SALT"}</span>
+          <div><span>●</span><Link href="/private-label" data-cms-key="global.announcement.private_label">{richText["global.announcement.private_label"]?.value || "PRIVATE LABEL"}</Link><Link href="/contact" data-cms-key="global.announcement.b2b_export">{richText["global.announcement.b2b_export"]?.value || "B2B EXPORT"}</Link><Link href="/products" data-cms-key="global.announcement.global_supply">{richText["global.announcement.global_supply"]?.value || "GLOBAL SUPPLY"}</Link></div>
         </div>
       </div>
       <header className="tso-main-header">
         <div className="tso-header-container tso-main-header__row">
           <Link href="/" className="tso-brand-lockup" aria-label="The Salt Origin homepage">
-            <img src={logo} alt={logoAlt} />
-            <span><strong>{brandName}</strong><small>{brandSubtitle}</small></span>
+            <img data-cms-image-key="global.branding.header_logo" src={logo} alt={logoAlt} />
+            <span><strong data-cms-key="global.branding.header_brand_name">{brandName}</strong><small data-cms-key="global.branding.header_brand_subtitle">{brandSubtitle}</small></span>
           </Link>
 
           <nav className="tso-desktop-nav">
             {links.map(([href, label, key]) => (
-              <Link key={href} href={href} style={navStyle(key)} className={pathname === href ? "active" : ""}>{label}</Link>
+              <Link key={href} href={href} data-cms-key={`global.navbar.${key}`} style={navStyle(key)} className={pathname === href ? "active" : ""}>{label}</Link>
             ))}
           </nav>
 
           <div className="tso-header-actions">
             <button className="tso-search-circle" onClick={() => setSearchOpen(true)} aria-label="Search website"><Search /></button>
-            <Link href="/contact" style={navStyle("quote")} className="tso-get-quote">{labels.quote}</Link>
+            <Link href="/contact" data-cms-key="global.navbar.quote" style={navStyle("quote")} className="tso-get-quote">{labels.quote}</Link>
             <button className="tso-mobile-menu-button" onClick={() => setIsOpen(true)} aria-label="Open menu"><Menu /></button>
           </div>
         </div>

@@ -1,5 +1,7 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
-import { requireAdminUser } from "@/lib/admin-auth";
+import { requireSuperAdmin } from "@/lib/admin-auth";
+import { logAdminSecurityEvent } from "@/lib/security/audit";
 import { createMetaOAuthState } from "@/lib/meta-oauth-state";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +20,7 @@ function redirectUri(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const { identity } = await requireAdminUser(request);
+    const { client, identity } = await requireSuperAdmin(request);
 
     const appId = process.env.META_APP_ID?.trim();
     const configId = process.env.META_LOGIN_CONFIG_ID?.trim();
@@ -34,12 +36,8 @@ export async function GET(request: Request) {
     ].filter(Boolean);
 
     if (missing.length) {
-      return NextResponse.json(
-        {
-          error: `Missing Meta server configuration: ${missing.join(", ")}.`,
-        },
-        { status: 400 },
-      );
+      console.error("[Meta OAuth] Missing required server configuration:", missing.join(", "));
+      return NextResponse.json({ error: "Meta integration is not fully configured." }, { status: 503 });
     }
 
     const authorizationUrl = new URL(
@@ -59,9 +57,8 @@ export async function GET(request: Request) {
       createMetaOAuthState(identity.id),
     );
 
-    return NextResponse.json({
-      authorizationUrl: authorizationUrl.toString(),
-    });
+    await logAdminSecurityEvent(client, identity, "meta_oauth_started", {});
+    return NextResponse.json({ authorizationUrl: authorizationUrl.toString() });
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -70,9 +67,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Unable to start Meta authorization.",
+          publicApiError(error, "Unable to start Meta authorization."),
       },
       { status: 500 },
     );

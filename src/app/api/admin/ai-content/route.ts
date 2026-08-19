@@ -1,14 +1,18 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
 import { parseJsonResponse, runOpenAI } from "@/lib/openai-server";
+import { cleanText, distributedRateLimit, readJson } from "@/lib/security/http";
 
 export async function POST(request: Request) {
   try {
-    await requireAdminUser(request);
-    const body = await request.json();
-    const topic = String(body.topic || "").trim();
+    const { identity } = await requireAdminUser(request);
+    const limited = await distributedRateLimit(request, { key: `ai-content:${identity.id}`, limit: 20, windowMs: 10 * 60_000 });
+    if (limited) return limited;
+    const body = await readJson(request, 32_000);
+    const topic = cleanText(body.topic, 500);
     if (!topic) return NextResponse.json({ error: "Topic is required." }, { status: 400 });
-    const tool = String(body.tool || "Blog Generator");
+    const tool = cleanText(body.tool || "Blog Generator", 80);
     const isSocial = ["Facebook Post", "Instagram Caption", "LinkedIn Post", "Pinterest Pin", "Threads Post", "X Post", "YouTube Description"].includes(tool);
     const schema = isSocial
       ? "title, caption, hashtags (array), cta, image_prompt, platform_notes, seo_title, seo_description, slug, excerpt, content, faq (array), internal_links (array)"
@@ -25,6 +29,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...parseJsonResponse(text), model });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ error: error instanceof Error ? error.message : "AI generation failed." }, { status: 500 });
+    return NextResponse.json({ error: publicApiError(error, "AI generation failed.") }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { loadCmsImages, loadCmsTextWithStyles, loadSocialLinks, type CmsTextPayload } from "@/lib/cms";
 import { supabase } from "@/lib/supabase-client";
 import { styleToReact } from "@/lib/text-style";
@@ -17,6 +17,7 @@ export default function Footer() {
   const [settings, setSettings] = useState<Settings>({ site_name: "The Salt Origin", contact_email: "sales@thesaltorigin.com", whatsapp_number: "92331281289", address: "Karachi, Pakistan" });
   const [richText, setRichText] = useState<Record<string, CmsTextPayload>>({});
   const [logo, setLogo] = useState("/salt-origin-logo.png");
+  const [footerArtwork, setFooterArtwork] = useState("/mountains-bg.png");
   const [socials, setSocials] = useState<Social[]>([]);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function Footer() {
 
   async function load(language = localStorage.getItem("salt-language") || "en") {
     const [{ data }, texts, images, links] = await Promise.all([
-      supabase.from("site_settings").select("*").limit(1).maybeSingle(),
+      supabase.from("public_site_settings").select("*").limit(1).maybeSingle(),
       loadCmsTextWithStyles("global", language),
       loadCmsImages("global"),
       loadSocialLinks(),
@@ -37,6 +38,7 @@ export default function Footer() {
     if (data) setSettings(data);
     setRichText(texts);
     setLogo(images["global.branding.footer_logo"]?.url || images["global.branding.logo"]?.url || "/salt-origin-logo.png");
+    setFooterArtwork(images["global.footer.mountain_artwork"]?.url || "/mountains-bg.png");
     setSocials(links);
   }
 
@@ -48,19 +50,25 @@ export default function Footer() {
 
   return (
     <footer className="tso-public-footer">
-      <div className="tso-footer-mountains" aria-hidden="true" />
+      <div
+        className="tso-footer-mountains"
+        data-cms-image-key="global.footer.mountain_artwork"
+        aria-label="Footer Himalayan mountain artwork"
+        style={{ backgroundImage: `url("${footerArtwork}")` }}
+        aria-hidden="true"
+      />
       <div className="tso-footer-container">
         <div className="tso-footer-grid">
           <section className="tso-footer-brand">
-            <img src={logo} alt="The Salt Origin" />
-            <p style={textStyle("description")}>{text("description", settings.footer_text || "Premium Himalayan pink salt for retail, foodservice, private label and global B2B supply. Clear specifications, responsive service and export-focused support for international buyers.")}</p>
+            <img data-cms-image-key="global.branding.footer_logo" src={logo} alt="The Salt Origin" />
+            <p data-cms-key="global.footer.description" style={textStyle("description")}>{text("description", settings.footer_text || "Premium Himalayan pink salt for retail, foodservice, private label and global B2B supply. Clear specifications, responsive service and export-focused support for international buyers.")}</p>
             <div className="tso-footer-socials">{orderedSocials.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noreferrer" aria-label={social.label}><SocialPlatformIcon platform={social.icon_key || social.platform}/></a>)}</div>
           </section>
-          <section><h4>{text("explore_title", "EXPLORE")}</h4><Link href="/products">{navText("products", "Products")}</Link><Link href="/private-label">{navText("private_label", "Private Label")}</Link><Link href="/certifications">{navText("certifications", "Certifications")}</Link><Link href="/blog">Salt Journal</Link></section>
-          <section><h4>{text("company_title", "COMPANY")}</h4><Link href="/about">{navText("about", "About Us")}</Link><Link href="/faqs">{navText("faq", "FAQ")}</Link><Link href="/contact">{navText("contact", "Contact")}</Link><Link href="/privacy-policy">Privacy Policy</Link><Link href="/terms-and-conditions">Terms & Conditions</Link></section>
-          <section><h4>{text("b2b_title", "B2B DESK")}</h4><a href={`mailto:${settings.contact_email || "sales@thesaltorigin.com"}`}><Mail />{settings.contact_email || "sales@thesaltorigin.com"}</a><span><MapPin />{settings.address || "Karachi, Pakistan"}</span><Link href="/contact">Request a Quote</Link><Link href="/certifications">Request Documents</Link></section>
+          <section><h4 data-cms-key="global.footer.explore_title">{text("explore_title", "EXPLORE")}</h4><Link href="/products" data-cms-key="global.navbar.products">{navText("products", "Products")}</Link><Link href="/private-label" data-cms-key="global.navbar.private_label">{navText("private_label", "Private Label")}</Link><Link href="/certifications" data-cms-key="global.navbar.certifications">{navText("certifications", "Certifications")}</Link><Link href="/blog" data-cms-key="global.footer.journal_label">{text("journal_label", "Salt Journal")}</Link></section>
+          <section><h4 data-cms-key="global.footer.company_title">{text("company_title", "COMPANY")}</h4><Link href="/about" data-cms-key="global.navbar.about">{navText("about", "About Us")}</Link><Link href="/faqs" data-cms-key="global.navbar.faq">{navText("faq", "FAQ")}</Link><Link href="/contact" data-cms-key="global.navbar.contact">{navText("contact", "Contact")}</Link><Link href="/privacy-policy" data-cms-key="global.footer.privacy_label">{text("privacy_label", "Privacy Policy")}</Link><Link href="/terms-and-conditions" data-cms-key="global.footer.terms_label">{text("terms_label", "Terms & Conditions")}</Link></section>
+          <section className="tso-footer-contact"><h4 data-cms-key="global.footer.contact_title">{text("contact_title", "CONTACT US")}</h4><a href={`mailto:${settings.contact_email || "sales@thesaltorigin.com"}`}><Mail />{settings.contact_email || "sales@thesaltorigin.com"}</a><a href={`https://wa.me/${String(settings.whatsapp_number || "92331281289").replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><Phone />{settings.whatsapp_number || "+92 331 281289"}</a><span><MapPin />{settings.address || "Karachi, Pakistan"}</span><Link href="/contact" className="tso-footer-quote" data-cms-key="global.footer.request_quote">{text("request_quote", "Request a Quote")}<span>→</span></Link></section>
         </div>
-        <div className="tso-footer-bottom"><span>© {year} {settings.site_name || "The Salt Origin"} · All Rights Reserved.</span><span>Himalayan Pink Salt · Private Label · Global B2B</span></div>
+        <div className="tso-footer-bottom"><span data-cms-key="global.footer.copyright">{text("copyright", "© {year} {site}. All Rights Reserved.").replace("{year}", String(year)).replace("{site}", settings.site_name || "The Salt Origin")}</span><span data-cms-key="global.footer.bottom_note">{text("bottom_note", "Himalayan Pink Salt · Private Label · Global B2B")}</span></div>
       </div>
     </footer>
   );

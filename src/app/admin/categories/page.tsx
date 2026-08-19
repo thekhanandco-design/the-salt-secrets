@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import { supabase } from "@/lib/supabase-client";
+import { adminUpload } from "@/lib/admin-client";
 import { APPROVED_PRODUCT_CATEGORIES, APPROVED_PRODUCT_SHEET } from "@/lib/product-catalog";
 import { Boxes, Edit3, Eye, EyeOff, ImagePlus, PackagePlus, Save, X } from "lucide-react";
 
@@ -132,10 +133,10 @@ export default function CategoriesPage() {
     const file = event.target.files?.[0];
     if (!file || !editingSlug) return;
     setUploading(true);
-    const path = `categories/${editingSlug}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
-    const result = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
-    if (result.error) alert(result.error.message);
-    else setForm((current) => ({ ...current, image: supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl }));
+    try {
+      const result = await adminUpload(file, "product-image", { folder: `categories/${editingSlug}`, filename: file.name });
+      setForm((current) => ({ ...current, image: result.value }));
+    } catch (reason) { alert(reason instanceof Error ? reason.message : "Image upload failed."); }
     setUploading(false);
     event.target.value = "";
   }

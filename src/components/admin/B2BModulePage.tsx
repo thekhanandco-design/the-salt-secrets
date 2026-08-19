@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase-client";
+import { adminUpload } from "@/lib/admin-client";
 import { calculateGeoScore, calculateSeoScore, normalizeGeneratedArticle, normalizeKeywordList, stripResearchLinks } from "@/lib/content-quality";
 import {
   AlertTriangle, BookOpen, CheckCircle2, ChevronRight, Download, Edit3, FileUp, Filter, Gauge, Globe2, Plus, RefreshCw,
@@ -381,10 +382,14 @@ export default function B2BModulePage({ moduleKey }: { moduleKey: string }) {
   async function uploadFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!file || !fileField) return;
     setSaving(true); setError("");
-    const path = `${moduleKey}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]+/g, "-")}`;
-    const { error: uploadError } = await supabase.storage.from("cms-media").upload(path, file, { upsert: false, contentType: file.type || undefined });
-    if (uploadError) setError(uploadError.message);
-    else { const url = supabase.storage.from("cms-media").getPublicUrl(path).data.publicUrl; setForm(previous => ({ ...previous, [fileField]: url })); setToast("File uploaded to the CMS media bucket"); }
+    try {
+      const isCertificate = moduleKey === "certifications" && fileField === "file_url";
+      const upload = await adminUpload(file, isCertificate ? "certificate" : "cms-image", { folder: moduleKey, filename: file.name });
+      setForm(previous => ({ ...previous, [fileField]: upload.value }));
+      setToast(isCertificate ? "Private certificate uploaded securely" : "File uploaded to the CMS media library");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "File upload failed.");
+    }
     setSaving(false); event.target.value = "";
   }
 

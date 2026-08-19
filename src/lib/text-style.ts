@@ -10,6 +10,10 @@ export type CmsTextStyle = {
   textAlign?: "left" | "center" | "right";
   letterSpacing?: string;
   lineHeight?: string;
+  hidden?: boolean;
+  translateX?: string;
+  translateY?: string;
+  maxWidth?: string;
 };
 
 export const SITE_BODY_FONT = "var(--site-font-body)";
@@ -27,6 +31,10 @@ export const defaultCmsTextStyle: CmsTextStyle = {
   textAlign: "left",
   letterSpacing: "",
   lineHeight: "",
+  hidden: false,
+  translateX: "",
+  translateY: "",
+  maxWidth: "",
 };
 
 export function styleToReact(style?: CmsTextStyle): React.CSSProperties {
@@ -50,5 +58,9 @@ export function styleToReact(style?: CmsTextStyle): React.CSSProperties {
     textAlign: style.textAlign || undefined,
     letterSpacing: style.letterSpacing || undefined,
     lineHeight: style.lineHeight || undefined,
+    display: style.hidden ? "none" : undefined,
+    position: style.translateX || style.translateY ? "relative" : undefined,
+    transform: style.translateX || style.translateY ? `translate(${style.translateX || "0px"}, ${style.translateY || "0px"})` : undefined,
+    maxWidth: style.maxWidth || undefined,
   };
 }

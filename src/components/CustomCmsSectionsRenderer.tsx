@@ -66,7 +66,7 @@ export default function CustomCmsSectionsRenderer() {
       const lang = window.localStorage.getItem("salt-language") || "en";
       setLanguage(lang);
       const [settingsResult, textResult, imageResult] = await Promise.all([
-        supabase.from("site_settings").select("config_json").limit(1).maybeSingle(),
+        supabase.from("public_site_settings").select("config_json").limit(1).maybeSingle(),
         supabase
           .from("cms_text_entries")
           .select("section_slug,field_key,default_value,cms_text_translations(language_code,value)")

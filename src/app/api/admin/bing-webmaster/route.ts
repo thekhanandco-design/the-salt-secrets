@@ -1,3 +1,4 @@
+import { publicApiError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
 
@@ -62,8 +63,7 @@ export async function GET(request: Request) {
     if (!apiKey) {
       return NextResponse.json({
         connected: false,
-        reason:
-          "BING_WEBMASTER_API_KEY is missing from the server environment.",
+        reason: "Bing Webmaster integration is not configured.",
       });
     }
 
@@ -160,9 +160,7 @@ export async function GET(request: Request) {
       {
         connected: false,
         reason:
-          error instanceof Error
-            ? error.message
-            : "Unknown Bing Webmaster error.",
+          publicApiError(error, "Unknown Bing Webmaster error."),
       },
       { status: 500 },
     );

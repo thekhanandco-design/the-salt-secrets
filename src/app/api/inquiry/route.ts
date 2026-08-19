@@ -1,16 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import { sendCustomerAutoReply, sendLeadEmail, sendWhatsAppWebhook } from "@/lib/notifications";
-import { cleanText, rateLimit, readJson, sameOrigin, secureJson, validEmail } from "@/lib/security/http";
+import { cleanText, distributedRateLimit, readJson, sameOrigin, secureJson, validEmail } from "@/lib/security/http";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export async function POST(request: Request) {
   try {
     if (!sameOrigin(request)) return secureJson({ success: false, error: "Invalid request origin." }, { status: 403 });
-    const limited = rateLimit(request, { key: "inquiry", limit: 5, windowMs: 10 * 60_000 });
+    const limited = await distributedRateLimit(request, { key: "inquiry", limit: 5, windowMs: 10 * 60_000 });
     if (limited) return limited;
     const payload = await readJson(request);
     if (cleanText(payload.website, 100)) return secureJson({ success: true });
-    const captcha = await verifyTurnstile(request, payload.turnstileToken);
+    const captcha = await verifyTurnstile(request, payload.turnstileToken, { action: ["quote_request", "product_inquiry"] });
     if (!captcha.success) return secureJson({ success: false, error: captcha.reason }, { status: 400 });
 
     const lead = {

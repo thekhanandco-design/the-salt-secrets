@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
+import { isLocalBrowserDevelopment } from "@/lib/local-development";
 import {
   Activity, BarChart3, Bell, Bot, Boxes, Building2, Cable, CalendarDays, ChartNoAxesCombined,
   ChevronDown, ChevronRight, CircleGauge, ClipboardCheck, Command, ContactRound, ExternalLink,
@@ -35,6 +36,7 @@ const navGroups: NavGroup[] = [
   ] },
   { label: "Website", items: [
     { href: "/admin/website-editor", label: "Website Visual Editor", icon: MonitorSmartphone },
+    { href: "/admin/homepage", label: "Homepage Content", icon: GalleryVerticalEnd },
     { href: "/admin/text", label: "Website Text Manager", icon: FileText },
     { href: "/admin/pages", label: "Pages", icon: GalleryVerticalEnd },
     { href: "/admin/products", label: "Products", icon: Boxes },
@@ -169,10 +171,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       const { data, error } = await supabase.auth.getSession();
       if (error || !data.session) { router.replace("/admin/login"); return; }
       const user = data.session.user;
-      const { data: profile } = await supabase.from("cms_profiles").select("full_name,role_name,enabled").eq("id", user.id).maybeSingle();
-      if (profile?.enabled === false) { await supabase.auth.signOut(); router.replace("/admin/login?disabled=1"); return; }
-      const fullName = String(profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Admin");
-      const role = String(profile?.role_name || user.app_metadata?.role || "Authenticated Admin").replaceAll("_", " ");
+      let { data: profile, error: profileError } = await supabase.from("cms_profiles").select("full_name,role_name,enabled").eq("id", user.id).maybeSingle();
+      if ((profileError || !profile || profile.enabled !== true || !profile.role_name || profile.role_name === "pending") && isLocalBrowserDevelopment()) {
+        const recoveryResponse = await fetch("/api/admin/local-access-recovery", { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: "no-store" });
+        if (recoveryResponse.ok) {
+          const retry = await supabase.from("cms_profiles").select("full_name,role_name,enabled").eq("id", user.id).maybeSingle();
+          profile = retry.data;
+          profileError = retry.error;
+        }
+      }
+      if (profileError || !profile || profile.enabled !== true || !profile.role_name || profile.role_name === "pending") { await supabase.auth.signOut({ scope: "local" }).catch(() => undefined); router.replace("/admin/login?disabled=1"); return; }
+      const fullName = String(profile.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Admin");
+      const role = String(profile.role_name).replaceAll("_", " ");
       setIdentity({ id: user.id, email: user.email || "", fullName, role });
       await loadWorkspaceData();
     } catch (error) {

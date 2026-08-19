@@ -1,3 +1,4 @@
+import { publicApiError } from "@/lib/api-errors";
 import { GoogleAuth } from "google-auth-library";
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/admin-auth";
@@ -67,12 +68,12 @@ export async function GET(request: Request) {
   try {
     await requireAdminUser(request);
     const propertyId = process.env.GA4_PROPERTY_ID?.trim();
-    if (!propertyId) return NextResponse.json({ connected: false, reason: "GA4_PROPERTY_ID is missing from .env.local." });
+    if (!propertyId) return NextResponse.json({ connected: false, reason: "Google Analytics integration is not configured." });
 
     const credentials = credentialsFromEnvironment();
     const configuredToken = process.env.GA4_ACCESS_TOKEN?.trim();
     if (!credentials && !configuredToken) {
-      return NextResponse.json({ connected: false, reason: "GA4 service-account credentials are missing. Add GA4_SERVICE_ACCOUNT_EMAIL and GA4_SERVICE_ACCOUNT_PRIVATE_KEY." });
+      return NextResponse.json({ connected: false, reason: "Google Analytics integration credentials are not configured." });
     }
 
     const url = new URL(request.url);
@@ -154,6 +155,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof Response) return error;
-    return NextResponse.json({ connected: false, reason: error instanceof Error ? error.message : "Unknown Analytics error." });
+    return NextResponse.json({ connected: false, reason: publicApiError(error, "Unknown Analytics error.") });
   }
 }

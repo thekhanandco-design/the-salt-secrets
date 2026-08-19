@@ -1,15 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
-import { cleanText, rateLimit, readJson, sameOrigin, secureJson, validEmail } from "@/lib/security/http";
+import { cleanText, distributedRateLimit, readJson, sameOrigin, secureJson, validEmail } from "@/lib/security/http";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export async function POST(request: Request) {
   try {
     if (!sameOrigin(request)) return secureJson({ success: false, error: "Invalid request origin." }, { status: 403 });
-    const limited = rateLimit(request, { key: "newsletter", limit: 4, windowMs: 60 * 60_000 });
+    const limited = await distributedRateLimit(request, { key: "newsletter", limit: 4, windowMs: 60 * 60_000 });
     if (limited) return limited;
     const payload = await readJson(request, 8_000);
     if (cleanText(payload.website, 100)) return secureJson({ success: true });
-    const captcha = await verifyTurnstile(request, payload.turnstileToken);
+    const captcha = await verifyTurnstile(request, payload.turnstileToken, { action: ["newsletter", "newsletter_subscribe"] });
     if (!captcha.success) return secureJson({ success: false, error: captcha.reason }, { status: 400 });
     const email = cleanText(payload.email, 254).toLowerCase();
     if (!validEmail(email)) return secureJson({ success: false, error: "Enter a valid email address." }, { status: 400 });
