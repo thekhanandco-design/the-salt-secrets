@@ -49,21 +49,28 @@ function supabaseOrigin() {
   }
 }
 
+function versionedAsset(url: string, updatedAt?: string | null) {
+  const value = String(url || "").trim();
+  if (!value || !updatedAt) return value;
+  const separator = value.includes("?") ? "&" : "?";
+  return `${value}${separator}cmsv=${encodeURIComponent(updatedAt)}`;
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  let favicon = "/favicon.ico";
+  let favicon = "/favicon-96x96.png";
   let appIcon = "/web-app-manifest-192x192.png";
 
   try {
     const { data } = await supabase
       .from("public_site_settings")
-      .select("favicon_url, app_icon_url")
+      .select("favicon_url, app_icon_url, updated_at")
       .limit(1)
       .maybeSingle();
 
-    favicon = data?.favicon_url || favicon;
-    appIcon = data?.app_icon_url || appIcon;
+    favicon = versionedAsset(data?.favicon_url || favicon, data?.updated_at);
+    appIcon = versionedAsset(data?.app_icon_url || appIcon, data?.updated_at);
   } catch {
-    // Default icons will be used if Supabase is unavailable.
+    // Branded static fallbacks remain available if Supabase is unavailable.
   }
 
   return {
@@ -81,16 +88,9 @@ export async function generateMetadata(): Promise<Metadata> {
     },
 
     icons: {
-      icon: [
-        {
-          url: favicon,
-        },
-      ],
-      apple: [
-        {
-          url: appIcon,
-        },
-      ],
+      icon: [{ url: favicon }],
+      shortcut: [{ url: favicon }],
+      apple: [{ url: appIcon }],
     },
 
     manifest: "/site.webmanifest",

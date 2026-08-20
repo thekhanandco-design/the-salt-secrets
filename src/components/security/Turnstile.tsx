@@ -17,7 +17,9 @@ export default function Turnstile({ onToken, action = "form_submit", theme = "li
   const reactId = useId();
   const id = `turnstile-${reactId.replace(/:/g, "")}`;
   const widgetId = useRef<string | null>(null);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey =
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
+    process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
     if (!siteKey) return;

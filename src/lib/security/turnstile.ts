@@ -32,7 +32,9 @@ function expectedHostnames(request: Request, explicit?: string[]) {
 }
 
 export async function verifyTurnstile(request: Request, token: unknown, options: TurnstileOptions) {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret =
+    process.env.TURNSTILE_SECRET_KEY ||
+    process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
   if (!secret) {
     if (process.env.NODE_ENV === "production") return { success: false, reason: "Security verification is not configured." };
     return { success: true, reason: "Development bypass" };
