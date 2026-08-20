@@ -190,6 +190,8 @@ export default function ContactForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileStatus, setTurnstileStatus] = useState<"loading" | "ready" | "verified" | "error" | "unconfigured">("loading");
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const [targetMarket, setTargetMarket] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const onTurnstile = useCallback((token: string) => setTurnstileToken(token), []);
@@ -204,40 +206,58 @@ export default function ContactForm() {
       return;
     }
 
+    if (!turnstileToken) {
+      setError(turnstileStatus === "unconfigured"
+        ? "Security verification is not configured on this deployment."
+        : turnstileStatus === "error"
+          ? "Security verification could not load. Refresh the page and try again."
+          : "Please wait for the security check to complete, then submit again.");
+      return;
+    }
+
     setLoading(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: formData.get("name"),
-        email: formData.get("email"),
-        company: formData.get("company"),
-        phone: formData.get("phone"),
-        productCategories: selectedCategories,
-        estimatedQuantity: formData.get("estimated_quantity"),
-        estimatedAnnualVolume: formData.get("estimated_annual_volume"),
-        privateLabelRequired: formData.get("private_label_required"),
-        targetMarket: formData.get("target_market"),
-        incotermPreference: formData.get("incoterm_preference"),
-        message: formData.get("message"),
-        website: formData.get("website"),
-        turnstileToken,
-      }),
-    });
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          company: formData.get("company"),
+          phone: formData.get("phone"),
+          productCategories: selectedCategories,
+          estimatedQuantity: formData.get("estimated_quantity"),
+          estimatedAnnualVolume: formData.get("estimated_annual_volume"),
+          privateLabelRequired: formData.get("private_label_required"),
+          targetMarket: formData.get("target_market"),
+          incotermPreference: formData.get("incoterm_preference"),
+          message: formData.get("message"),
+          website: formData.get("website"),
+          turnstileToken,
+        }),
+      });
 
-    setLoading(false);
-    const result = await response.json().catch(() => ({}));
-    if (response.ok) {
-      setSuccess(true);
+      const result = await response.json().catch(() => ({}));
       setTurnstileToken("");
-      setTargetMarket("");
-      setSelectedCategories([]);
-      form.reset();
-    } else {
-      setError(result.error || "Quote request could not be sent.");
+      setTurnstileResetSignal((current) => current + 1);
+
+      if (response.ok) {
+        setSuccess(true);
+        setTargetMarket("");
+        setSelectedCategories([]);
+        form.reset();
+      } else {
+        setError(result.error || "Quote request could not be sent.");
+      }
+    } catch {
+      setTurnstileToken("");
+      setTurnstileResetSignal((current) => current + 1);
+      setError("Quote request could not be sent. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -301,7 +321,7 @@ export default function ContactForm() {
         </label>
 
         <label className="full"><span>Message</span><textarea name="message" required rows={5} /></label>
-        <div className="full tso-contact-turnstile"><Turnstile action="contact_form" onToken={onTurnstile} /></div>
+        <div className="full tso-contact-turnstile"><Turnstile action="contact_form" onToken={onTurnstile} onStatusChange={setTurnstileStatus} resetSignal={turnstileResetSignal} /></div>
         <button className="full tso-contact-submit" disabled={loading} type="submit"><span>{loading ? "Sending…" : "Request Quote"}</span></button>
       </form>
     </>
