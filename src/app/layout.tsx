@@ -6,11 +6,48 @@ import SiteChrome from "@/components/SiteChrome";
 import { SiteThemeProvider } from "@/components/SiteThemeProvider";
 import { supabase } from "@/lib/supabase";
 import PwaRegister from "@/components/PwaRegister";
+import { CmsImageManifestProvider, type CmsImageManifest } from "@/components/CmsImageManifestProvider";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const GA4_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID?.trim() ||
   process.env.GA4_MEASUREMENT_ID?.trim() ||
   "G-D9ZSFZBT1E";
+
+
+async function getCmsImageManifest(): Promise<CmsImageManifest> {
+  try {
+    const { data, error } = await supabase
+      .from("cms_image_slots")
+      .select("page_slug,section_slug,slot_key,current_url,default_url,alt_text")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error) return {};
+    const output: CmsImageManifest = {};
+    for (const row of data || []) {
+      const url = String(row.current_url || row.default_url || "").trim();
+      if (!url) continue;
+      output[`${row.page_slug}.${row.section_slug}.${row.slot_key}`] = {
+        url,
+        alt: String(row.alt_text || ""),
+      };
+    }
+    return output;
+  } catch {
+    return {};
+  }
+}
+
+function supabaseOrigin() {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").origin;
+  } catch {
+    return "";
+  }
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   let favicon = "/favicon.ico";
@@ -86,11 +123,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialCmsImages = await getCmsImageManifest();
+  const cmsAssetOrigin = supabaseOrigin();
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
   const clarityProjectId =
     process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim();
@@ -109,6 +148,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {cmsAssetOrigin ? <link rel="preconnect" href={cmsAssetOrigin} crossOrigin="anonymous" /> : null}
+        {cmsAssetOrigin ? <link rel="dns-prefetch" href={cmsAssetOrigin} /> : null}
         {gtmId ? (
           <Script id="google-tag-manager" strategy="afterInteractive">
             {`
@@ -193,6 +234,7 @@ export default function RootLayout({
           </noscript>
         )}
 
+        <CmsImageManifestProvider initialManifest={initialCmsImages}>
         <SiteThemeProvider>
           <PwaRegister />
 
@@ -206,6 +248,7 @@ export default function RootLayout({
 
           <SiteChrome>{children}</SiteChrome>
         </SiteThemeProvider>
+        </CmsImageManifestProvider>
       </body>
     </html>
   );

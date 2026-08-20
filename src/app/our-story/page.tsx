@@ -5,6 +5,7 @@ import { Award, Box, FlaskConical, ShieldCheck } from "lucide-react";
 import { loadCmsImages, loadCmsTextWithStyles, type CmsTextPayload } from "@/lib/cms";
 import { supabase } from "@/lib/supabase-client";
 import { styleToReact } from "@/lib/text-style";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 type CmsImage = { url: string; alt: string };
 type FounderSlot = { current_url?: string | null; default_url?: string | null; alt_text?: string | null; is_active?: boolean | null };
@@ -12,6 +13,8 @@ type FounderSlot = { current_url?: string | null; default_url?: string | null; a
 const page = "our-story";
 
 export default function OurStoryPage() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [richText, setRichText] = useState<Record<string, CmsTextPayload>>({});
   const [images, setImages] = useState<Record<string, CmsImage>>({});
   const [founderSlot, setFounderSlot] = useState<FounderSlot | null>(null);
@@ -40,9 +43,9 @@ export default function OurStoryPage() {
 
   const text = (section: string, key: string, fallback: string) => richText[`${page}.${section}.${key}`]?.value || fallback;
   const textStyle = (section: string, key: string) => styleToReact(richText[`${page}.${section}.${key}`]?.style);
-  const heroImage = images[`${page}.hero.reference`]?.url || images[`${page}.hero.mountains`]?.url || "/about-hero-mountains-reference.png";
-  const storyImage = images[`${page}.story.visual`]?.url || images[`${page}.story.collage`]?.url || "/about-story-reference.png";
-  const founderImage = founderSlot ? (founderSlot.current_url || founderSlot.default_url || "/founder-portrait-reference.png") : "/founder-portrait-reference.png";
+  const heroImage = cmsImage(`${page}.hero.reference`, images[`${page}.hero.reference`]?.url || images[`${page}.hero.mountains`]?.url || "/about-hero-mountains-reference.png");
+  const storyImage = cmsImage(`${page}.story.visual`, images[`${page}.story.visual`]?.url || images[`${page}.story.collage`]?.url || "/about-story-reference.png");
+  const founderImage = cmsImage(`${page}.founder.portrait`, founderSlot ? (founderSlot.current_url || founderSlot.default_url || "/founder-portrait-reference.png") : "/founder-portrait-reference.png");
   const founderVisible = founderSlot?.is_active !== false;
 
   return (
@@ -61,7 +64,7 @@ export default function OurStoryPage() {
 
       <section className="tso-about-story tso-route-section" data-cms-section="story">
         <div className="tso-public-container tso-about-story__grid">
-          <div className="tso-about-story__visual"><img data-cms-image-key="our-story.story.visual" src={storyImage} alt={images[`${page}.story.visual`]?.alt || "Himalayan mountain origin"}/></div>
+          <div className="tso-about-story__visual"><img data-cms-image-key="our-story.story.visual" src={storyImage} alt={cmsImageAlt(`${page}.story.visual`, images[`${page}.story.visual`]?.alt || "Himalayan mountain origin")}/></div>
           <div className="tso-about-copy">
             <div className="tso-eyebrow" data-cms-key="our-story.story.eyebrow">{text("story", "eyebrow", "Our Story & Mission")}</div>
             <h2><span data-cms-key="our-story.story.title_main">{text("story", "title_main", "Custodians of Earth’s ")}</span><em data-cms-key="our-story.story.title_accent">{text("story", "title_accent", "Purest Treasure")}</em></h2>
@@ -83,7 +86,7 @@ export default function OurStoryPage() {
             <div className="tso-founder-signature" data-cms-key="our-story.founder.name">{text("founder", "name", "Hamza Khan")}</div>
             <p className="tso-founder-role" data-cms-key="our-story.founder.role">{text("founder", "role", "Founder, The Salt Origin & The Khan & Co.")}</p>
           </div>
-          {founderVisible ? <div className="tso-about-founder__portrait"><img data-cms-image-key="our-story.founder.portrait" src={founderImage} alt={founderSlot?.alt_text || "Founder of The Salt Origin"}/></div> : null}
+          {founderVisible ? <div className="tso-about-founder__portrait"><img data-cms-image-key="our-story.founder.portrait" src={founderImage} alt={cmsImageAlt(`${page}.founder.portrait`, founderSlot?.alt_text || "Founder of The Salt Origin")}/></div> : null}
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase-client";
 import { FACILITY_CERTIFICATIONS, certificationMatches } from "@/lib/certification-catalog";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 type Cert = {
   id: string;
@@ -15,6 +16,8 @@ type Cert = {
 };
 
 export default function CertificationsPage() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [certs, setCerts] = useState<Cert[]>([]);
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function CertificationsPage() {
             {items.map((item) => (
               <article key={item.key} className="tso-cert-public-card">
                 <div className="tso-cert-logo-wrap">
-                  <Image data-cms-image-key={`certifications.documents.${item.key}`} src={item.image} alt={`${item.name} certification logo`} width={160} height={110} unoptimized />
+                  <Image data-cms-image-key={`certifications.documents.${item.key}`} src={cmsImage(`certifications.documents.${item.key}`, item.image)} alt={cmsImageAlt(`certifications.documents.${item.key}`, `${item.name} certification logo`)} width={160} height={110} unoptimized />
                 </div>
                 <h3>{item.record?.document_name || item.name}</h3>
                 <p>{item.description}</p>

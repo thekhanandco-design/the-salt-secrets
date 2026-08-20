@@ -7,6 +7,7 @@ import { BadgeCheck, Box, Boxes, Globe2, Package, Palette, ShoppingBag } from "l
 import { supabase } from "@/lib/supabase-client";
 import { PRIVATE_LABEL_PRODUCTS, type PrivateLabelProductSeed } from "@/lib/private-label-catalog";
 import styles from "./PrivateLabel.module.css";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 type Product = Omit<PrivateLabelProductSeed, "status"> & { id?: number; status?: string | null };
 type Grain = "Extra Fine Powder" | "Coarse (2–5mm)";
@@ -38,6 +39,8 @@ function cmsKey(section: string, field: string) {
 }
 
 export default function PrivateLabelPage() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [products, setProducts] = useState<Product[]>(PRIVATE_LABEL_PRODUCTS);
 
   useEffect(() => {
@@ -98,7 +101,7 @@ export default function PrivateLabelPage() {
           </div>
 
           <div className={styles.heroBannerWrap}>
-            <Image data-cms-image-key="private-label.hero.salt_accent" className={styles.heroBanner} src="/hero-banner.png" alt="Himalayan pink salt private label banner" width={1600} height={900} priority unoptimized />
+            <Image data-cms-image-key="private-label.hero.salt_accent" className={styles.heroBanner} src={cmsImage("private-label.hero.salt_accent", "/hero-banner.png")} alt={cmsImageAlt("private-label.hero.salt_accent", "Himalayan pink salt private label banner")} width={1600} height={900} priority unoptimized />
           </div>
         </div>
       </section>
@@ -107,7 +110,7 @@ export default function PrivateLabelPage() {
         <div className={`${styles.container} ${styles.studioGrid}`}>
           <div className={styles.studioVisual}>
             <span className={styles.visualBadge}>Interactive Packaging</span>
-            <Image data-cms-image-key="private-label.studio.packaging_visual" src="/custom-packaging.png" alt="Private label packaging formats" width={1100} height={900} unoptimized />
+            <Image data-cms-image-key="private-label.studio.packaging_visual" src={cmsImage("private-label.studio.packaging_visual", "/custom-packaging.png")} alt={cmsImageAlt("private-label.studio.packaging_visual", "Private label packaging formats")} width={1100} height={900} unoptimized />
           </div>
           <div className={styles.studioCopy}>
             <div className={styles.eyebrow} data-cms-key={cmsKey("studio", "eyebrow")}>Packaging Studio</div>
@@ -145,7 +148,7 @@ export default function PrivateLabelPage() {
                   const sizes = String(product.sizes || "").split(/[·,]/).map((item) => item.trim()).filter(Boolean);
                   return (
                     <article className={styles.productCard} key={product.slug}>
-                      <div className={styles.productImage}><Image data-cms-image-key={`private-label.range.product_${product.slug}_image`} src={product.image || "/white-sack.png"} alt={product.title} width={700} height={700}/></div>
+                      <div className={styles.productImage}><Image data-cms-image-key={`private-label.range.product_${product.slug}_image`} src={cmsImage(`private-label.range.product_${product.slug}_image`, product.image || "/white-sack.png")} alt={cmsImageAlt(`private-label.range.product_${product.slug}_image`, product.title)} width={700} height={700}/></div>
                       <div className={styles.productBody}>
                         <span className={styles.productIndex}>{String(index + 1).padStart(2, "0")}</span>
                         <h3>{product.title}</h3>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Boxes, Grid3X3, LampDesk, Mountain, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
 import { APPROVED_PRODUCT_CATEGORIES, APPROVED_PRODUCT_SHEET, LEGACY_PRODUCT_SLUGS } from "@/lib/product-catalog";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 type ProductSegment = "powder" | "coarse";
 
@@ -152,6 +153,8 @@ function semanticProductKey(product: Product) {
 }
 
 export default function ProductsPage() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [rows, setRows] = useState<Product[]>([]);
   const [categoryRows, setCategoryRows] = useState<CategoryRow[]>([]);
   const [activeFamily, setActiveFamily] = useState("edible-salt");
@@ -260,7 +263,7 @@ export default function ProductsPage() {
         {items.map((product, index) => (
           <article className="tso-showcase-product-card" key={`${product.slug}-${index}`}>
             <div className="tso-showcase-product-card__image">
-              <img data-cms-image-key={productListingCmsImageKey(product)} src={product.image || "/hero-products.png"} alt={displayProductName(product)} />
+              <img data-cms-image-key={productListingCmsImageKey(product)} src={cmsImage(productListingCmsImageKey(product), product.image || "/hero-products.png")} alt={cmsImageAlt(productListingCmsImageKey(product), displayProductName(product))} />
             </div>
             <div className="tso-showcase-product-card__body">
               <h3>{displayProductName(product)}</h3>
@@ -293,7 +296,7 @@ export default function ProductsPage() {
             <p data-cms-key={`products.hero.${currentFamilyCmsKey}_description`}>{currentFamily.description}</p>
           </div>
           <div className="tso-products-showcase-hero__visual">
-            <img data-cms-image-key={`products.hero.${currentFamilyCmsKey}_image`} src={currentFamily.image || "/hero-banner.png"} alt={`${currentFamily.name} collection`} />
+            <img data-cms-image-key={`products.hero.${currentFamilyCmsKey}_image`} src={cmsImage(`products.hero.${currentFamilyCmsKey}_image`, currentFamily.image || "/hero-banner.png")} alt={cmsImageAlt(`products.hero.${currentFamilyCmsKey}_image`, `${currentFamily.name} collection`)} loading="eager" fetchPriority="high" />
           </div>
         </div>
       </section>

@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase-client";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 import { styleToReact } from "@/lib/text-style";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 const defaults = {
   home: "Home",
@@ -31,6 +32,8 @@ type LabelKey = keyof typeof defaults;
 
 export default function Navbar() {
   const pathname = usePathname();
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const { dark, toggle } = useSiteTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -88,6 +91,8 @@ export default function Navbar() {
   }
 
   const navStyle = (key: LabelKey) => styleToReact(richText[`global.navbar.${key}`]?.style);
+  const renderedLogo = cmsImage("global.branding.header_logo", cmsImage("global.branding.logo", logo));
+  const renderedLogoAlt = cmsImageAlt("global.branding.header_logo", logoAlt);
   const brandName = richText["global.branding.header_brand_name"]?.value || "The Salt Origin";
   const brandSubtitle = richText["global.branding.header_brand_subtitle"]?.value || "PINK SALT · PAKISTAN";
   const links: Array<[string, string, LabelKey]> = [
@@ -118,7 +123,7 @@ export default function Navbar() {
       <header className="tso-main-header">
         <div className="tso-header-container tso-main-header__row">
           <Link href="/" className="tso-brand-lockup" aria-label="The Salt Origin homepage">
-            <img data-cms-image-key="global.branding.header_logo" src={logo} alt={logoAlt} />
+            <img data-cms-image-key="global.branding.header_logo" src={renderedLogo} alt={renderedLogoAlt} />
             <span><strong data-cms-key="global.branding.header_brand_name">{brandName}</strong><small data-cms-key="global.branding.header_brand_subtitle">{brandSubtitle}</small></span>
           </Link>
 
@@ -150,7 +155,7 @@ export default function Navbar() {
         <>
           <button className="tso-mobile-backdrop" onClick={() => setIsOpen(false)} aria-label="Close menu overlay" />
           <aside className="tso-mobile-drawer">
-            <div className="tso-mobile-drawer__head"><div className="tso-brand-lockup"><img src={logo} alt={logoAlt}/><span><strong>{brandName}</strong><small>{brandSubtitle}</small></span></div><button onClick={() => setIsOpen(false)}><X /></button></div>
+            <div className="tso-mobile-drawer__head"><div className="tso-brand-lockup"><img src={renderedLogo} alt={renderedLogoAlt}/><span><strong>{brandName}</strong><small>{brandSubtitle}</small></span></div><button onClick={() => setIsOpen(false)}><X /></button></div>
             <nav>{links.map(([href, label]) => <Link key={href} href={href} onClick={() => setIsOpen(false)}>{label}</Link>)}</nav>
             <div className="tso-mobile-tools">
               <button onClick={toggle}>{dark ? <Sun/> : <Moon/>}<span>{dark ? "Light Mode" : "Dark Mode"}</span></button>

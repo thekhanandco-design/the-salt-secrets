@@ -7,6 +7,7 @@ import { loadCmsImages, loadCmsTextWithStyles, loadSocialLinks, type CmsTextPayl
 import { supabase } from "@/lib/supabase-client";
 import { styleToReact } from "@/lib/text-style";
 import { SocialPlatformIcon } from "@/components/SocialPlatformIcon";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 type Settings = { site_name?: string; footer_text?: string; contact_email?: string; whatsapp_number?: string; address?: string };
 type Social = { platform: string; label: string; url: string; icon_key: string };
@@ -14,6 +15,8 @@ type Social = { platform: string; label: string; url: string; icon_key: string }
 const socialOrder = ["linkedin", "instagram", "facebook", "pinterest", "tiktok", "youtube"];
 
 export default function Footer() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [settings, setSettings] = useState<Settings>({ site_name: "The Salt Origin", contact_email: "sales@thesaltorigin.com", whatsapp_number: "92331281289", address: "Karachi, Pakistan" });
   const [richText, setRichText] = useState<Record<string, CmsTextPayload>>({});
   const [logo, setLogo] = useState("/salt-origin-logo.png");
@@ -46,6 +49,9 @@ export default function Footer() {
   const textStyle = (key: string) => styleToReact(richText[`global.footer.${key}`]?.style);
   const navText = (key: string, fallback: string) => richText[`global.navbar.${key}`]?.value || fallback;
   const orderedSocials = useMemo(() => socialOrder.map((name) => socials.find((item) => String(item.platform || item.icon_key).toLowerCase() === name)).filter(Boolean) as Social[], [socials]);
+  const renderedLogo = cmsImage("global.branding.footer_logo", cmsImage("global.branding.logo", logo));
+  const renderedLogoAlt = cmsImageAlt("global.branding.footer_logo", "The Salt Origin");
+  const renderedFooterArtwork = cmsImage("global.footer.mountain_artwork", footerArtwork);
   const year = new Date().getFullYear();
 
   return (
@@ -54,13 +60,13 @@ export default function Footer() {
         className="tso-footer-mountains"
         data-cms-image-key="global.footer.mountain_artwork"
         aria-label="Footer Himalayan mountain artwork"
-        style={{ backgroundImage: `url("${footerArtwork}")` }}
+        style={{ backgroundImage: `url("${renderedFooterArtwork}")` }}
         aria-hidden="true"
       />
       <div className="tso-footer-container">
         <div className="tso-footer-grid">
           <section className="tso-footer-brand">
-            <img data-cms-image-key="global.branding.footer_logo" src={logo} alt="The Salt Origin" />
+            <img data-cms-image-key="global.branding.footer_logo" src={renderedLogo} alt={renderedLogoAlt} />
             <p data-cms-key="global.footer.description" style={textStyle("description")}>{text("description", settings.footer_text || "Premium Himalayan pink salt for retail, foodservice, private label and global B2B supply. Clear specifications, responsive service and export-focused support for international buyers.")}</p>
             <div className="tso-footer-socials">{orderedSocials.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noreferrer" aria-label={social.label}><SocialPlatformIcon platform={social.icon_key || social.platform}/></a>)}</div>
           </section>

@@ -24,6 +24,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { loadCmsImages, loadCmsTextWithStyles, type CmsTextPayload } from "@/lib/cms";
+import { useCmsImageAltResolver, useCmsImageResolver } from "@/components/CmsImageManifestProvider";
 
 const page = "about";
 
@@ -37,6 +38,8 @@ type Card = {
 };
 
 export default function AboutPage() {
+  const cmsImage = useCmsImageResolver();
+  const cmsImageAlt = useCmsImageAltResolver();
   const [richText, setRichText] = useState<Record<string, CmsTextPayload>>({});
   const [images, setImages] = useState<Record<string, CmsImage>>({});
 
@@ -63,8 +66,10 @@ export default function AboutPage() {
   const text = (section: string, key: string, fallback: string) =>
     richText[`${page}.${section}.${key}`]?.value || fallback;
 
-  const image = (section: string, key: string, fallback: string) =>
-    images[`${page}.${section}.${key}`]?.url || fallback;
+  const image = (section: string, key: string, fallback: string) => {
+    const fullKey = `${page}.${section}.${key}`;
+    return cmsImage(fullKey, images[fullKey]?.url || fallback);
+  };
 
   const whoCards: Card[] = [
     {
@@ -231,7 +236,7 @@ export default function AboutPage() {
             {serviceCards.map((card) => (
               <article key={card.key}>
                 <div className="tso-about-v78-service-image">
-                  <img data-cms-image-key={`about.what_we_do.${card.key}_image`} src={card.image} alt={images[`about.what_we_do.${card.key}_image`]?.alt || card.fallbackAlt} />
+                  <img data-cms-image-key={`about.what_we_do.${card.key}_image`} src={card.image} alt={cmsImageAlt(`about.what_we_do.${card.key}_image`, images[`about.what_we_do.${card.key}_image`]?.alt || card.fallbackAlt)} />
                 </div>
                 <div className="tso-about-v78-service-copy">
                   <span>{card.icon}</span>
@@ -281,7 +286,7 @@ export default function AboutPage() {
       <section className="tso-about-v78-purpose" data-cms-section="purpose">
         <div className="tso-public-container tso-about-v78-purpose-grid">
           <div className="tso-about-v78-purpose-image">
-            <img data-cms-image-key="about.purpose.salt_image" src={image("purpose", "salt_image", "/hero-banner.png")} alt={images["about.purpose.salt_image"]?.alt || "Himalayan pink salt"} />
+            <img data-cms-image-key="about.purpose.salt_image" src={image("purpose", "salt_image", "/hero-banner.png")} alt={cmsImageAlt("about.purpose.salt_image", images["about.purpose.salt_image"]?.alt || "Himalayan pink salt")} />
           </div>
           <div className="tso-about-v78-purpose-copy">
             <div className="tso-about-v78-eyebrow" data-cms-key="about.purpose.eyebrow">{text("purpose", "eyebrow", "WHY WE EXIST")}</div>
