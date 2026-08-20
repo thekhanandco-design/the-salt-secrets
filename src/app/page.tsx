@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import HomepageClone from "@/components/HomepageClone";
 import { APPROVED_PRODUCT_CATEGORIES } from "@/lib/product-catalog";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Himalayan Pink Salt Exporter & Private Label Supplier | The Salt Origin",
   description: "Source export-ready Himalayan Pink Salt from Pakistan in retail packs, grinders, pouches and bulk formats, with private-label packaging and B2B support.",
@@ -29,6 +32,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
 };
+
 
 const homepageSchema = {
   "@context": "https://schema.org",

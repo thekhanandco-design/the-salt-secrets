@@ -22,10 +22,11 @@ import {
   Warehouse,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase-client";
-import { loadCmsImages, loadCmsTextWithStyles, type CmsTextPayload } from "@/lib/cms";
+import { loadCmsTextWithStyles, type CmsTextPayload } from "@/lib/cms";
 import { styleToReact } from "@/lib/text-style";
 import { APPROVED_PRODUCT_CATEGORIES } from "@/lib/product-catalog";
 import { FACILITY_CERTIFICATIONS, certificationMatches } from "@/lib/certification-catalog";
+import { useCmsImageManifest } from "@/components/CmsImageManifestProvider";
 
 type HomepageContent = {
   hero_title: string | null;
@@ -151,7 +152,7 @@ export default function HomepageClone() {
   const [content, setContent] = useState<HomepageContent>(defaultContent);
   const [cmsText, setCmsText] = useState<Record<string, string>>({});
   const [cmsRichText, setCmsRichText] = useState<Record<string, CmsTextPayload>>({});
-  const [cmsImages, setCmsImages] = useState<Record<string, { url: string; alt: string }>>({});
+  const cmsImages = useCmsImageManifest();
   const [sections, setSections] = useState<HomeSection[]>(defaultSections);
   const [blogs, setBlogs] = useState<BlogRow[]>([]);
   const [selectedResourceIds, setSelectedResourceIds] = useState<string[]>([]);
@@ -172,10 +173,9 @@ export default function HomepageClone() {
   }, []);
 
   async function loadHomepageContent(language = "en") {
-    const [homepageResult, texts, images, settingsResult, blogResult, categoryResult, certificationResult] = await Promise.all([
+    const [homepageResult, texts, settingsResult, blogResult, categoryResult, certificationResult] = await Promise.all([
       supabase.from("homepage").select("*").limit(1).maybeSingle(),
       loadCmsTextWithStyles("home", language),
-      loadCmsImages("home"),
       supabase.from("public_site_settings").select("config_json").limit(1).maybeSingle(),
       supabase
         .from("blog_posts")
@@ -214,7 +214,6 @@ export default function HomepageClone() {
       if (!String(loadedText["home.quality.button"] || "").trim() || String(loadedText["home.quality.button"] || "").trim() === "View Quality Documentation") loadedText["home.quality.button"] = "Certification Center";
     }
     setCmsText(loadedText);
-    setCmsImages(images);
     setContent({
       hero_title: legacyHeroTitles.has(String(rawHeroTitle).trim()) ? "Himalayan Pink Salt," : rawHeroTitle,
       hero_description: texts["home.hero.description"]?.value || homepage?.hero_description || defaultContent.hero_description,
@@ -370,6 +369,11 @@ export default function HomepageClone() {
                 data-cms-image-key="home.hero.products"
                 src={cmsImages["home.hero.products"]?.url || "/hero-products.png"}
                 alt={cmsImages["home.hero.products"]?.alt || "The Salt Origin Himalayan pink salt products"}
+                width={1600}
+                height={900}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
           </div>

@@ -171,7 +171,10 @@ export default function PublicCmsRuntimeController() {
       }
     }
 
-    if (!imageResult.error) {
+    // Homepage images are rendered from the global SSR CMS image manifest.
+    // Do not mutate them again after hydration, otherwise an old/default image can flash
+    // before the current CMS image is applied. Other pages keep legacy runtime support.
+    if (!imageResult.error && basePageSlug !== "home") {
       const rows = ([...(imageResult.data || [])] as ImageRow[]).sort((a, b) =>
         pagePriority(a.page_slug, basePageSlug, productPageSlug) - pagePriority(b.page_slug, basePageSlug, productPageSlug) ||
         Number(a.display_order || 0) - Number(b.display_order || 0),
